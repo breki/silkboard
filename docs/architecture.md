@@ -2,7 +2,8 @@
 
 Date: 2026-10-13
 
-Status: Proposed; not implemented
+Status: Proposed; not implemented. The [roadmap](roadmap.md) takes precedence
+for delivery priorities and the rustbase technology foundation.
 
 ## 1. Purpose and requirements
 
@@ -303,8 +304,8 @@ Restrict writable directories. Expose no Docker socket, host mounts, SSH keys, o
 hypervisor controls. Keep Tailscale identity files inaccessible to the app.
 
 Use SQLite transactions, foreign keys, schema migrations, and a busy timeout on
-local VM storage. Implementation language and UI framework remain open; a small
-server-rendered app is sufficient. Revisit storage if measured needs outgrow it.
+local VM storage. The application is based on the rustbase Rust/Axum and
+Svelte/Vite template. Revisit storage if measured needs outgrow it.
 
 Back up through SQLite's supported online backup mechanism or a consistent
 snapshot, including journal state where needed. Encrypt backups and keep a copy
@@ -338,15 +339,12 @@ it does not make agents immune to plausible malicious instructions.
 12. Backups restore successfully with leases and credentials reconciled.
 13. The dashboard cannot invoke Bombyx or administer the development host.
 
-## 12. Milestones and open decisions
+## 12. Roadmap and open decisions
 
-1. Owner authentication, project overview, status publishing, and local handoffs.
-2. Guest sync client and Bombyx provisioning integration.
-3. Owner task creation, incremental polling, revisions, and claims.
-4. Runtime registration, reset reconciliation, and restricted scratch reporting.
-5. Network isolation, authorization, hostile-content checks, and backup restore.
+The [project roadmap](roadmap.md) defines the general milestones and their
+completion criteria. It replaces the original implementation milestone list.
 
-Resolve the Pi/hypervisor platform, app stack, guest enrollment, trusted runtime
+Resolve the Pi/hypervisor platform, guest enrollment, trusted runtime
 registration, enforcement of agent permissions, backup objectives, and retention
 settings during implementation. Do not treat isolation or recovery as complete
 until the corresponding acceptance checks pass.

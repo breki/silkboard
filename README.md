@@ -12,7 +12,8 @@ You can add tasks remotely; project agents fetch them and publish progress.
 - A dedicated dashboard VM on a Raspberry Pi, accessible through Tailscale HTTPS.
 - A web interface and project-scoped API backed by SQLite.
 - A sync client inside each participating Bombyx development VM.
-- No dashboard access to GitHub repositories, development files, or VM control.
+- No dashboard access to development repositories, files, or VM control.
+  A separate updater can fetch Silkboard releases from GitHub.
 - Local execution permissions that remain independent of dashboard task content.
 
 ## Status
@@ -20,9 +21,14 @@ You can add tasks remotely; project agents fetch them and publish progress.
 Architecture proposal. No application or sync client has been implemented yet.
 
 Read [the architecture](docs/architecture.md) for requirements, security boundaries,
-API design, Bombyx lifecycle integration, and implementation milestones.
+API design, and Bombyx lifecycle integration.
 
-## First milestone
+## Roadmap
 
-Implement owner authentication, a project overview, status publishing, and a
-local handoff format before adding task polling and claims.
+1. Complete deployment pipeline with a minimal status page: based on
+   [rustbase](https://github.com/breki/rustbase), running inside a Raspberry Pi
+   VM, and automatically upgraded from verified, tagged GitHub revisions.
+
+See [the roadmap](docs/roadmap.md) for completion criteria, existing deployment
+patterns, and open decisions. Implementation is pending; later milestones
+remain to be defined.
