@@ -9,7 +9,8 @@ You can add tasks remotely; project agents fetch them and publish progress.
 
 ## Planned architecture
 
-- A dedicated dashboard VM on a Raspberry Pi, accessible through Tailscale HTTPS.
+- A dedicated dashboard VM on a Raspberry Pi, accessible through Tailscale
+  HTTPS.
 - A web interface and project-scoped API backed by SQLite.
 - A sync client inside each participating Bombyx development VM.
 - No dashboard access to development repositories, files, or VM control.
@@ -32,3 +33,9 @@ API design, and Bombyx lifecycle integration.
 See [the roadmap](docs/roadmap.md) for completion criteria, existing deployment
 patterns, and open decisions. Implementation is pending; later milestones
 remain to be defined.
+
+## Agent guidance
+
+Start with [AGENTS.md](AGENTS.md). Codex and Claude Code share the same
+[workflow canon](docs/ai-agents/catalog.md); their wrappers contain only
+routing instructions. Build and release tooling remains pending.
