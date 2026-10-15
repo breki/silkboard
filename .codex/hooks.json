@@ -1,0 +1,16 @@
+{
+  "description": "Show a plain-text Kozmotic Git summary after each turn.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.claude/bin/kozmotic\" codex-git-status",
+            "timeout": 6
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,8 +1,10 @@
 # Tooling status and prerequisites
 
-The repository currently contains documentation and agent workflows. It has
-no Cargo workspace, application, frontend, xtask, release CI, or installed
-agent hooks. The existence of a wrapper does not change that status.
+The repository contains documentation, agent workflows, and a Git-status hook.
+It has no Cargo workspace, application, frontend, xtask, or release CI. The
+existence of a wrapper does not change that status. A separate informational
+[Codex Git-status hook](git-status-hook.md) is registered; it requires local
+prerequisites and hook trust before it can run automatically.
 
 ## Available now
 
@@ -43,5 +45,5 @@ of absent or upstream paths as such rather than inventing files to satisfy
 checks. Add record validation when structured IDs and their helpers exist.
 Future automated checks must cover both agent wrappers and shared sources.
 
-No hook is claimed as enforcement. Any later hooks should call shared checks
-and accurately state which gates they run.
+The Git-status hook is informational, not enforcement. Any later validation
+hooks should call shared checks and accurately state which gates they run.

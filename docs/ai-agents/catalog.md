@@ -1,9 +1,8 @@
 # Workflow catalog
 
-Shared procedures are authoritative. Codex skills use the prefix
-`silkboard-`; Claude uses the corresponding command name, except
-`architect` and `web-dev`, which are Claude skills. For example,
-use `$silkboard-review` in Codex or `/review` in Claude Code.
+Shared procedures are authoritative. Codex and Claude use the same workflow
+names: invoke `$review` in Codex or `/review` in Claude Code. Claude exposes
+`architect` and `web-dev` as skills; the others are commands.
 
 Wrappers become discoverable when the client loads repository skills;
 a current session may need to reload them. A procedure can also be read

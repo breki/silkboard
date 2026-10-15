@@ -10,4 +10,6 @@ Use `AskUserQuestion` for interactive choices when available, and delegate
 review roles through `Agent` when supported. If a capability is unavailable,
 follow the shared procedure's fallback and state the limitation.
 
-No hooks or tool permission overrides are installed by this canon.
+No Claude hooks or tool permission overrides are installed by this canon.
+The separate [Codex Git-status hook](docs/ai-agents/git-status-hook.md)
+registers only with Codex.
