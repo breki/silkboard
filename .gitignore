@@ -1,3 +1,6 @@
 # Local generated reports and future build output
 /reports/
 /target/
+
+# Temporary session handoffs and local scratch files
+/.local/

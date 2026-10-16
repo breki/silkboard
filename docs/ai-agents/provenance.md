@@ -71,3 +71,10 @@ The todo, backlog-report, and record procedures now use `breki/silkboard`
 issues as the authoritative task queue. Local `docs/issues/` files remain
 temporary implementation notes. This is an owner-directed policy change,
 not an upstream template sync.
+
+## Local handoff storage, 2026-10-16
+
+The owner selected `.local/handoff.md` as the default session handoff path,
+with `.local/` gitignored. Handoffs hold temporary resume context; tracked
+canon and GitHub issues retain durable decisions and pending work. This is
+an owner-directed storage policy change, not an upstream template sync.

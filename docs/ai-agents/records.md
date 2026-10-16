@@ -13,7 +13,9 @@ Do not create empty review logs, fake backlog entries, or placeholder history.
   severity, source snapshot, consequence, disposition, and follow-up link.
 - Template feedback: `docs/developer/template-feedback.md`, using unique
   `tf-date-slug` IDs and open/resolved/suggestion sections.
-- Latest handoff: `docs/handoff.md`, written only by the handoff workflow.
+- Latest handoff: `.local/handoff.md`, gitignored temporary session context,
+  written by the handoff workflow. Durable decisions belong in tracked canon
+  and pending tasks in GitHub issues.
 
 Check uniqueness before writing. Preserve existing identifiers when updating
 status; resolve findings with evidence rather than deleting their history.
