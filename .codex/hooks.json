@@ -1,9 +1,14 @@
 {
-  "description": "Show a plain-text Kozmotic Git summary after each turn.",
+  "description": "Check changed Rust code and show a Kozmotic Git summary after each turn.",
   "hooks": {
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/stop-check.sh\"",
+            "timeout": 120
+          },
           {
             "type": "command",
             "command": "\"$HOME/.claude/bin/kozmotic\" codex-git-status",

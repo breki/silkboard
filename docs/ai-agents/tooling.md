@@ -6,6 +6,11 @@ existence of a wrapper does not change that status. A separate informational
 [Codex Git-status hook](git-status-hook.md) is registered; it requires local
 prerequisites and hook trust before it can run automatically.
 
+A [Stop validation hook](stop-check-hook.md) is also registered for changed
+Rust files. It requires Bash, Git, and jq; Rust validation additionally needs
+the pending Cargo workspace and xtask commands. Registration does not make
+those gates available. The hook reports unavailable or failing stages.
+
 ## Available now
 
 Git inspection, diff checks, documentation editing, review, handoff, planning,

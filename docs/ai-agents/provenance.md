@@ -27,7 +27,7 @@ whole-template watermark for a guidance-only update.
 - Rustbase quality thresholds retained; absent automation marked pending.
 - No CLI-only, Windows-only, host-specific, or speech-summary requirements.
 - No copied incidents, private host addresses, stale crate names, or fake
-  command availability. No hooks or permission overrides imported.
+  command availability. No permission overrides imported.
 - Manual backlog/changelog/feedback capture allowed before helpers exist;
   missing release gates block releases rather than being skipped.
 - Full workflow set retained, including reports and template maintenance,
@@ -37,3 +37,13 @@ whole-template watermark for a guidance-only update.
 Check links, wrapper routing, workflow prerequisites, and source consistency
 when changing this layout. Update the shared body once rather than editing
 both wrappers. Record future generic improvements through template feedback.
+
+## Hook adaptation, 2026-10-16
+
+Adapted Bombyx's `.claude/hooks/stop-check.sh` and its Stop registration from
+`38fe77286f55a0bcc6e12bd5d4500e72ae4ebb06` for project-local Codex use. This
+adds the formatting, Clippy, Rust documentation, and test stages without
+advancing the guidance baseline. The adaptation parses the payload with jq,
+uses its checkout path, corrects the boolean recursion guard, includes Rust
+deletions, and reports missing prerequisites. Without jq it warns without
+requesting repeated continuation. See the [hook guide](stop-check-hook.md).

@@ -21,8 +21,9 @@ The initial web app can be just a status page.
   private access to the status page.
 - Detect eligible GitHub release tags automatically and deploy the exact
   referenced revision without a development machine driving each upgrade.
-- Verify eligibility before building or activating a revision. The precise
-  policy for trusted signatures and passing release checks remains to be set.
+- Verify eligibility before building or activating a revision: require a
+  trusted signed release tag and a passing full GitHub release suite for the
+  exact referenced revision.
 - Stage a release, activate it, and check service health. Keep a working
   release available for rollback if an upgrade fails.
 - Show the running version, release tag, commit, and application health on the
@@ -36,7 +37,7 @@ The initial web app can be just a status page.
 2. Publishing an eligible tagged revision causes an automatic upgrade, and
    the status page identifies the deployed revision.
 3. An untagged or unverified revision is not deployed. A tag waiting for checks
-   can become eligible after those checks finish, if checks are required.
+   can become eligible after its required release checks finish successfully.
 4. A failed build or upgrade preserves or restores the working release;
    rollback and retry behavior are demonstrated.
 5. The application and automatic update mechanism recover after a VM reboot.
@@ -74,15 +75,42 @@ not inspect live services on the Pi.
   cargo xtask deploy; automatic pull upgrades need to be added for Silkboard.
 
 These deployments document host services on malina, not a reusable VM deployment
-setup. Silkboard's VM provisioning and networking still need to be established.
+setup. The subsequent [VM resource trial](deployment-vm-trial.md) verified a
+representative guest; production Silkboard provisioning and networking still
+need to be established.
 
-### Decisions still needed
+### Agreed deployment decisions
 
-- What constitutes a verified release: trusted commit/tag signatures, passing
-  GitHub release checks, or both.
-- VM platform, guest OS, resource allocation, and private access address.
-- Build inside the VM or download an ARM64 artifact produced by CI.
-- Release ordering, polling interval, and rollback pinning/retry policy.
+Selected with the owner on 2026-10-16; implementation remains pending.
+
+- Target malina with a dedicated QEMU/KVM guest managed by libvirt, running
+  minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
+- Build the Rust backend and frontend inside the guest as an unprivileged
+  user. Downloaded CI build artifacts are not the chosen deployment model.
+- Starting resource budget: two shared vCPUs, 2 GiB RAM, and a 40 GiB disk
+  including 4 GiB guest swap. A separate trial tested lower idle memory
+  and host-controlled ballooning; see the completed
+  [trial results](deployment-vm-trial.md). Dynamic allocation is not yet adopted.
+- Use guest Tailscale Serve for private HTTPS with the hostname `silkboard`,
+  subject to name availability.
+- Require a trusted signed release tag and a passing full release suite for
+  the tagged revision, including the agreed CI and release quality gates.
+- Poll every ten minutes, including reconsidering tags awaiting checks.
+  Select the highest newer stable `vMAJOR.MINOR.PATCH` version. Exclude
+  prereleases; downgrades require explicit operator action.
+- Preserve or restore the working release after failure. Block the failed
+  tag until manual retry, while continuing to consider newer eligible tags.
+
+### Decisions and evidence still needed
+
+- Trusted signer/key configuration and the exact GitHub workflow identity
+  used to establish a successful full release suite.
+- Production Silkboard provisioning and measurements. The representative
+  rustbase trial passed guest boot, in-VM builds, private access, ballooning,
+  and guest reboot recovery; it does not establish the delivery pipeline.
+- Whether to adopt dynamic guest memory, based on the trial's measurements.
+- Production provisioning, release activation, and demonstrated rollback and
+  retry behavior. The deployment pipeline is not operational yet.
 
 ## Later milestones
 
