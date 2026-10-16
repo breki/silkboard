@@ -72,9 +72,21 @@ issues as the authoritative task queue. Local `docs/issues/` files remain
 temporary implementation notes. This is an owner-directed policy change,
 not an upstream template sync.
 
+Following the owner's request for issue relationships and milestones, the
+todo procedure records authorized organization using native GitHub dependency
+links and agreed milestone membership, with a read-back verification step.
+
 ## Local handoff storage, 2026-10-16
 
 The owner selected `.local/handoff.md` as the default session handoff path,
 with `.local/` gitignored. Handoffs hold temporary resume context; tracked
 canon and GitHub issues retain durable decisions and pending work. This is
 an owner-directed storage policy change, not an upstream template sync.
+
+## Actionable retrospectives, 2026-10-16
+
+At the owner's request, the retrospect procedure now requires a disposition
+for useful findings, applies authorized corrections, and presents concrete
+proposals for changes needing a new decision. Verification and existing
+publication boundaries remain in force. This is a local workflow improvement,
+not an upstream template sync.
