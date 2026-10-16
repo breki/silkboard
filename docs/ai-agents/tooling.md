@@ -1,15 +1,16 @@
 # Tooling status and prerequisites
 
-The repository contains documentation, agent workflows, and a Git-status hook.
-It has no Cargo workspace, application, frontend, xtask, or release CI. The
-existence of a wrapper does not change that status. A separate informational
-[Codex Git-status hook](git-status-hook.md) is registered; it requires local
+The repository contains documentation, agent workflows, hooks, and a minimal
+Cargo workspace with a dependency-free xtask crate. It has no application,
+frontend, or release CI. Workflow wrappers do not implement missing commands.
+An informational [Codex Git-status hook](git-status-hook.md) is registered;
+it requires local
 prerequisites and hook trust before it can run automatically.
 
 A [Stop validation hook](stop-check-hook.md) is also registered for changed
 Rust files. It requires Bash, Git, and jq; Rust validation additionally needs
-the pending Cargo workspace and xtask commands. Registration does not make
-those gates available. The hook reports unavailable or failing stages.
+the Rust toolchain with rustfmt and Clippy. Its Cargo stages are implemented
+for the tooling workspace. The hook reports unavailable or failing stages.
 
 ## Available now
 
@@ -18,19 +19,38 @@ and local reports can work with the tools actually available to the agent.
 GitHub operations require working authenticated access and task authorization.
 Check availability without printing credentials. Missing tools must be reported.
 
+The [Cargo workspace](../../Cargo.toml) follows Bombyx's workspace/xtask
+layout, with Rust edition 2024, shared lints, and 80-column rustfmt. The
+lockfile has no third-party dependencies. Available checks are:
+
+| Capability | Entry point |
+| --- | --- |
+| Rust formatting | `cargo fmt --all -- --check` |
+| Rust linting | `cargo xtask clippy` (workspace, all targets, denied warnings) |
+| Rust docs | `cargo xtask doc` (public and private passes, denied warnings) |
+| Tests | `cargo xtask test` (all workspace tests) |
+
+`cargo xtask --help` lists the implemented tasks. Tasks reject unsupported
+arguments and stop on a failed Cargo stage. They use the workspace root and
+locked dependency resolution. Cargo builds also work with `--offline`.
+
+The [Stop hook's behavioral tests](stop-check-hook.md#enable-and-verify) are
+registered as xtask's `stop_check` integration test. They use only the standard
+library and can also run directly with `rustc --test`. These checks validate
+repository tooling; they do not establish an application or release pipeline.
+
 ## Pending rustbase adaptation
 
 The following are intended interfaces, not commands that currently work:
 
 | Capability | Intended entry points |
 | --- | --- |
-| Build checks | `cargo xtask check`, `clippy`, `fmt` |
-| Tests | `cargo xtask test [filter]`, `coverage`, `dupes` |
+| Build checks | `cargo xtask check`, `fmt` |
+| Tests | Filtered `cargo xtask test [filter]`, `coverage`, `dupes` |
 | Full validation | `cargo xtask validate --check` |
 | Supply chain | `cargo xtask deny`, `audit`, `dep-age-check`, `dep-preflight` |
 | Canon | `cargo xtask canon-check` |
 | Records | `cargo xtask records-check`, when record tooling is adopted |
-| Rust docs | `cargo xtask doc` |
 | Frontend | Configured frontend checks and isolated Playwright suite |
 | Backlog/changelog | `cargo xtask todo`, `changelog add` |
 | Template maintenance | `sync-candidates`, `feedback-add`, backfeed helpers |

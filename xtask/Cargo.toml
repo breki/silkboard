@@ -1,0 +1,14 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Silkboard repository checks"
+license = "MIT"
+
+[lints]
+workspace = true
+
+[[test]]
+name = "stop_check"
+path = "../.codex/hooks/tests/stop_check.rs"

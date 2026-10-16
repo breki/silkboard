@@ -53,8 +53,9 @@ services as evidence of a working VM deployment.
 
 ## Current tooling
 
-No application or Cargo/xtask tooling is installed yet. Workflow wrappers
-are instructions, not executable implementations of missing helpers.
+The Cargo workspace currently contains repository tooling and hook tests.
+No application is installed yet. Workflow wrappers are instructions, not
+executable implementations of missing helpers.
 [Tooling status](docs/ai-agents/tooling.md) distinguishes current checks
 from pending commands. Never report a skipped prerequisite as a pass.
 

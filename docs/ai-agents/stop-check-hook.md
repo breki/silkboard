@@ -18,7 +18,7 @@ from the worktree root and stops at the first failure:
 
 Cargo, the workspace, and those xtask commands must exist before these gates
 can pass. Missing prerequisites are reported as unavailable, never as passing
-validation. Silkboard's Cargo workspace and xtask are currently pending; see
+validation. Silkboard's tooling workspace implements these stages; see
 [tooling status](tooling.md). A missing or failing Cargo stage returns exit
 code 2 with the stage and captured diagnostics. Codex uses that feedback to
 continue the turn. Successful stages produce no output.
@@ -43,12 +43,25 @@ Review and trust the changed Stop definition in Codex `/hooks`; follow the
 [hook setup guide](git-status-hook.md#enable) if the client retains an old
 definition. Trust remains user configuration. Do not bypass it.
 
-Run the behavioral tests with:
+The behavioral tests use Rust's standard library and test harness. Run them
+as the workspace's integration test:
 
 ```bash
-python3 -m unittest discover -s .codex/hooks/tests -v
+cargo test --locked --package xtask --test stop_check
 ```
 
-These use temporary Git repositories and a mocked Cargo executable. They
-verify orchestration, not Rust gates or delivery by the Codex client. An
-actual completed turn after hook trust is required to verify delivery.
+`cargo xtask test` runs these and xtask's own tests. To run the hook suite
+without Cargo, compile it directly with Rust edition 2024:
+
+```bash
+rustc --edition=2024 --test -D warnings \
+  .codex/hooks/tests/stop_check.rs -o /tmp/silkboard-stop-check-tests
+/tmp/silkboard-stop-check-tests
+```
+
+These tests require a Unix host with Bash, Git, and jq, using temporary Git
+repositories and a mocked Cargo executable. They add no Rust crate or Python
+dependencies. Fixtures isolate their Git configuration and environment from
+the user's settings. They verify orchestration, not Rust gates or delivery by
+the Codex client. An actual completed turn after hook trust is required to
+verify delivery.

@@ -47,3 +47,18 @@ advancing the guidance baseline. The adaptation parses the payload with jq,
 uses its checkout path, corrects the boolean recursion guard, includes Rust
 deletions, and reports missing prerequisites. Without jq it warns without
 requesting repeated continuation. See the [hook guide](stop-check-hook.md).
+Its behavioral regression tests use Rust's standard library and test harness,
+registered with Cargo and also runnable directly with `rustc --test`.
+
+## Cargo bootstrap, 2026-10-16
+
+Adapted Bombyx's root manifest, Cargo alias, rustfmt configuration, and
+Clippy/doc/test invocation patterns from
+`38fe77286f55a0bcc6e12bd5d4500e72ae4ebb06`. The workspace currently contains
+only a dependency-free xtask and the Stop hook integration tests. Shared
+warning, unsafe-code, documentation, pedantic, and performance lints apply.
+Rustdoc checks both public and private items with denied warnings. Bombyx's
+application, dependency list, coverage exclusions, release-fast profile,
+Windows helpers, and broader xtask command set were not imported. The
+rustbase application and full quality gates remain pending; this does not
+advance either whole-template baseline.

@@ -38,4 +38,6 @@ remain to be defined.
 
 Start with [AGENTS.md](AGENTS.md). Codex and Claude Code share the same
 [workflow canon](docs/ai-agents/catalog.md); their wrappers contain only
-routing instructions. Build and release tooling remains pending.
+routing instructions. A minimal Cargo workspace provides repository checks
+and hook tests; application build and release tooling remain pending. See
+[tooling status](docs/ai-agents/tooling.md) for available commands.

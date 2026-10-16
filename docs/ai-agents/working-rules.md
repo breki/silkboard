@@ -42,6 +42,7 @@ Use meaningful exit codes appropriate to the actual interface.
 
 Keep nontrivial automation in Rust/xtask when practical. Shell wrappers should
 be thin; bootstrap scripts that run before Cargo exists are a valid exception.
+Do not rely on Python for repository tooling or tests.
 Do not assume Windows-only or Bombyx host-specific restrictions apply here.
 Inspect actual tool availability and platform behavior.
 
