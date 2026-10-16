@@ -28,8 +28,9 @@ whole-template watermark for a guidance-only update.
 - No CLI-only, Windows-only, host-specific, or speech-summary requirements.
 - No copied incidents, private host addresses, stale crate names, or fake
   command availability. No permission overrides imported.
-- Manual backlog/changelog/feedback capture allowed before helpers exist;
-  missing release gates block releases rather than being skipped.
+- GitHub issues are the backlog; manual changelog/feedback capture is allowed
+  before helpers exist. Missing release gates block releases rather than
+  being skipped.
 - Full workflow set retained, including reports and template maintenance,
   with supporting assets shared and capability limitations explicit.
 - Deployment eligibility and platform choices remain the owner's decisions.
@@ -62,3 +63,11 @@ application, dependency list, coverage exclusions, release-fast profile,
 Windows helpers, and broader xtask command set were not imported. The
 rustbase application and full quality gates remain pending; this does not
 advance either whole-template baseline.
+
+## Backlog policy, 2026-10-16
+
+The owner selected GitHub issues instead of a local Markdown backlog.
+The todo, backlog-report, and record procedures now use `breki/silkboard`
+issues as the authoritative task queue. Local `docs/issues/` files remain
+temporary implementation notes. This is an owner-directed policy change,
+not an upstream template sync.

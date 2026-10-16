@@ -3,9 +3,11 @@
 Create records only when there is actual work or a finding to preserve.
 Do not create empty review logs, fake backlog entries, or placeholder history.
 
-- Backlog: `docs/todo.md`, with a unique lowercase hyphenated slug, summary,
-  pending/in-progress/blocked/done state, and source/acceptance details.
-- Working plans: `docs/issues/<slug>.md`, linked to the backlog or GitHub issue.
+- Backlog: GitHub issues in `breki/silkboard`. GitHub owns task details and
+  status; use issue numbers/URLs as identifiers. Do not keep a parallel
+  Markdown backlog or fall back to one when GitHub is unavailable.
+- Working plans: `docs/issues/<slug>.md`, linked to the GitHub issue when
+  applicable. These are implementation notes, not a separate task queue.
 - Deferred review findings: `docs/developer/<role>-log.md`, where role is
   artisan, redteam, or fresh-reader. Include a unique `role-date-slug` ID,
   severity, source snapshot, consequence, disposition, and follow-up link.

@@ -19,6 +19,10 @@ and local reports can work with the tools actually available to the agent.
 GitHub operations require working authenticated access and task authorization.
 Check availability without printing credentials. Missing tools must be reported.
 
+Backlog capture and listing use authenticated GitHub tooling directly; see
+the [todo workflow](workflows/todo.md). GitHub issues are the backlog, with
+no parallel local Markdown task queue. No xtask helper is required.
+
 The [Cargo workspace](../../Cargo.toml) follows Bombyx's workspace/xtask
 layout, with Rust edition 2024, shared lints, and 80-column rustfmt. The
 lockfile has no third-party dependencies. Available checks are:
@@ -52,7 +56,7 @@ The following are intended interfaces, not commands that currently work:
 | Canon | `cargo xtask canon-check` |
 | Records | `cargo xtask records-check`, when record tooling is adopted |
 | Frontend | Configured frontend checks and isolated Playwright suite |
-| Backlog/changelog | `cargo xtask todo`, `changelog add` |
+| Changelog | `cargo xtask changelog add` |
 | Template maintenance | `sync-candidates`, `feedback-add`, backfeed helpers |
 
 Before a workflow invokes a pending interface, inspect manifests, Cargo

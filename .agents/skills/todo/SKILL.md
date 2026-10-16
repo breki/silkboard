@@ -1,7 +1,7 @@
 ---
 name: todo
 description: >-
-  Capture or list Silkboard backlog items without implementing them.
+  Create or list Silkboard GitHub issues without implementing them.
 ---
 
 Read and follow the [shared todo procedure](../../../docs/ai-agents/workflows/todo.md).

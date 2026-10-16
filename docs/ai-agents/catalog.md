@@ -18,14 +18,14 @@ directly. See [tooling status](tooling.md) for unavailable build helpers.
 | [release](workflows/release.md) | Prepare a validated Silkboard SemVer release and annotated tag. | Both; Hoard release separation |
 | [review](workflows/review.md) | Review a fixed Silkboard change with reviewers matched to its content. | Bombyx, adapted reviewer selection |
 | [code-reviewers](workflows/code-reviewers.md) | Explain or invoke Silkboard review roles for a requested change. | Both |
-| [todo](workflows/todo.md) | Capture or list Silkboard backlog items without implementing them. | Both; explicit pre-tooling fallback |
+| [todo](workflows/todo.md) | Create or list Silkboard GitHub issues without implementing them. | Both; GitHub backlog policy |
 | [issue](workflows/issue.md) | Handle an authorized GitHub issue through implementation and a draft PR. | Bombyx |
 | [handoff](workflows/handoff.md) | Write a self-contained Silkboard session handoff from observed state. | Bombyx |
 | [rundown](workflows/rundown.md) | Summarize the Silkboard session without changing repository state. | Bombyx |
 | [retrospect](workflows/retrospect.md) | Review a Silkboard workflow for useful process improvements. | Both |
 | [docs-audit](workflows/docs-audit.md) | Audit Silkboard documentation without editing or deleting it. | Bombyx |
 | [html-report](workflows/html-report.md) | Create an offline local HTML report from requested material. | Both |
-| [backlog-report](workflows/backlog-report.md) | Generate a local report of Silkboard backlog and GitHub issues. | Bombyx |
+| [backlog-report](workflows/backlog-report.md) | Generate a local report of Silkboard GitHub issues. | Bombyx |
 | [ask](workflows/ask.md) | Present the latest unresolved Silkboard choice through the question UI. | Bombyx |
 | [short](workflows/short.md) | Restate the last reply or answer a supplied instruction in forty words. | Bombyx, without speech-specific rules |
 | [architect](workflows/architect.md) | Explain or assess Silkboard architecture against its agreed roadmap. | Both |

@@ -1,6 +1,6 @@
 ---
 description: >-
-  Generate a local report of Silkboard backlog and GitHub issues.
+  Generate a local report of Silkboard GitHub issues.
 ---
 
 Read and follow the [shared backlog-report procedure](../../docs/ai-agents/workflows/backlog-report.md).

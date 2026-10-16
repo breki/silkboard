@@ -49,8 +49,9 @@ Full provisioning details and measurements are in the sibling homelab repo,
 `/home/igor/silkboard-trial/` on malina. Installed virtualization packages and
 the guest image directory `/var/lib/libvirt/images/silkboard-trial/` remain.
 
-The next resource decision is whether to adopt the tested 512 MiB idle /
-2 GiB build range. Automatic transitions would require an independently
-authorized host controller, with no VM-control permissions granted to the
-dashboard or its build account. The [roadmap](roadmap.md) retains the agreed
-2 GiB starting budget until that decision is made.
+After the trial, the owner chose to retain a fixed 2 GiB allocation and
+rejected host-directed resizing because of setup and maintenance overhead.
+The tested 512 MiB idle / 2 GiB build range is not adopted. Automatic memory
+sharing is a [deferred investigation](https://github.com/breki/silkboard/issues/1);
+the trial did not verify that behavior. The [roadmap](roadmap.md) records
+the current resource policy.

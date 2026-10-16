@@ -87,10 +87,13 @@ Selected with the owner on 2026-10-16; implementation remains pending.
   minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
 - Build the Rust backend and frontend inside the guest as an unprivileged
   user. Downloaded CI build artifacts are not the chosen deployment model.
-- Starting resource budget: two shared vCPUs, 2 GiB RAM, and a 40 GiB disk
+- Resource budget: two shared vCPUs, fixed 2 GiB RAM, and a 40 GiB disk
   including 4 GiB guest swap. A separate trial tested lower idle memory
   and host-controlled ballooning; see the completed
-  [trial results](deployment-vm-trial.md). Dynamic allocation is not yet adopted.
+  [trial results](deployment-vm-trial.md). The owner rejected host-directed
+  resizing because of setup and maintenance overhead. Automatic memory
+  sharing is deferred for [future investigation](https://github.com/breki/silkboard/issues/1);
+  it is not a milestone 1 prerequisite or an adopted configuration.
 - Use guest Tailscale Serve for private HTTPS with the hostname `silkboard`,
   subject to name availability.
 - Require a trusted signed release tag and a passing full release suite for
@@ -108,7 +111,6 @@ Selected with the owner on 2026-10-16; implementation remains pending.
 - Production Silkboard provisioning and measurements. The representative
   rustbase trial passed guest boot, in-VM builds, private access, ballooning,
   and guest reboot recovery; it does not establish the delivery pipeline.
-- Whether to adopt dynamic guest memory, based on the trial's measurements.
 - Production provisioning, release activation, and demonstrated rollback and
   retry behavior. The deployment pipeline is not operational yet.
 
