@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Cancel superseded PR CI runs while preserving separate PRs, main and release
+  runs.
+
 - Validate documentation-only PRs with canon/diff checks; preserve full checks
   for code, uncertain changes, main and releases.
 

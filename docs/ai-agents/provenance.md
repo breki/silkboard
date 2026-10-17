@@ -230,3 +230,11 @@ classification checks Git's exact merge identity and raw file records before
 selecting that limited PR scope. No upstream implementation is imported.
 This changes PR validation policy only; full local validation, main/release
 gates and the updater's exact required release job set remain intact.
+
+## PR concurrency, 2026-10-17
+
+Issue #21 authorizes cancellation of superseded PR CI. GitHub's concurrency
+and reusable-workflow context documentation supply the group/caller behavior.
+Silkboard uses a dedicated namespace, the caller workflow reference and PR
+number, with unique run/attempt groups for non-PR events. No new dependency,
+validation bypass, release admission or production policy is introduced.
