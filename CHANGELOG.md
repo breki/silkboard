@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Remove the completed resource-trial VM and its registration, retaining
+  measurements and shared production virtualization infrastructure.
+
 ## 0.2.0 - 2026-10-17
 
 - Add an in-repository deployment engine, validated release policy, structured

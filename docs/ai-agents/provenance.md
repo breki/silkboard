@@ -198,3 +198,13 @@ is newly imported. The [toolkit procedure](../deployment-toolkit.md) records
 new typed reports, validated policy, legacy/schema-1 state compatibility and
 installation boundaries. Production code is not replaced by this change;
 second-consumer adoption and repository extraction are not authorized.
+
+## Trial cleanup, 2026-10-17
+
+Issue #2 authorizes removal of the completed resource trial. The
+[trial report](../deployment-vm-trial.md) preserves its existing measurements
+and records live libvirt/storage/process/service/DNS/HTTPS checks from malina.
+The owner removed the identified Tailscale device; host tailnet readback
+confirmed its absence. The sibling homelab trial runbook supplies the original
+resource inventory and is updated with the removal. No upstream source,
+template baseline, production release or shared resource policy changes.
