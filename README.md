@@ -19,7 +19,9 @@ You can add tasks remotely; project agents fetch them and publish progress.
 
 ## Status
 
-Architecture proposal. No application or sync client has been implemented yet.
+The minimal Rust/Axum and Svelte/Vite status application is implemented.
+Production deployment, automatic upgrades, and the sync client remain pending.
+See [local development](docs/development.md) for build, run, and check commands.
 
 Read [the architecture](docs/architecture.md) for requirements, security boundaries,
 API design, and Bombyx lifecycle integration.
@@ -31,13 +33,13 @@ API design, and Bombyx lifecycle integration.
    VM, and automatically upgraded from verified, tagged GitHub revisions.
 
 See [the roadmap](docs/roadmap.md) for completion criteria, existing deployment
-patterns, and open decisions. Implementation is pending; later milestones
-remain to be defined.
+patterns, and open decisions. The status application is available locally;
+the deployment pipeline remains pending. Later milestones remain to be defined.
 
 ## Agent guidance
 
 Start with [AGENTS.md](AGENTS.md). Codex and Claude Code share the same
 [workflow canon](docs/ai-agents/catalog.md); their wrappers contain only
-routing instructions. A minimal Cargo workspace provides repository checks
-and hook tests; application build and release tooling remain pending. See
-[tooling status](docs/ai-agents/tooling.md) for available commands.
+routing instructions. The Cargo workspace provides the application, repository
+checks, and hook tests. The frontend has local build and checks; full release
+gates remain pending. See [tooling status](docs/ai-agents/tooling.md) for available commands.

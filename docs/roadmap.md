@@ -1,6 +1,7 @@
 # Silkboard Roadmap
 
-Status: Milestone 1 defined; implementation pending. Later milestones are open.
+Status: Milestone 1 in progress; the minimal application is implemented.
+Deployment and release gates remain pending. Later milestones are open.
 
 This roadmap replaces the original milestone list in the architecture proposal.
 Milestones follow the owner's priorities; later product scope is not yet set.
