@@ -81,6 +81,22 @@ verifies against the required lockfile sha512 digest. Package aliases are not
 supported. Cargo license
 expressions and sources are checked by [cargo-deny](../../deny.toml).
 Unavailable registries fail; there is no offline success claim or date cache.
+Requests run in batches of at most four, with one npm metadata request per
+package across all its locked versions. Each response is verified and discarded
+inside its worker. Every worker in a batch finishes before another batch
+starts; any fetch, JSON, source, license, integrity or age error stops later
+batches. Up to three other requests in that batch may still run. There are no
+automatic retries, including for HTTP 429; rerun after the registry's advised
+wait. Errors identify the registry URL. Curl retains its 10-second connection
+and 30-second request timeouts.
+Curl requests compressed responses, and batches interleave the registries so
+npm work can proceed during crates.io pacing.
+The [crates.io API policy](https://crates.io/data-access#api) requires at most
+one request per second. A shared per-invocation pacer spaces crates.io request
+starts by at least one second; npm requests use the four-worker bound.
+Separate gate invocations do not share a rate limiter. See
+[the measurement record](../ci-registry-performance.md) for observed savings
+and resource limits.
 Check prospective dependency publication dates before compiling newly adopted
 code; the gate runner itself must be built to check an updated workspace.
 

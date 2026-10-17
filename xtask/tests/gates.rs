@@ -4,6 +4,10 @@ use serde_json::json;
 use std::{
     fs,
     path::{Path, PathBuf},
+    sync::{
+        Mutex,
+        atomic::{AtomicUsize, Ordering::SeqCst},
+    },
     time::{SystemTime, UNIX_EPOCH},
 };
 use xtask::dispatch;
@@ -60,12 +64,12 @@ fn successful_output(program: &str, args: &[&str]) -> String {
 #[test]
 fn validation_requires_every_stage_and_stops_at_each_failure() {
     let fixture = Fixture::new();
-    let mut calls = Vec::new();
+    let calls = Mutex::new(Vec::new());
     dispatch(
         &args(&["validate", "--check"]),
         &fixture.0,
         &mut |program, argv, cwd| {
-            calls.push((
+            calls.lock().unwrap().push((
                 program.to_owned(),
                 argv.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>(),
                 cwd.to_owned(),
@@ -74,6 +78,7 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
         },
     )
     .unwrap();
+    let calls = calls.into_inner().unwrap();
     assert!(
         calls
             .iter()
@@ -103,13 +108,12 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
                 && a == &["audit", "--deny", "warnings"])
     );
     for failure in 0..calls.len() {
-        let mut count = 0;
+        let count = AtomicUsize::new(0);
         let result = dispatch(
             &args(&["validate", "--check"]),
             &fixture.0,
             &mut |program, argv, _| {
-                let current = count;
-                count += 1;
+                let current = count.fetch_add(1, SeqCst);
                 if current == failure {
                     Err("required gate failed or unavailable".into())
                 } else {
@@ -117,8 +121,21 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
                 }
             },
         );
-        assert_eq!(result, Err("required gate failed or unavailable".into()));
-        assert_eq!(count, failure + 1);
+        assert!(
+            result
+                .unwrap_err()
+                .contains("required gate failed or unavailable")
+        );
+        let expected = if calls[failure].0 == "curl" {
+            calls
+                .iter()
+                .rposition(|(program, _, _)| program == "curl")
+                .unwrap()
+                + 1
+        } else {
+            failure + 1
+        };
+        assert_eq!(count.load(SeqCst), expected);
     }
 }
 

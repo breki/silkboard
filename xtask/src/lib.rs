@@ -7,8 +7,9 @@ mod dependencies;
 mod release;
 
 /// Subprocess adapter shared by real execution and behavioral tests.
+/// Registry checks may invoke it concurrently; other gates run sequentially.
 pub type Runner<'a> =
-    dyn FnMut(&str, &[&str], &Path) -> Result<String, String> + 'a;
+    dyn Fn(&str, &[&str], &Path) -> Result<String, String> + Sync + 'a;
 
 /// Supported task syntax. Validation is read-only with or without `--check`.
 pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
