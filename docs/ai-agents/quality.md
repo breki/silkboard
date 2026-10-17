@@ -4,6 +4,12 @@ These policies apply from the first application code. The shared validator
 and CI/release workflows enforce the gates; see
 [tooling status](tooling.md) for prerequisites and pending interfaces.
 
+The owner-authorized [documentation-only PR path](tooling.md#documentation-only-pr-checks)
+runs canon and diff checks for a conservative allowlist. It reports that
+limited scope explicitly. Code/mixed/uncertain changes, main pushes and
+release calls retain full validation. Local `validate --check` is unchanged;
+a lightweight PR result cannot establish release eligibility.
+
 ## Code and tests
 
 Use Rust edition 2024, denied warnings, forbidden unsafe production code,

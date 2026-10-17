@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Validate documentation-only PRs with canon/diff checks; preserve full checks
+  for code, uncertain changes, main and releases.
+
 - Cache pinned CI gate tools and npm downloads while retaining full validation
   and separate PR cache keys.
 
