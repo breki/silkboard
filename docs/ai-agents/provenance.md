@@ -172,3 +172,18 @@ and scheduled polling were verified on the production guest. Automatic
 upgrade and recovery demonstrations remain pending; see
 [the updater procedure](../automatic-upgrades.md). This does not
 advance the application or guidance template baseline.
+
+## Deployment toolkit feasibility, 2026-10-17
+
+Issue #14 authorizes investigation of reuse inside Silkboard before possible
+later extraction. The [assessment](../deployment-toolkit-feasibility.md)
+inspects main `4ea173495bf4cf7c547422e3a77533e1384b0619`, including the
+updater, evidence/OS boundaries, shell handoffs, provisioning and tests. It
+rechecks the existing MuTrack, Phren and Hoard revisions recorded above and
+links exact source files; Hoard pull deployment remains a plan. GitHub REST
+run and attempt-job documentation was checked for the evidence interface.
+
+Library/CLI profiles, state compatibility work, second-consumer adoption and
+extraction criteria are proposals, not delivered capabilities or approved
+milestones. No upstream code, template baseline, application behavior,
+production configuration or trust policy changes in this investigation.
