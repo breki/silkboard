@@ -51,7 +51,7 @@ fn successful_output(program: &str, args: &[&str]) -> String {
     } else if program == "curl" && args.last().unwrap().contains("crates.io") {
         json!({"version":{"created_at":"2020-01-01T00:00:00Z"}}).to_string()
     } else if program == "curl" {
-        json!({"time":{"1.0.0":"2020-01-01T00:00:00Z"}}).to_string()
+        json!({"time":{"1.0.0":"2020-01-01T00:00:00Z"},"versions":{"1.0.0":{"name":"tool","version":"1.0.0","license":"MIT","dist":{"tarball":"https://registry.npmjs.org/tool/-/tool-1.0.0.tgz","integrity":"sha512-fixture"}}}}).to_string()
     } else {
         String::new()
     }

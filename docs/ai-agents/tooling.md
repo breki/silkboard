@@ -72,7 +72,12 @@ and transitive versions, against current registry publication timestamps.
 It enforces fourteen full days and has no environment bypass. It also rejects
 non-workspace Cargo path dependencies, non-crates.io sources, non-npm npm
 sources, missing sha512 integrity, and npm licenses outside the explicit
-list in [the dependency gate](../../xtask/src/dependencies.rs). Cargo license
+list in [the dependency gate](../../xtask/src/dependencies.rs). npm package
+name, version, canonical tarball URL, and license must match registry metadata;
+registry integrity must also match when published. Legacy registry records
+without integrity still bind to the canonical tarball, whose bytes npm ci
+verifies against the required lockfile sha512 digest. Package aliases are not
+supported. Cargo license
 expressions and sources are checked by [cargo-deny](../../deny.toml).
 Unavailable registries fail; there is no offline success claim or date cache.
 Check prospective dependency publication dates before compiling newly adopted
