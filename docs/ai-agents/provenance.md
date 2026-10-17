@@ -90,3 +90,19 @@ for useful findings, applies authorized corrections, and presents concrete
 proposals for changes needing a new decision. Verification and existing
 publication boundaries remain in force. This is a local workflow improvement,
 not an upstream template sync.
+
+## Minimal application, 2026-10-17
+
+Adapted rustbase's Axum router/static serving, Tokio listener and graceful
+shutdown, and Svelte/Vite frontend from
+`6528907cea4e1e2e369fe260ccd0432b29c557b3`. Retained the existing xtask and
+hook tests rather than importing upstream's broader command set. Replaced
+sample greeting/dashboard content with backend-owned status metadata,
+explicit build identity validation, and component/HTTP tests. The upstream
+MIT notice is retained in [the application notice](../../THIRD_PARTY_NOTICES.md).
+
+Imported and trimmed upstream lockfiles, applying frontend advisory fixes
+and cooldown-compatible pins. All resolved Cargo and npm versions were
+checked against registry publication dates on 2026-10-17; none required a
+14-day cooldown exception. This does not advance the guidance baseline or
+import rustbase deployment, CI, coverage, duplication, or release automation.

@@ -1,8 +1,9 @@
 # Tooling status and prerequisites
 
 The repository contains documentation, agent workflows, hooks, and a minimal
-Cargo workspace with a dependency-free xtask crate. It has no application,
-frontend, or release CI. Workflow wrappers do not implement missing commands.
+Cargo workspace with the Axum status application and a dependency-free xtask
+crate. The Svelte/Vite frontend builds locally; release CI remains pending.
+Workflow wrappers do not implement missing commands.
 An informational [Codex Git-status hook](git-status-hook.md) is registered;
 it requires local
 prerequisites and hook trust before it can run automatically.
@@ -10,7 +11,7 @@ prerequisites and hook trust before it can run automatically.
 A [Stop validation hook](stop-check-hook.md) is also registered for changed
 Rust files. It requires Bash, Git, and jq; Rust validation additionally needs
 the Rust toolchain with rustfmt and Clippy. Its Cargo stages are implemented
-for the tooling workspace. The hook reports unavailable or failing stages.
+for the full workspace. The hook reports unavailable or failing stages.
 
 ## Available now
 
@@ -25,7 +26,7 @@ no parallel local Markdown task queue. No xtask helper is required.
 
 The [Cargo workspace](../../Cargo.toml) follows Bombyx's workspace/xtask
 layout, with Rust edition 2024, shared lints, and 80-column rustfmt. The
-lockfile has no third-party dependencies. Available checks are:
+lockfile pins application dependencies. Available checks are:
 
 | Capability | Entry point |
 | --- | --- |
@@ -40,8 +41,31 @@ locked dependency resolution. Cargo builds also work with `--offline`.
 
 The [Stop hook's behavioral tests](stop-check-hook.md#enable-and-verify) are
 registered as xtask's `stop_check` integration test. They use only the standard
-library and can also run directly with `rustc --test`. These checks validate
-repository tooling; they do not establish an application or release pipeline.
+library and can also run directly with `rustc --test`. The workspace checks
+include application tests as well as repository tooling; they do not establish
+a release or deployment pipeline.
+
+## Application and frontend commands
+
+See [local development](../development.md) for prerequisites, build identity,
+configuration, and run instructions. These commands are implemented directly;
+they are not new xtask subcommands:
+
+| Capability | Entry point |
+| --- | --- |
+| Backend build/run | `cargo build --locked -p silkboard-web`, `cargo run --locked -p silkboard-web` |
+| Frontend install | `npm ci --prefix frontend` |
+| Frontend checks | `npm run check:all --prefix frontend` |
+| Frontend build/dev | `npm run build --prefix frontend`, `npm run dev --prefix frontend` |
+| Frontend advisory audit | `npm audit --prefix frontend` |
+
+The frontend check includes types, ESLint, Prettier, component tests, and a
+production build. Rust formatting, Clippy, docs, and tests cover the full
+workspace. Release backend builds additionally require the identity inputs
+documented in the development guide. No automated aggregate validation,
+coverage, duplication, supply-chain, or browser-test gate is wired yet.
+Standalone tools can be used when installed; that does not implement the
+pending xtask entry points below.
 
 ## Pending rustbase adaptation
 
@@ -55,7 +79,7 @@ The following are intended interfaces, not commands that currently work:
 | Supply chain | `cargo xtask deny`, `audit`, `dep-age-check`, `dep-preflight` |
 | Canon | `cargo xtask canon-check` |
 | Records | `cargo xtask records-check`, when record tooling is adopted |
-| Frontend | Configured frontend checks and isolated Playwright suite |
+| Frontend | Isolated Playwright suite and aggregate gate integration |
 | Changelog | `cargo xtask changelog add` |
 | Template maintenance | `sync-candidates`, `feedback-add`, backfeed helpers |
 

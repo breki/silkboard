@@ -4,3 +4,7 @@
 
 # Temporary session handoffs and local scratch files
 /.local/
+
+# Frontend dependencies and generated assets
+/frontend/node_modules/
+/frontend/dist/

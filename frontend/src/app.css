@@ -1,0 +1,34 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #e7edf2;
+  background: #14212b;
+  line-height: 1.6;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 48rem;
+  margin: 8vh auto;
+  padding: 2rem;
+}
+h1 {
+  margin-bottom: 0;
+}
+.healthy {
+  color: #9fe4bc;
+  font-weight: 700;
+}
+dt {
+  margin-top: 1rem;
+  color: #b4c6d5;
+}
+dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+}
+[role="alert"] {
+  color: #ffbbad;
+}
