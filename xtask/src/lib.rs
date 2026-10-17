@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+pub mod ci;
 mod dependencies;
 mod release;
 
@@ -14,7 +15,7 @@ pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
 [--target TARGET]|doc|test [FILTER]|validate [--check]|coverage|dupes|deny|\
 audit|dep-age-check|frontend|frontend-check|frontend-fmt [--check]|\
 frontend-test|frontend-coverage|frontend-dupes|browser-test|\
-release-check TAG|canon-check>";
+release-check TAG|canon-check|ci-mode EVENT BASE HEAD>";
 
 /// Run a supported repository task.
 ///
@@ -35,6 +36,10 @@ pub fn dispatch(
         ["dep-age-check"] => dependencies::check(root, runner),
         ["release-check", tag] => release::check(root, runner, tag),
         ["canon-check"] => canon_check(root),
+        ["ci-mode", event, base, head] => {
+            println!("{}", ci::mode(root, runner, event, base, head).as_str());
+            Ok(())
+        }
         ["fmt"] => cargo(root, runner, &["fmt", "--all"]),
         ["fmt", "--check"] => {
             cargo(root, runner, &["fmt", "--all", "--", "--check"])
@@ -292,6 +297,7 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "browser-test"
                     | "release-check"
                     | "canon-check"
+                    | "ci-mode"
                     | "--help"
                     | "-h"
             ) {

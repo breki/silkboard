@@ -21,18 +21,46 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Install minimal pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup override set 1.93.1
+      # No path filters or additional jobs: release callers retain their exact
+      # required job set. Missing/failed classification means full validation.
+      - name: Classify PR changes
+        id: scope
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mode=full
+          if result=$(cargo xtask ci-mode "$GITHUB_EVENT_NAME" "$PR_BASE_SHA" "$GITHUB_SHA"); then
+            if [[ $result == docs ]]; then mode=docs; fi
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+      - name: Check documentation-only PR
+        if: github.event_name == 'pull_request' && steps.scope.outputs.mode == 'docs'
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          cargo xtask canon-check
+          git diff --check "$PR_BASE_SHA" "$GITHUB_SHA" --
+          echo 'Documentation-only PR: canon links/tooling claims and diff checks passed. Application gates were not run; this is not release eligibility evidence.' >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         with:
           node-version: 24.14.1
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install pinned Rust toolchain
+      - name: Install full Rust components
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: |
-          rustup toolchain install 1.93.1 --profile minimal --component rustfmt,clippy,llvm-tools-preview --target aarch64-unknown-linux-gnu
-          rustup override set 1.93.1
+          rustup component add --toolchain 1.93.1 rustfmt clippy llvm-tools-preview
+          rustup target add --toolchain 1.93.1 aarch64-unknown-linux-gnu
       # PR cache entries are distinct from main/release entries. No prefix
       # fallback: the workflow hash binds tool versions and installation logic.
       - name: Restore trusted gate tools
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         id: gate-tools
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
@@ -40,13 +68,13 @@ jobs:
           key: gate-tools-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-trusted-${{ hashFiles('.github/workflows/ci.yml') }}
       - name: Restore PR gate tools
         id: pr-gate-tools
-        if: github.event_name == 'pull_request' && steps.gate-tools.outputs.cache-hit != 'true'
+        if: github.event_name == 'pull_request' && steps.scope.outputs.mode != 'docs' && steps.gate-tools.outputs.cache-hit != 'true'
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.temp }}/silkboard-ci-tools/bin
           key: gate-tools-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-pr-${{ github.event.pull_request.number }}-${{ hashFiles('.github/workflows/ci.yml') }}
       - name: Install required gate tools
-        if: steps.gate-tools.outputs.cache-hit != 'true' && steps.pr-gate-tools.outputs.cache-hit != 'true'
+        if: (github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs') && steps.gate-tools.outputs.cache-hit != 'true' && steps.pr-gate-tools.outputs.cache-hit != 'true'
         working-directory: ${{ runner.temp }}
         run: |
           ci_tools_root="$RUNNER_TEMP/silkboard-ci-tools"
@@ -55,28 +83,34 @@ jobs:
           cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-deny@0.20.2
           cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-audit@0.22.2
       - name: Select pinned gate tools
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: echo "$RUNNER_TEMP/silkboard-ci-tools/bin" >> "$GITHUB_PATH"
       - name: Check gate tool versions
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: |
           test "$(cargo llvm-cov --version)" = 'cargo-llvm-cov 0.9.0'
           test "$(code-dupes --version)" = 'code-dupes 0.2.1'
           test "$(cargo deny --version)" = 'cargo-deny 0.20.2'
           test "$(cargo-audit --version)" = 'cargo-audit 0.22.2'
-      # Save explicitly before candidate frontend/build/test code executes.
+      # Save before frontend dependency scripts and full application validation.
       - name: Save pinned gate tools
-        if: steps.gate-tools.outputs.cache-hit != 'true' && steps.pr-gate-tools.outputs.cache-hit != 'true'
+        if: (github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs') && steps.gate-tools.outputs.cache-hit != 'true' && steps.pr-gate-tools.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.temp }}/silkboard-ci-tools/bin
           key: ${{ github.event_name == 'pull_request' && steps.pr-gate-tools.outputs.cache-primary-key || steps.gate-tools.outputs.cache-primary-key }}
       - name: Install locked frontend tools and Chromium
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         working-directory: frontend
         run: |
           npm ci
           npm exec -- playwright install --with-deps chromium
       - name: Fetch locked Rust dependencies
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: cargo fetch --locked
       - name: Full read-only validation
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: cargo xtask validate --check
       - name: ARM64 cross-target lint
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: cargo xtask clippy --target aarch64-unknown-linux-gnu

@@ -79,8 +79,12 @@ GitHub Release object or controls the Pi as an implicit step.
 ## CI and local validation
 
 [CI](../.github/workflows/ci.yml) uses Linux because the existing hook tests
-require Unix. It installs pinned Rust/Node and gate tools, runs the complete
-read-only validator, and cross-lints ARM64. It does not claim native ARM64
+require Unix. Main, code/mixed/uncertain PR changes and release calls install
+pinned Rust/Node and gate tools, run the complete read-only validator, and
+cross-lint ARM64. A conservative documentation-only PR path reports canon/diff
+checks instead; it is not release evidence. See
+[PR scope rules](ai-agents/tooling.md#documentation-only-pr-checks).
+CI does not claim native ARM64
 runtime or VM deployment coverage. Pinned gate executables use a dedicated,
 version-checked cache; npm caches downloads and still runs `npm ci`. See
 [CI cache boundaries](ai-agents/tooling.md#ci-cache-boundaries). Tokens have

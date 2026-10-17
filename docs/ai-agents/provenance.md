@@ -221,3 +221,12 @@ PR namespaces and pre-application cache saves are Silkboard choices. This
 supersedes the earlier fresh-only CI tool installation policy; release trust
 and validation gates remain required. No application/template baseline or
 production installation changes.
+
+## Documentation-only PR validation, 2026-10-17
+
+The owner authorized issue #22 after selecting CI optimizations. Silkboard's
+existing canon-check supplies link and tooling-claim verification; new Rust
+classification checks Git's exact merge identity and raw file records before
+selecting that limited PR scope. No upstream implementation is imported.
+This changes PR validation policy only; full local validation, main/release
+gates and the updater's exact required release job set remain intact.

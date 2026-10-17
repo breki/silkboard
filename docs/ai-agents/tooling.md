@@ -50,6 +50,7 @@ Long runs print stage progress; redirect output to a local log when needed.
 | Isolated Chromium tests | `cargo xtask browser-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
+| Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
 
 `cargo xtask --help` documents supported arguments. `validate` is also
 read-only without `--check`. Only standalone `fmt` and `frontend-fmt` rewrite
@@ -104,6 +105,38 @@ and recovery evidence remain pending. It is not
 an xtask deployment command. The [in-repository toolkit](../deployment-toolkit.md)
 adds a reusable engine, policy evaluator and structured operator interface;
 its newer installed-code/state format has not been deployed to production.
+
+## Documentation-only PR checks
+
+The owner authorized issue #22's lighter PR policy. CI retains the single
+`Full validation (Linux)` required job, which always reports a result. Its
+documentation path runs `canon-check` and `git diff --check` after installing
+minimal pinned Rust. It does not install Node/frontend dependencies, gate
+tools, LLVM tools or the ARM64 target, and does not claim application tests,
+coverage or audits passed. The job summary explicitly records that scope.
+
+`ci-mode` selects documentation only for a `pull_request` event whose exact
+checked-out SHA is the expected two-parent merge, with the event base as its
+first parent. It reads Git's NUL-delimited raw diff with renames disabled,
+including both sides of moves. Only regular non-executable Markdown files
+under `docs/`, plus `README.md` and `CHANGELOG.md`, qualify. Paths must use
+simple ASCII names without hidden/traversal/empty components. Symlinks,
+executable modes, code/workflow/dependency/deployment files, mixed or empty
+diffs, invalid identities, malformed output and failed Git probes select
+full validation. Agent entry points and executable instruction wrappers are
+outside this allowlist.
+
+Classification compilation/command failures also fall back to full; a
+subsequent failing gate still fails the job. Documentation check failures
+fail the required job rather than being treated as a reason to skip checks.
+The classifier and canon checks run repository tooling; this optimization is
+not a security sandbox for unreviewed PR code.
+
+Main pushes and all non-PR/release calls always take the full path, regardless
+of changed files or classifier output. Release workflow identity and its
+exact three successful job requirements are unchanged. A documentation-only
+PR result is never release eligibility evidence. The standalone
+`validate --check` command continues to run every gate locally.
 
 ## CI cache boundaries
 
