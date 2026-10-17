@@ -251,3 +251,14 @@ implement that requirement. Four-request batches, in-invocation npm
 deduplication and stopping after a failed batch are Silkboard choices.
 No upstream code, new dependency, verdict cache, release admission or
 production configuration is introduced.
+
+## Rust build-cache investigation, 2026-10-17
+
+Issue #24 authorizes investigation and measurement, not adoption. A temporary
+branch-only workflow used existing pinned actions and tools to measure cold,
+warm and source-edit dependency-build reuse on GitHub runners. The
+[research record](../ci-rust-cache-study.md) preserves run identities,
+measurements, cleanup, and a proposed follow-up. Cargo's build-cache reference,
+the pinned cargo-llvm-cov clean implementation and GitHub's cache reference
+supply the documented artifact and isolation semantics. No upstream code,
+new dependency, CI/release policy or production change is adopted.

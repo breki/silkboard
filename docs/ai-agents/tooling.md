@@ -202,6 +202,10 @@ change. Dependency-age/registry checks and advisory audits still contact
 their live sources on every validation; cached tools do not cache pass
 results. ARM64 lint and signed exact-revision release checks remain required.
 
+The [Rust build-cache investigation](../ci-rust-cache-study.md) measured
+separate dependency-build caches on a temporary branch. Its recommendation
+is not an adopted policy; current CI/release build-cache behavior is unchanged.
+
 An unavailable or evicted cache can take the normal cold path. A restored
 tool-version mismatch fails the job; remove the affected GitHub cache entry
 and rerun rather than bypassing the check. Changes to the workflow or pinned
