@@ -105,6 +105,43 @@ an xtask deployment command. The [in-repository toolkit](../deployment-toolkit.m
 adds a reusable engine, policy evaluator and structured operator interface;
 its newer installed-code/state format has not been deployed to production.
 
+## CI cache boundaries
+
+The owner authorized CI caching after gate-tool installation took 6m 42s in
+run 39044784280. CI restores only four pinned gate executables from a
+dedicated temporary tool root. An exact key includes OS, architecture,
+Ubuntu/Rust versions and the CI workflow hash, which binds the pinned tool
+versions and installation logic. There are no broad restore prefixes. PR
+keys include the PR number and are distinct from main/tag keys; GitHub also
+scopes PR caches to their merge refs. PRs first try the matching trusted cache
+from main, then their own isolated entry. A PR cannot populate the trusted
+key used by main or release runs through this workflow.
+
+On a miss, tools are built with `cargo install --locked` using explicit
+Rust 1.93.1 outside the candidate checkout. Every run checks their expected
+version output before use. The explicit cache save runs before frontend
+dependency scripts, application builds and tests. Only the tool `bin/`
+directory is saved, excluding Cargo configuration/registry metadata, project
+build output and credentials. Version checks detect incompatible entries;
+they do not independently authenticate binary contents. Cache trust depends
+on GitHub's isolation and the reviewed workflow that creates the entry.
+
+Both CI and the release frontend build use setup-node's npm download cache,
+keyed by `frontend/package-lock.json`; `node_modules` is not restored.
+`npm ci` still installs from the lockfile and checks package integrity.
+Rust registry/project build outputs and Chromium are not cached by this
+change. Dependency-age/registry checks and advisory audits still contact
+their live sources on every validation; cached tools do not cache pass
+results. ARM64 lint and signed exact-revision release checks remain required.
+
+An unavailable or evicted cache can take the normal cold path. A restored
+tool-version mismatch fails the job; remove the affected GitHub cache entry
+and rerun rather than bypassing the check. Changes to the workflow or pinned
+tool/Rust/runner versions invalidate the tool key. A new workflow version
+needs an initial cold run. Before main has a matching trusted entry, PRs can
+reuse their own entry on later runs; once main populates it, new PRs can
+restore that trusted entry directly.
+
 ## Pending interfaces and deployment
 
 | Capability | Pending work |

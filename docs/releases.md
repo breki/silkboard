@@ -81,9 +81,10 @@ GitHub Release object or controls the Pi as an implicit step.
 [CI](../.github/workflows/ci.yml) uses Linux because the existing hook tests
 require Unix. It installs pinned Rust/Node and gate tools, runs the complete
 read-only validator, and cross-lints ARM64. It does not claim native ARM64
-runtime or VM deployment coverage. Gate executables are installed fresh,
-without restored registry or executable caches; tokens have read-only
-contents permission and checkout does not persist credentials.
+runtime or VM deployment coverage. Pinned gate executables use a dedicated,
+version-checked cache; npm caches downloads and still runs `npm ci`. See
+[CI cache boundaries](ai-agents/tooling.md#ci-cache-boundaries). Tokens have
+read-only contents permission and checkout does not persist credentials.
 
 [The release suite](../.github/workflows/release.yml) reuses these exact gates
 and builds a tagged release. It uploads no build artifacts: the production
