@@ -12,6 +12,11 @@ fn initial_activation_cleans_up_every_failure_path() {
     run_fixture("activation.sh");
 }
 
+#[test]
+fn updater_snapshots_and_credential_transport_preserve_boundaries() {
+    run_fixture("updater.sh");
+}
+
 fn run_fixture(name: &str) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let output = Command::new("bash")

@@ -1,9 +1,9 @@
 # Production VM bootstrap
 
-Operator procedure for issue #5. Automatic polling, eligibility checks on each
-upgrade, activation recovery, and retries belong to issue #6. Scripts here
-bootstrap a fresh guest; they do not implement an updater. Do not install the
-host/guest-agent scripts in the dashboard or build account.
+Operator bootstrap procedure for issue #5. Automatic polling, eligibility,
+recovery, and retries have a separate [updater procedure](../../docs/automatic-upgrades.md)
+for issue #6; its production verification is still pending. Do not install
+the host/guest-agent scripts in the dashboard or build account.
 
 ## Boundaries and prerequisites
 
@@ -61,7 +61,7 @@ a timed-out guest process may still run, so inspect before retrying.
 
 ```sh
 deploy/vm/guest-agent.sh exec /usr/bin/cloud-init status --wait
-for file in guest-bootstrap.sh guest-build.sh guest-activate-initial.sh silkboard.service; do
+for file in guest-bootstrap.sh guest-build.sh guest-stage.sh guest-activate-initial.sh silkboard.service; do
   deploy/vm/guest-agent.sh put "deploy/vm/$file" "$file"
 done
 deploy/vm/guest-agent.sh put .github/release-signers release-signers

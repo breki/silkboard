@@ -153,3 +153,18 @@ and Hoard's release guard and proposed pull updater through the
 provide initial provisioning only; they do not claim to implement Hoard's
 proposal or Silkboard's automatic updater. This does not advance either
 application or guidance template baseline.
+
+## Automatic updater, 2026-10-17
+
+Adapted the ten-minute polling and atomic release-switch pattern from MuTrack
+`5bdf415cbae23835c8449cf3ef3747aa8583be8f`, pre-build signature verification
+from Phren `effd71bed44dd95fcbe7a4d1f6f609c2b58e05ba`, and release separation
+from Hoard `79c06892e3eff1e89782b8834813ffdcd1a4b0ed`. Hoard's pull-updater
+document remains a proposal, not an implemented source of deployment evidence.
+
+Silkboard adds its own Rust state machine, exact workflow/run/job admission,
+separate credential-bearing downloader, unprivileged build, root-owned staging,
+and persistent interrupted-upgrade recovery. The owner selected a restricted
+fine-grained token through the question UI. Production verification remains
+pending; see [the updater procedure](../automatic-upgrades.md). This does not
+advance the application or guidance template baseline.

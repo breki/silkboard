@@ -108,7 +108,9 @@ pub fn dispatch(
             )
         }
         ["dupes"] => {
-            for directory in ["crates/silkboard-web", "xtask"] {
+            for directory in
+                ["crates/silkboard-web", "crates/silkboard-updater", "xtask"]
+            {
                 report(&runner(
                     "code-dupes",
                     &[

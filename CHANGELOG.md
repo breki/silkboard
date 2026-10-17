@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add verified release polling, isolated download/build accounts, durable
+  activation recovery and failed-tag retry tooling; live verification pending.
 - Add repeatable production VM bootstrap, isolated in-guest release builds,
   a sandboxed application service, and deployment verification guidance.
 

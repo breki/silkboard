@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/silkboard-web", "xtask"]
+members = ["crates/silkboard-web", "crates/silkboard-updater", "xtask"]
 resolver = "2"
 
 [workspace.lints.rust]

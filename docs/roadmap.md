@@ -117,6 +117,9 @@ the automatic updater remains pending.
   prereleases; downgrades require explicit operator action.
 - Preserve or restore the working release after failure. Block the failed
   tag until manual retry, while continuing to consider newer eligible tags.
+- Use a fine-grained GitHub token restricted to `breki/silkboard`, with
+  Contents/read and Actions/read, for the separate downloader. Selected on
+  2026-10-17; credential installation and live updater verification are pending.
 
 ### Decisions and evidence still needed
 
@@ -125,7 +128,8 @@ the automatic updater remains pending.
   [release preparation](releases.md).
 - Automatic release polling, eligibility checks, upgrade activation, and
   demonstrated rollback and retry behavior. The initial production deployment
-  is operational; the automatic delivery pipeline is not implemented yet.
+  is operational; the [updater implementation](automatic-upgrades.md) is under
+  development and the automatic delivery pipeline is not verified yet.
 
 ## Later milestones
 
