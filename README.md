@@ -22,7 +22,9 @@ You can add tasks remotely; project agents fetch them and publish progress.
 The minimal Rust/Axum and Svelte/Vite status application runs in its dedicated
 production VM with private HTTPS. See [deployment evidence](docs/production-vm.md).
 Automatic upgrades and the sync client remain pending.
-See [local development](docs/development.md) for build, run, and check commands.
+See [local development](docs/development.md) for build, run, and check commands,
+and [development in a Bombyx VM](docs/development-vm.md) for Bombyx
+provisioning with Codex and Claude Code.
 
 Read [the architecture](docs/architecture.md) for requirements, security boundaries,
 API design, and Bombyx lifecycle integration.

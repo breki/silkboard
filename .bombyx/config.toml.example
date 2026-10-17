@@ -1,0 +1,25 @@
+# Merge this into your private Bombyx registry, outside the checkout.
+# These are development VM examples, independent of production resources.
+host = "YOUR_VM_HOST"
+
+[projects.silkboard-dev]
+remote_root = "~/vms"
+
+[projects.silkboard-dev.vm]
+provider = "libvirt"
+box = "generic/ubuntu2204"
+cpus = 4
+memory = "8GB"
+disk = "80GB"
+guest_user = "agent"
+
+[projects.silkboard-dev.source]
+repo = "https://github.com/breki/silkboard.git"
+ref = "issue-13-development-vm" # use main after this work merges
+script = ".bombyx/provision.sh"
+# This private repository needs guest clone access. Configure a separate,
+# repository-limited credential using Bombyx's env_file/vault and repo_token,
+# or its deploy_key option. Never put the credential value in this file.
+# env_file = "~/.secrets/silkboard-dev.env"
+# repo_token = "SILKBOARD_GITHUB_TOKEN"
+# repo_user = "x-access-token"

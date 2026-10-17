@@ -5,6 +5,9 @@ frontend. It serves a status page, `/health`, and `/api/status`. It has no
 project data, execution API, VM access, or updater credentials. Production
 provisioning and automatic upgrades remain separate work.
 
+For an isolated toolchain with Codex and Claude Code, see
+[development in a Bombyx VM](development-vm.md).
+
 ## Prerequisites and first run
 
 Use Rust with edition 2024 support, rustfmt, and Clippy, plus Node 22.12+
