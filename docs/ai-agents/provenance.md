@@ -113,7 +113,8 @@ The owner selected the existing Git SSH signing key as the trusted release-tag
 signer through the interactive question UI. The roadmap records its public
 fingerprint and the separation of private signing material from CI and the
 dashboard. This is an owner decision, not an upstream template sync.
-Installation of the public trust configuration in production remains pending.
+The public trust configuration is installed; production admission of signed
+`v0.1.1` is recorded in [updater evidence](../automatic-upgrades.md#verification-status).
 
 The owner also selected `breki/silkboard/.github/workflows/release.yml` as the
 required release suite, triggered by the release tag and checking its exact
@@ -153,3 +154,21 @@ and Hoard's release guard and proposed pull updater through the
 provide initial provisioning only; they do not claim to implement Hoard's
 proposal or Silkboard's automatic updater. This does not advance either
 application or guidance template baseline.
+
+## Automatic updater, 2026-10-17
+
+Adapted the ten-minute polling and atomic release-switch pattern from MuTrack
+`5bdf415cbae23835c8449cf3ef3747aa8583be8f`, pre-build signature verification
+from Phren `effd71bed44dd95fcbe7a4d1f6f609c2b58e05ba`, and release separation
+from Hoard `79c06892e3eff1e89782b8834813ffdcd1a4b0ed`. Hoard's pull-updater
+document remains a proposal, not an implemented source of deployment evidence.
+
+Silkboard adds its own Rust state machine, exact workflow/run/job admission,
+separate credential-bearing downloader, unprivileged build, root-owned staging,
+and persistent interrupted-upgrade recovery. The owner selected a restricted
+fine-grained token through the question UI. Its private phone-accessible
+intake, protected installation, required API reads, initial-release admission,
+and scheduled polling were verified on the production guest. Automatic
+upgrade and recovery demonstrations remain pending; see
+[the updater procedure](../automatic-upgrades.md). This does not
+advance the application or guidance template baseline.

@@ -1,9 +1,10 @@
 # Production VM bootstrap
 
-Operator procedure for issue #5. Automatic polling, eligibility checks on each
-upgrade, activation recovery, and retries belong to issue #6. Scripts here
-bootstrap a fresh guest; they do not implement an updater. Do not install the
-host/guest-agent scripts in the dashboard or build account.
+Operator bootstrap procedure for issue #5. Automatic polling, eligibility,
+recovery, and retries have a separate [updater procedure](../../docs/automatic-upgrades.md)
+for issue #6. Admission and polling are verified; live upgrade and recovery
+demonstrations remain pending. Do not install
+the host/guest-agent scripts in the dashboard or build account.
 
 ## Boundaries and prerequisites
 
@@ -61,7 +62,7 @@ a timed-out guest process may still run, so inspect before retrying.
 
 ```sh
 deploy/vm/guest-agent.sh exec /usr/bin/cloud-init status --wait
-for file in guest-bootstrap.sh guest-build.sh guest-activate-initial.sh silkboard.service; do
+for file in guest-bootstrap.sh guest-build.sh guest-stage.sh guest-activate-initial.sh silkboard.service; do
   deploy/vm/guest-agent.sh put "deploy/vm/$file" "$file"
 done
 deploy/vm/guest-agent.sh put .github/release-signers release-signers
@@ -143,5 +144,5 @@ Reboot only the guest, verify its boot ID changes, and repeat strict SSH,
 HTTPS, identity and health checks. Verify libvirt autostart, guest application
 and tailscaled enabled state. A host reboot is outside this test.
 
-Keep the initial release and logs until the updater/recovery workflow exists.
+Keep the initial release and logs while upgrade/recovery verification is pending.
 Do not delete the trial as an implied provisioning step; cleanup is issue #2.

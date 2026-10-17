@@ -1,0 +1,22 @@
+[Unit]
+Description=Verified Silkboard release update and recovery
+Wants=network-online.target
+After=network-online.target silkboard.service
+
+[Service]
+Type=oneshot
+RuntimeDirectory=silkboard-fetch
+RuntimeDirectoryMode=0700
+ExecStart=/usr/local/sbin/silkboard-update poll
+TimeoutStartSec=30min
+UMask=0077
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/silkboard-updater /var/lib/silkboard-fetch /var/lib/silkboard-build /var/lib/silkboard-input /opt/silkboard
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes

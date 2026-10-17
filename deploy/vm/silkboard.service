@@ -30,6 +30,7 @@ CapabilityBoundingSet=
 AmbientCapabilities=
 RestrictAddressFamilies=AF_INET AF_INET6
 InaccessiblePaths=/var/lib/silkboard-build /etc/silkboard
+InaccessiblePaths=-/var/lib/silkboard-fetch -/var/lib/silkboard-updater -/var/lib/silkboard-input -/run/silkboard-fetch
 UMask=0077
 
 [Install]
