@@ -2,9 +2,10 @@
 
 ## Unreleased
 
+## 0.2.0 - 2026-10-17
+
 - Add an in-repository deployment engine, validated release policy, structured
   operator reports and policy-bound state, preserving Silkboard commands.
-
 - Add verified release polling, isolated download/build accounts, durable
   activation recovery and failed-tag retry tooling; live verification pending.
 - Add repeatable production VM bootstrap, isolated in-guest release builds,
