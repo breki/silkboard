@@ -172,3 +172,24 @@ and scheduled polling were verified on the production guest. Automatic
 upgrade and recovery demonstrations remain pending; see
 [the updater procedure](../automatic-upgrades.md). This does not
 advance the application or guidance template baseline.
+
+## Development VM provisioning, 2026-10-17
+
+The owner extended issue #13 to include Claude Code alongside Codex and
+selected native provisioning directly inside a Bombyx development VM. Checked
+Bombyx main `38fe77286f55a0bcc6e12bd5d4500e72ae4ebb06`: its external
+registry and agent-user provisioning contract are used without changing
+Bombyx or adding a container layer. This does not advance its guidance
+baseline or change the production deployment decisions.
+
+Checked official Codex CLI installation, headless authentication and Linux
+sandbox documentation, plus Claude Code npm installation/authentication,
+linked in [development VM instructions](../development-vm.md). The npm
+registry publication timestamps, canonical tarballs, SHA512 integrity and
+licenses of all sixteen locked agent package entries were checked before
+installation; all met fourteen full days. Codex 0.160.0 is Apache-2.0;
+Claude Code 2.1.288 is a proprietary developer tool requested by the owner,
+not a shipped application dependency or a change to application license
+policy. Both supported Linux architectures have pinned optional packages.
+Node 24.14.1 and rustup-init 1.28.2 download hashes were read from their
+official distribution endpoints and pinned for x86_64 and ARM64.

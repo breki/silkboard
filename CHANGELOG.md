@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add native Bombyx development VM provisioning with pinned Rust/Node
+  validation tools, Codex, and Claude Code, plus migration and login guidance.
+
 - Add verified release polling, isolated download/build accounts, durable
   activation recovery and failed-tag retry tooling; live verification pending.
 - Add repeatable production VM bootstrap, isolated in-guest release builds,

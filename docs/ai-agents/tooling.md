@@ -103,6 +103,12 @@ it is installed with verified admission and scheduled polling. Live upgrade
 and recovery evidence remain pending. It is not
 an xtask deployment command.
 
+The [development VM](../development-vm.md) provisions the same
+pinned toolchain and validation gates, plus Codex and Claude Code. Its agent
+package lock is separate from application dependencies. The owner selected
+native provisioning inside a Bombyx VM. The verification record distinguishes
+command-fixture checks from a full guest run and authenticated agent use.
+
 ## Pending interfaces and deployment
 
 | Capability | Pending work |
