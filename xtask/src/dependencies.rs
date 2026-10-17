@@ -3,10 +3,11 @@
 use crate::Runner;
 use serde_json::Value;
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     fs,
     path::Path,
-    time::{SystemTime, UNIX_EPOCH},
+    sync::Mutex,
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 const NPM_LICENSES: &[&str] = &[
@@ -23,6 +24,23 @@ const NPM_LICENSES: &[&str] = &[
     "(MIT OR CC0-1.0)",
     "MIT OR Apache-2.0",
 ];
+
+// Small batches bound registry load and memory. A failed batch is the last;
+// do not retry HTTP 429 or start more requests after unavailable evidence.
+const CONCURRENCY: usize = 4;
+
+struct CratePacer(Mutex<Option<Instant>>);
+
+impl CratePacer {
+    fn wait(&self, interval: Duration) -> Result<(), String> {
+        let mut last = self.0.lock().map_err(|e| e.to_string())?;
+        if let Some(previous) = *last {
+            std::thread::sleep(interval.saturating_sub(previous.elapsed()));
+        }
+        *last = Some(Instant::now());
+        Ok(())
+    }
+}
 
 pub(super) fn check(
     root: &Path,
@@ -62,7 +80,7 @@ fn text<'a>(value: &'a Value, field: &str) -> Result<&'a str, String> {
 
 fn check_at(
     root: &Path,
-    runner: &mut Runner<'_>,
+    runner: &Runner<'_>,
     metadata: &str,
     npm: &str,
     now: u64,
@@ -99,47 +117,99 @@ fn check_at(
             .keys()
             .map(|(name, version)| (true, name.clone(), version.clone())),
     );
-    // Dependencies are sorted by name, so retain only the current packument.
-    let mut npm_metadata: Option<(String, Value)> = None;
     let count = dependencies.len();
-    for (index, (npm, name, version)) in dependencies.into_iter().enumerate() {
+    let mut requests: BTreeMap<String, Vec<(bool, String, String)>> =
+        BTreeMap::new();
+    for (npm, name, version) in dependencies {
         let encoded = package_segment(&name)?;
-        let date = if npm {
-            if npm_metadata
-                .as_ref()
-                .is_none_or(|(cached, _)| cached != &name)
-            {
-                let value = fetch(
-                    root,
-                    runner,
-                    &format!("https://registry.npmjs.org/{encoded}"),
-                )?;
-                npm_metadata = Some((name.clone(), value));
-            }
-            let document =
-                &npm_metadata.as_ref().ok_or("missing npm metadata")?.1;
+        let url = if npm {
+            format!("https://registry.npmjs.org/{encoded}")
+        } else {
+            format!("https://crates.io/api/v1/crates/{encoded}/{version}")
+        };
+        requests.entry(url).or_default().push((npm, name, version));
+    }
+    let (mut crates, mut npm): (VecDeque<_>, VecDeque<_>) = requests
+        .into_iter()
+        .partition(|(url, _)| url.starts_with("https://crates.io/"));
+    let mut requests = Vec::new();
+    // Let npm work overlap the paced crates.io requests instead of queuing
+    // every npm package behind the complete crates.io phase.
+    while let Some(request) = crates.pop_front() {
+        requests.push(request);
+        requests.extend(npm.drain(..npm.len().min(CONCURRENCY - 1)));
+    }
+    requests.extend(npm);
+    let pacer = CratePacer(Mutex::new(None));
+    let mut checked = 0;
+    for batch in requests.chunks(CONCURRENCY) {
+        let previous = checked;
+        let results = std::thread::scope(|scope| {
+            let workers: Vec<_> = batch
+                .iter()
+                .map(|(url, versions)| {
+                    let claims = &npm_claims;
+                    let pacer = &pacer;
+                    scope.spawn(move || {
+                        if url.starts_with("https://crates.io/") {
+                            pacer.wait(Duration::from_secs(1))?;
+                        }
+                        let document = fetch(root, runner, url)?;
+                        verify_versions(&document, versions, claims, now)
+                            .map_err(|error| format!("{url}: {error}"))
+                    })
+                })
+                .collect();
+            // Join every worker, even on errors. Return errors in request
+            // order rather than whichever worker happened to finish first.
+            workers
+                .into_iter()
+                .map(|worker| {
+                    worker.join().unwrap_or_else(|_| {
+                        Err("registry worker panicked".into())
+                    })
+                })
+                .collect::<Vec<_>>()
+        });
+        for result in results {
+            checked += result?;
+        }
+        if checked / 25 != previous / 25 || checked == count {
+            eprintln!("Checked dependency ages: {checked}/{count}");
+        }
+    }
+    println!(
+        "Dependency ages and npm license/sources passed ({count} versions, {} live requests, concurrency {CONCURRENCY}).",
+        requests.len()
+    );
+    Ok(())
+}
+
+fn verify_versions(
+    document: &Value,
+    versions: &[(bool, String, String)],
+    npm_claims: &NpmClaims,
+    now: u64,
+) -> Result<usize, String> {
+    for (npm, name, version) in versions {
+        let date = if *npm {
             let claim = npm_claims
                 .get(&(name.clone(), version.clone()))
                 .ok_or("missing npm lock claim")?;
             verify_npm_claim(
-                &document["versions"][&version],
-                &name,
-                &version,
+                &document["versions"][version],
+                name,
+                version,
                 claim,
             )?;
-            document["time"][&version]
+            document["time"][version]
                 .as_str()
                 .ok_or_else(|| {
                     format!("no npm publish date: {name}@{version}")
                 })?
                 .to_owned()
         } else {
-            let value = fetch(
-                root,
-                runner,
-                &format!("https://crates.io/api/v1/crates/{encoded}/{version}"),
-            )?;
-            text(&value["version"], "created_at")?.to_owned()
+            text(&document["version"], "created_at")?.to_owned()
         };
         let published = timestamp(&date)?;
         if now
@@ -150,14 +220,8 @@ fn check_at(
                 "{name}@{version} published {date}: within 14-day cooldown"
             ));
         }
-        if (index + 1) % 25 == 0 {
-            eprintln!("Checked dependency ages: {}/{count}", index + 1);
-        }
     }
-    println!(
-        "Dependency ages and npm license/sources passed ({count} versions)."
-    );
-    Ok(())
+    Ok(versions.len())
 }
 
 type NpmClaims = BTreeMap<(String, String), (String, String, String)>;
@@ -247,17 +311,14 @@ fn verify_npm_claim(
     Ok(())
 }
 
-fn fetch(
-    root: &Path,
-    runner: &mut Runner<'_>,
-    url: &str,
-) -> Result<Value, String> {
+fn fetch(root: &Path, runner: &Runner<'_>, url: &str) -> Result<Value, String> {
     let response = runner(
         "curl",
         &[
             "--fail",
             "--silent",
             "--show-error",
+            "--compressed",
             "--location",
             "--proto",
             "=https",
@@ -266,12 +327,13 @@ fn fetch(
             "--max-time",
             "30",
             "--user-agent",
-            "silkboard-dependency-check",
+            "silkboard-dependency-check (https://github.com/breki/silkboard)",
             url,
         ],
         root,
-    )?;
-    json(&response)
+    )
+    .map_err(|error| format!("{url}: {error}"))?;
+    json(&response).map_err(|error| format!("{url}: {error}"))
 }
 
 fn package_segment(name: &str) -> Result<String, String> {
@@ -352,6 +414,171 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    fn many_npm() -> Value {
+        let mut lock = json!({"lockfileVersion":3,"packages":{"":{}}});
+        for i in 0..9 {
+            lock["packages"][format!("node_modules/tool-{i}")] = json!({
+                "version":"1.0.0", "license":"MIT", "integrity":"sha512-test",
+                "resolved":format!("https://registry.npmjs.org/tool-{i}/-/tool-1.0.0.tgz")
+            });
+        }
+        lock
+    }
+
+    fn registry_versions(name: &str) -> String {
+        let version = json!({"name":name,"version":"1.0.0","license":"MIT","dist":{"tarball":format!("https://registry.npmjs.org/{name}/-/tool-1.0.0.tgz"),"integrity":"sha512-test"}});
+        let mut other = version.clone();
+        other["version"] = json!("2.0.0");
+        json!({"time":{"1.0.0":"2020-01-01T00:00:00Z","2.0.0":"2020-01-01T00:00:00Z"},"versions":{"1.0.0":version,"2.0.0":other}}).to_string()
+    }
+
+    #[test]
+    fn requests_overlap_with_a_bound_and_deduplicate_npm_versions() {
+        use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+        let active = AtomicUsize::new(0);
+        let peak = AtomicUsize::new(0);
+        let requests = AtomicUsize::new(0);
+        let meta = metadata(&json!(
+            "registry+https://github.com/rust-lang/crates.io-index"
+        ));
+        let mut lock = many_npm();
+        let mut duplicate = lock["packages"]["node_modules/tool-0"].clone();
+        duplicate["version"] = json!("2.0.0");
+        lock["packages"]["node_modules/parent/node_modules/tool-0"] = duplicate;
+        lock["packages"]["node_modules/other/node_modules/tool-0"] =
+            lock["packages"]["node_modules/tool-0"].clone();
+        check_at(
+            Path::new("."),
+            &|_, args, _| {
+                requests.fetch_add(1, SeqCst);
+                let concurrent = active.fetch_add(1, SeqCst) + 1;
+                peak.fetch_max(concurrent, SeqCst);
+                std::thread::sleep(std::time::Duration::from_millis(30));
+                active.fetch_sub(1, SeqCst);
+                if args.last().unwrap().contains("crates.io") {
+                    Ok(json!({"version":{"created_at":"2020-01-01T00:00:00Z"}})
+                        .to_string())
+                } else {
+                    Ok(registry_versions(
+                        args.last().unwrap().rsplit('/').next().unwrap(),
+                    ))
+                }
+            },
+            &meta,
+            &lock.to_string(),
+            u64::MAX,
+        )
+        .unwrap();
+        assert_eq!(requests.load(SeqCst), 10);
+        assert!(peak.load(SeqCst) > 1, "registry requests never overlapped");
+        assert!(peak.load(SeqCst) <= 4);
+    }
+
+    #[test]
+    fn failed_batch_is_joined_and_never_retried_or_followed() {
+        use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+        let meta = json!({"workspace_members":["local"],"packages":[{"id":"local","name":"local","version":"1.0.0","source":null}]}).to_string();
+        for response in [
+            Err("HTTP 429 Too Many Requests; Retry-After: 60".into()),
+            Err("HTTP 503 Service Unavailable".into()),
+            Err("curl: (28) timeout".into()),
+            Ok("malformed".into()),
+            Ok("{}".into()),
+        ] {
+            let calls = AtomicUsize::new(0);
+            let error = check_at(
+                Path::new("."),
+                &|_, _, _| {
+                    calls.fetch_add(1, SeqCst);
+                    response.clone()
+                },
+                &meta,
+                &many_npm().to_string(),
+                u64::MAX,
+            )
+            .unwrap_err();
+            assert_eq!(calls.load(SeqCst), 4);
+            assert!(error.contains("https://registry.npmjs.org/tool-0"));
+            if let Err(reason) = response {
+                assert!(error.contains(&reason));
+            }
+        }
+    }
+
+    #[test]
+    fn crate_pacing_serializes_grants_and_has_no_catch_up_burst() {
+        let pacer = CratePacer(Mutex::new(None));
+        let grants = Mutex::new(Vec::new());
+        let interval = Duration::from_millis(20);
+        std::thread::scope(|scope| {
+            for _ in 0..6 {
+                scope.spawn(|| {
+                    pacer.wait(interval).unwrap();
+                    grants.lock().unwrap().push(Instant::now());
+                });
+            }
+        });
+        let mut grants = grants.into_inner().unwrap();
+        grants.sort();
+        for pair in grants.windows(2) {
+            assert!(
+                pair[1].duration_since(pair[0]) >= Duration::from_millis(15)
+            );
+        }
+        std::thread::sleep(interval * 2);
+        pacer.wait(interval).unwrap();
+        let start = Instant::now();
+        pacer.wait(interval).unwrap();
+        assert!(start.elapsed() >= interval);
+    }
+
+    #[test]
+    fn every_version_in_a_shared_npm_response_is_verified() {
+        let name = "@scope/tool";
+        let mut claims = parse_npm_claims(&npm().to_string()).unwrap();
+        let claim = claims[&(name.into(), "1.0.0".into())].clone();
+        claims.insert((name.into(), "2.0.0".into()), claim);
+        let versions = vec![
+            (true, name.into(), "1.0.0".into()),
+            (true, name.into(), "2.0.0".into()),
+        ];
+        let good = json(&registry_versions(name)).unwrap();
+        let now = timestamp("2020-01-15T00:00:00Z").unwrap();
+        assert_eq!(verify_versions(&good, &versions, &claims, now), Ok(2));
+        for invalid in [
+            json!("2020-01-01T00:00:01Z"),
+            json!("2020-01-16T00:00:00Z"),
+            json!("not a date"),
+            Value::Null,
+        ] {
+            let mut document = good.clone();
+            document["time"]["2.0.0"] = invalid;
+            assert!(
+                verify_versions(&document, &versions, &claims, now).is_err()
+            );
+        }
+        let mut document = good;
+        document["versions"]["2.0.0"]["dist"]["integrity"] =
+            json!("sha512-other");
+        assert!(verify_versions(&document, &versions, &claims, now).is_err());
+    }
+
+    #[test]
+    fn panicking_worker_cannot_produce_a_successful_verdict() {
+        let meta = metadata(&json!(
+            "registry+https://github.com/rust-lang/crates.io-index"
+        ));
+        let error = check_at(
+            Path::new("."),
+            &|_, _, _| panic!("failed adapter"),
+            &meta,
+            &npm().to_string(),
+            u64::MAX,
+        )
+        .unwrap_err();
+        assert!(error.contains("registry worker panicked"));
+    }
+
     fn metadata(source: &Value) -> String {
         json!({"workspace_members":["workspace"],"packages":[{"id":"external","name":"axum","version":"0.8.9","source":source}]}).to_string()
     }
@@ -361,8 +588,17 @@ mod tests {
     fn run(meta: &str, lock: &Value, age: u64) -> Result<(), String> {
         check_at(
             Path::new("."),
-            &mut |_, args, _| {
+            &|_, args, _| {
                 assert_eq!(args[0], "--fail");
+                assert!(args.contains(&"--compressed"));
+                for pair in [
+                    ["--connect-timeout", "10"],
+                    ["--max-time", "30"],
+                    ["--proto", "=https"],
+                ] {
+                    assert!(args.windows(2).any(|window| window == pair));
+                }
+                assert!(!args.iter().any(|arg| arg.starts_with("--retry")));
                 if args.last().unwrap().contains("crates.io") {
                     Ok(json!({"version":{"created_at":"2026-01-01T00:00:00Z"}})
                         .to_string())
@@ -443,7 +679,7 @@ mod tests {
             assert!(
                 check_at(
                     Path::new("."),
-                    &mut |_, _, _| Ok(response.clone()),
+                    &|_, _, _| Ok(response.clone()),
                     &metadata,
                     &npm().to_string(),
                     u64::MAX
@@ -519,7 +755,7 @@ mod tests {
             assert!(
                 check_at(
                     Path::new("."),
-                    &mut |_, _, _| response.clone(),
+                    &|_, _, _| response.clone(),
                     &meta,
                     &npm().to_string(),
                     u64::MAX

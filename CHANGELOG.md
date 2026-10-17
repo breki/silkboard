@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Run live dependency-registry checks with bounded concurrency and explicit
+  crates.io pacing, preserving dependency policy and fatal registry errors.
+
 - Cancel superseded PR CI runs while preserving separate PRs, main and release
   runs.
 

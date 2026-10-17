@@ -238,3 +238,16 @@ and reusable-workflow context documentation supply the group/caller behavior.
 Silkboard uses a dedicated namespace, the caller workflow reference and PR
 number, with unique run/attempt groups for non-PR events. No new dependency,
 validation bypass, release admission or production policy is introduced.
+
+## Live registry concurrency, 2026-10-17
+
+Issue #23 authorizes bounded concurrent live requests without changing
+dependency policy. The existing Silkboard registry verifier supplies all age,
+source, license and integrity checks. The
+[crates.io data-access policy](https://crates.io/data-access#api), checked
+against its official page source, requires one API request per second and an
+identifying user agent; a per-invocation pacer and repository contact URL
+implement that requirement. Four-request batches, in-invocation npm
+deduplication and stopping after a failed batch are Silkboard choices.
+No upstream code, new dependency, verdict cache, release admission or
+production configuration is introduced.
