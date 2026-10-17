@@ -1,0 +1,39 @@
+#cloud-config
+hostname: silkboard
+manage_etc_hosts: true
+ssh_pwauth: false
+disable_root: true
+users:
+  - name: silkadmin
+    groups: [sudo]
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    lock_passwd: true
+    ssh_authorized_keys:
+      - @OPERATOR_KEY@
+  - name: silkbuild
+    shell: /usr/sbin/nologin
+    lock_passwd: true
+  - name: silkboard
+    system: true
+    shell: /usr/sbin/nologin
+    lock_passwd: true
+package_update: true
+packages:
+  - build-essential
+  - pkg-config
+  - libssl-dev
+  - git
+  - curl
+  - ca-certificates
+  - xz-utils
+  - jq
+  - time
+  - qemu-guest-agent
+runcmd:
+  - [systemctl, enable, --now, qemu-guest-agent]
+  - [fallocate, -l, 4G, /swapfile]
+  - [chmod, '600', /swapfile]
+  - [mkswap, /swapfile]
+  - [swapon, /swapfile]
+  - [sh, -c, 'echo "/swapfile none swap sw 0 0" >> /etc/fstab']

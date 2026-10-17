@@ -27,8 +27,23 @@ registered the active release workflow as ID `387356305`, read back on
 2026-10-17 after PR #8 merged. Bind evidence to repository, registered workflow
 ID and path, push event, release tag, exact peeled commit, and completed success.
 Do not accept matching display names or checks on a different revision.
-No tag-triggered release run has been verified yet; registration alone does
-not establish release eligibility.
+
+## Verified initial release
+
+On 2026-10-17, signed tag `v0.1.1` at commit
+`c68a53902d8e9552abee2d3488645800f856986e` passed
+[release run 39003125429](https://github.com/breki/silkboard/actions/runs/39003125429).
+The API read-back matched workflow ID `387356305`, the agreed path, push
+event, tag, and exact commit, with completed success. Admission, the full
+validation suite including ARM64 linting, and release builds all passed.
+The remote annotated tag object is
+`407232ca5daf02a96865a7abf202be0905210d3c`; its trusted SSH signature was
+also verified locally. This establishes release eligibility, not deployment.
+
+The earlier `v0.1.0` tag remains unchanged and ineligible: its
+[release run failed admission](https://github.com/breki/silkboard/actions/runs/39001755923)
+because checkout replaced the runner's signed tag ref with the peeled commit.
+PR #9 fixed checkout selection before `v0.1.1` was published.
 
 ## Local preparation
 

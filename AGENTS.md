@@ -55,8 +55,8 @@ services as evidence of a working VM deployment.
 
 The Cargo workspace contains the minimal status application, repository
 tooling, full validation, and hook tests. CI/release workflows are configured.
-The Svelte frontend builds locally; no production
-application deployment is established yet. Workflow wrappers are instructions,
+The minimal application runs in its dedicated production VM with private
+HTTPS; automatic upgrades remain pending. Workflow wrappers are instructions,
 not executable implementations of missing helpers.
 [Tooling status](docs/ai-agents/tooling.md) distinguishes current checks
 from pending commands. Never report a skipped prerequisite as a pass.

@@ -1,0 +1,36 @@
+[Unit]
+Description=Silkboard private status application
+After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=silkboard
+Group=silkboard
+WorkingDirectory=/opt/silkboard/current
+Environment=SILKBOARD_LISTEN=127.0.0.1:3000
+Environment=SILKBOARD_FRONTEND=/opt/silkboard/current/frontend
+ExecStart=/opt/silkboard/current/silkboard-web
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictRealtime=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_INET AF_INET6
+InaccessiblePaths=/var/lib/silkboard-build /etc/silkboard
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

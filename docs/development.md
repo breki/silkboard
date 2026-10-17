@@ -43,8 +43,8 @@ npm run dev --prefix frontend
 
 Open <http://127.0.0.1:5173>. Vite proxies `/api` and `/health` to the
 backend on loopback port 3000; keep the default backend address for this
-setup. Both listeners default to loopback; private production HTTPS is
-still pending.
+setup. Both listeners default to loopback. The separate
+[production VM](production-vm.md) uses private Tailscale HTTPS.
 
 ## Release build identity
 
@@ -57,13 +57,14 @@ For an already checked-out release revision, for example:
 ```sh
 npm ci --prefix frontend
 npm run build --prefix frontend
-SILKBOARD_RELEASE_TAG=v0.1.0 SILKBOARD_COMMIT="$(git rev-parse HEAD)" \
+SILKBOARD_RELEASE_TAG="$(git describe --tags --exact-match HEAD)" \
+  SILKBOARD_COMMIT="$(git rev-parse HEAD)" \
   cargo build --locked --release -p silkboard-web
 ./target/release/silkboard-web
 ```
 
-The version must match `crates/silkboard-web/Cargo.toml`; `v0.1.0` is the
-initial version. These inputs label a build; they do not verify the checkout,
+The tag version must match `crates/silkboard-web/Cargo.toml`.
+These inputs label a build; they do not verify the checkout,
 signatures, clean worktree, or GitHub checks. A future release builder/updater
 must establish those facts and supply the exact approved identity before
 building. This command alone does not produce a deployment-eligible release.
