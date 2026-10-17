@@ -177,3 +177,12 @@ through private port 443. Guest installation evidence is retained in
 Live automatic upgrade, rollback/retry, and updater reboot demonstrations
 remain required before issue #6 or milestone 1 is complete. Polling an already
 installed release does not demonstrate build or activation of a newer release.
+
+## Reuse assessment
+
+The [deployment toolkit feasibility assessment](deployment-toolkit-feasibility.md)
+examines reuse of these boundaries. Its interfaces and extraction sequence
+are broader proposals. An [initial in-repository toolkit](deployment-toolkit.md)
+now implements the engine/policy/CLI boundary; it has not replaced the
+installed updater. Its state-format and privileged-installation compatibility
+requirements apply before adopting that version.

@@ -1,6 +1,9 @@
 //! Linux deployment boundaries with injectable command execution.
 
-use crate::{Backend, Release, State, Version, evidence};
+use crate::{
+    Backend, Release, State, Version, evidence, outcome::Admission,
+    profile::Policy, storage,
+};
 use serde_json::Value;
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
@@ -14,6 +17,7 @@ const TOOLS: &str = "/usr/local/libexec/silkboard";
 /// is invoked with root privileges.
 pub struct Linux<R> {
     runner: R,
+    policy: Policy,
     state: PathBuf,
     releases: PathBuf,
     current: PathBuf,
@@ -30,10 +34,25 @@ where
     pub fn production(runner: R) -> Self {
         Self {
             runner,
+            policy: Policy::silkboard(),
             state: "/var/lib/silkboard-updater/state.json".into(),
             releases: "/opt/silkboard/releases".into(),
             current: "/opt/silkboard/current".into(),
         }
+    }
+
+    /// Bind validated admission policy to the installed Silkboard application adapter.
+    /// Other applications must supply their own reviewed backend implementation.
+    ///
+    /// # Errors
+    /// Rejects an application without a registered adapter.
+    pub fn configured(runner: R, policy: Policy) -> Result<Self, String> {
+        if policy.application() != "silkboard" {
+            return Err("application adapter is not registered".into());
+        }
+        let mut backend = Self::production(runner);
+        backend.policy = policy;
+        Ok(backend)
     }
 
     fn run(&mut self, program: &str, args: &[&str]) -> Result<String, String> {
@@ -68,6 +87,7 @@ where
     }
 
     fn api(&mut self, path: &str) -> Result<Value, String> {
+        let repository = self.policy.repository().to_owned();
         let output = self.run(
             "runuser",
             &[
@@ -75,45 +95,52 @@ where
                 "silkfetch",
                 "--",
                 "/usr/local/libexec/silkboard/github-read",
+                &repository,
                 path,
             ],
         )?;
         serde_json::from_str(&output).map_err(|e| format!("GitHub JSON: {e}"))
     }
 
-    fn evidence(&mut self, release: &Release) -> Result<bool, String> {
-        if !evidence::valid_workflow(&self.api("actions/workflows/387356305")?)
-        {
+    fn evidence(&mut self, release: &Release) -> Result<Admission, String> {
+        let workflow_id = self.policy.workflow_id();
+        let workflow = self.api(&format!("actions/workflows/{workflow_id}"))?;
+        if !evidence::valid_workflow_for(&workflow, &self.policy) {
             return Err("registered release workflow identity changed".into());
         }
-        let runs = self.api(&format!("actions/workflows/387356305/runs?event=push&branch={}&head_sha={}&per_page=100", release.tag(), release.commit()))?;
-        let Some(id) = evidence::passing_run(&runs, release) else {
-            return Ok(false);
+        let runs = self.api(&format!("actions/workflows/{workflow_id}/runs?event=push&branch={}&head_sha={}&per_page=100", release.tag(), release.commit()))?;
+        let Some(id) = evidence::passing_run_for(&runs, release, &self.policy)
+        else {
+            return Ok(classify_incomplete(&runs));
         };
         let run = self.api(&format!("actions/runs/{id}"))?;
-        if !evidence::valid_run(&run, release) {
-            return Ok(false);
+        if !evidence::valid_run_for(&run, release, &self.policy) {
+            return Ok(incomplete_run(&run));
         }
         let attempt =
             run["run_attempt"].as_u64().ok_or("missing run attempt")?;
         let jobs = self.api(&format!(
             "actions/runs/{id}/attempts/{attempt}/jobs?per_page=100"
         ))?;
-        if !evidence::passing_jobs(&jobs) {
-            return Ok(false);
+        if !evidence::passing_jobs_for(&jobs, &self.policy) {
+            return Ok(Admission::Rejected {
+                reason: "required jobs did not all pass".into(),
+            });
         }
-        // Detect a rerun starting while job evidence was being read.
         let after = self.api(&format!("actions/runs/{id}"))?;
-        let valid = evidence::valid_run(&after, release)
-            && after["run_attempt"] == attempt;
-        if valid {
-            println!(
-                "Release suite passed: tag={} commit={} workflow=387356305 run={id} attempt={attempt}",
-                release.tag(),
-                release.commit()
-            );
+        if !evidence::valid_run_for(&after, release, &self.policy)
+            || after["run_attempt"] != attempt
+        {
+            return Ok(incomplete_run(&after));
         }
-        Ok(valid)
+        eprintln!(
+            "Release suite passed: tag={} commit={} workflow={workflow_id} run={id} attempt={attempt}",
+            release.tag(),
+            release.commit()
+        );
+        Ok(Admission::Eligible {
+            release: release.clone(),
+        })
     }
 
     fn directory(&self, release: &Release) -> PathBuf {
@@ -141,31 +168,17 @@ where
     R: FnMut(&str, &[&str]) -> Result<String, String>,
 {
     fn load(&mut self) -> Result<State, String> {
-        let state: State = match fs::read(&self.state) {
-            Ok(bytes) => serde_json::from_slice(&bytes)
-                .map_err(|e| format!("updater state: {e}"))?,
+        match fs::read(&self.state) {
+            Ok(bytes) => storage::decode(
+                &bytes,
+                &self.policy,
+                storage::SILKBOARD_ADAPTER,
+            ),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                return Ok(State::default());
+                Ok(State::default())
             }
-            Err(e) => return Err(e.to_string()),
-        };
-        for tag in &state.blocked {
-            if Version::parse(tag).is_none() {
-                return Err("invalid blocked tag".into());
-            }
+            Err(e) => Err(e.to_string()),
         }
-        if let Some(pending) = &state.pending {
-            for release in [&pending.previous, &pending.candidate] {
-                Release::new(release.tag(), release.commit())?;
-            }
-            if !state.blocked.contains(pending.candidate.tag())
-                || Version::parse(pending.previous.tag())
-                    >= Version::parse(pending.candidate.tag())
-            {
-                return Err("invalid recovery transaction".into());
-            }
-        }
-        Ok(state)
     }
 
     fn save(&mut self, state: &State) -> Result<(), String> {
@@ -178,7 +191,11 @@ where
                 .truncate(true)
                 .open(&temporary)?;
             file.set_permissions(fs::Permissions::from_mode(0o600))?;
-            file.write_all(&serde_json::to_vec(state)?)?;
+            file.write_all(&storage::encode(
+                state,
+                &self.policy,
+                storage::SILKBOARD_ADAPTER,
+            )?)?;
             file.sync_all()?;
             fs::rename(temporary, &self.state)?;
             File::open(self.state.parent().ok_or("missing state parent")?)?
@@ -199,7 +216,7 @@ where
             "fetch",
             "--no-tags",
             "--prune",
-            "https://github.com/breki/silkboard.git",
+            &format!("https://github.com/{}.git", self.policy.repository()),
             "+refs/tags/*:refs/tags/*",
         ])?;
         Ok(self
@@ -214,6 +231,10 @@ where
     }
 
     fn admit(&mut self, tag: &str) -> Result<Option<Release>, String> {
+        Ok(self.inspect(tag)?.release().cloned())
+    }
+
+    fn inspect(&mut self, tag: &str) -> Result<Admission, String> {
         if Version::parse(tag).is_none() {
             return Err("invalid candidate tag".into());
         }
@@ -222,14 +243,16 @@ where
             Ok(object) => object,
             Err(error) => {
                 eprintln!("Reject {tag}: {error}");
-                return Ok(None);
+                return Ok(Admission::Rejected {
+                    reason: "invalid annotated tag".into(),
+                });
             }
         };
         let release = match Release::from_tag(tag, &object) {
             Ok(release) => release,
             Err(error) => {
                 eprintln!("Reject {tag}: {error}");
-                return Ok(None);
+                return Ok(Admission::Rejected { reason: error });
             }
         };
         if self
@@ -244,20 +267,20 @@ where
             .is_err()
         {
             eprintln!("Reject {tag}: untrusted signature");
-            return Ok(None);
+            return Ok(Admission::Rejected {
+                reason: "tag signature or target was rejected".into(),
+            });
         }
         if self
             .fetch_git(&["cat-file", "-t", release.commit()])?
             .trim()
             != "commit"
         {
-            return Ok(None);
+            return Ok(Admission::Rejected {
+                reason: "tag target is not a commit".into(),
+            });
         }
-        if !self.evidence(&release)? {
-            println!("Awaiting passing release suite for {tag}");
-            return Ok(None);
-        }
-        Ok(Some(release))
+        self.evidence(&release)
     }
 
     fn build(&mut self, release: &Release) -> Result<(), String> {
@@ -374,5 +397,37 @@ where
             "health or exact identity failed for {}",
             release.tag()
         ))
+    }
+}
+
+fn incomplete_run(run: &Value) -> Admission {
+    if matches!(
+        run["status"].as_str(),
+        Some("queued" | "in_progress" | "waiting" | "pending" | "requested")
+    ) {
+        Admission::Waiting {
+            reason: "release suite is incomplete".into(),
+        }
+    } else {
+        Admission::Rejected {
+            reason: "release run failed or did not match installed policy"
+                .into(),
+        }
+    }
+}
+
+fn classify_incomplete(response: &Value) -> Admission {
+    match response["workflow_runs"].as_array() {
+        Some(runs) if runs.is_empty() => Admission::Waiting {
+            reason: "release suite has not run".into(),
+        },
+        Some(runs) => incomplete_run(
+            runs.iter()
+                .max_by_key(|r| r["id"].as_u64().unwrap_or(0))
+                .expect("nonempty runs"),
+        ),
+        None => Admission::Rejected {
+            reason: "invalid release run response".into(),
+        },
     }
 }

@@ -48,3 +48,14 @@ fn signed_object_must_bind_exact_name_and_direct_commit() {
         assert!(Release::from_tag("v1.2.3", &bad).is_err());
     }
 }
+
+#[test]
+fn deserialization_cannot_bypass_release_identity_validation() {
+    for identity in [
+        serde_json::json!({"tag":"../bad","commit":"a".repeat(40)}),
+        serde_json::json!({"tag":"v0.2.0","commit":"bad"}),
+        serde_json::json!({"tag":"v0.2.0","commit":"a".repeat(40),"unknown":true}),
+    ] {
+        assert!(serde_json::from_value::<Release>(identity).is_err());
+    }
+}

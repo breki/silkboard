@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "application": "silkboard",
+  "repository": "breki/silkboard",
+  "repository_id": 1417054470,
+  "workflow_id": 387356305,
+  "workflow_path": ".github/workflows/release.yml",
+  "ci_path": ".github/workflows/ci.yml",
+  "required_jobs": [
+    "Signed stable tag and exact revision",
+    "gates / Full validation (Linux)",
+    "Build the checked release revision"
+  ]
+}

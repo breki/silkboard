@@ -20,6 +20,7 @@ impl Fixture {
     fn backend<R>(&self, runner: R) -> Linux<R> {
         Linux {
             runner,
+            policy: Policy::silkboard(),
             state: self.0.join("state.json"),
             releases: self.0.join("releases"),
             current: self.0.join("current"),
@@ -304,4 +305,88 @@ fn unhealthy_or_wrong_identity_exhausts_bounded_retries() {
         }
     });
     assert!(backend.healthy(&release).is_err());
+}
+
+#[test]
+fn legacy_pending_state_recovers_offline_and_is_written_with_policy_binding() {
+    let fixture = Fixture::new();
+    let previous = fixture.stage("v0.1.1");
+    let candidate = fixture.stage("v0.2.0");
+    symlink(
+        fixture.0.join("releases").join(format!(
+            "{}-{}",
+            candidate.tag(),
+            candidate.commit()
+        )),
+        fixture.0.join("current"),
+    )
+    .unwrap();
+    let state = State {
+        blocked: [candidate.tag().into()].into(),
+        pending: Some(crate::Transaction {
+            previous: previous.clone(),
+            candidate,
+        }),
+    };
+    fs::write(
+        fixture.0.join("state.json"),
+        serde_json::to_vec(&state).unwrap(),
+    )
+    .unwrap();
+    let mut backend = fixture.backend(|program: &str, args: &[&str]| {
+        assert!(program == "systemctl" || program == "curl", "recovery must not fetch or use credentials");
+        Ok(if args.last().is_some_and(|p| p.ends_with("/api/status")) {
+            json!({"health":"ok","version":"0.1.1","release_tag":"v0.1.1","commit":"a".repeat(40)}).to_string()
+        } else { json!({"status":"ok"}).to_string() })
+    });
+    assert!(
+        matches!(crate::poll(&mut backend).unwrap(), crate::outcome::Outcome::Recovered { current, .. } if current == previous)
+    );
+    let original = fs::read(&backend.state).unwrap();
+    let stored: Value = serde_json::from_slice(&original).unwrap();
+    assert_eq!(stored["schema"], 1);
+    assert_eq!(stored["policy"]["repository"], "breki/silkboard");
+    assert!(stored["state"]["pending"].is_null());
+    assert_eq!(stored["state"]["blocked"], json!(["v0.2.0"]));
+    assert_eq!(backend.current().unwrap(), previous);
+    let mut changed = serde_json::to_value(Policy::silkboard()).unwrap();
+    changed["workflow_id"] = json!(9);
+    backend.policy =
+        Policy::from_json(&serde_json::to_vec(&changed).unwrap()).unwrap();
+    assert!(backend.load().is_err());
+    assert_eq!(fs::read(&backend.state).unwrap(), original);
+}
+
+#[test]
+fn configured_adapter_and_incomplete_evidence_are_explicit() {
+    assert!(Linux::configured(response, Policy::silkboard()).is_ok());
+    let mut other = serde_json::to_value(Policy::silkboard()).unwrap();
+    other["application"] = json!("other");
+    assert!(
+        Linux::configured(
+            response,
+            Policy::from_json(&serde_json::to_vec(&other).unwrap()).unwrap()
+        )
+        .is_err()
+    );
+    for status in ["queued", "in_progress", "waiting", "pending", "requested"] {
+        assert!(matches!(
+            incomplete_run(&json!({"status":status})),
+            Admission::Waiting { .. }
+        ));
+    }
+    assert!(matches!(
+        classify_incomplete(&json!({"workflow_runs":[]})),
+        Admission::Waiting { .. }
+    ));
+    assert!(matches!(
+        classify_incomplete(&json!({})),
+        Admission::Rejected { .. }
+    ));
+    assert!(matches!(
+        classify_incomplete(
+            &json!({"workflow_runs":[{"id":1,"status":"completed"}]})
+        ),
+        Admission::Rejected { .. }
+    ));
 }
