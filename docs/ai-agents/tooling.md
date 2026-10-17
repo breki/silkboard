@@ -138,6 +138,25 @@ exact three successful job requirements are unchanged. A documentation-only
 PR result is never release eligibility evidence. The standalone
 `validate --check` command continues to run every gate locally.
 
+## Superseded PR runs
+
+CI groups PR runs by the caller's workflow reference and PR number. A newer
+run for that same group cancels the older running/pending work. Different PRs
+and caller workflow files/refs have separate groups; the `silkboard-ci-`
+prefix keeps this policy distinct from caller-level concurrency policies.
+Callers must not reuse this internal group namespace for their own policy.
+
+Main pushes and other non-PR events, including release calls, use unique
+run-ID/attempt groups and disable cancellation. This also prevents GitHub's
+single-pending-run replacement from dropping an unrelated main/release run.
+Release jobs and admission requirements remain unchanged. Cancellation does
+not make an older commit eligible or replace the latest required check; a
+superseding commit still needs its own successful validation.
+
+Manual reruns share the PR's group. Rerun the latest commit: starting an old
+attempt can cancel newer work in that group. This policy follows run arrival,
+not an independent comparison of commit age.
+
 ## CI cache boundaries
 
 The owner authorized CI caching after gate-tool installation took 6m 42s in

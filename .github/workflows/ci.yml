@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# Keep this CI namespace separate from caller-level concurrency. Only updates
+# to the same PR/calling workflow cancel work; other events have unique groups.
+concurrency:
+  group: silkboard-ci-${{ github.workflow_ref }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}-attempt-{1}', github.run_id, github.run_attempt) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     name: Full validation (Linux)
