@@ -112,12 +112,14 @@ import rustbase deployment, CI, coverage, duplication, or release automation.
 The owner selected the existing Git SSH signing key as the trusted release-tag
 signer through the interactive question UI. The roadmap records its public
 fingerprint and the separation of private signing material from CI and the
-dashboard. This is an owner decision, not an upstream template sync. Workflow
-identity and installation of the public trust configuration remain pending.
+dashboard. This is an owner decision, not an upstream template sync.
+Installation of the public trust configuration in production remains pending.
 
 The owner also selected `breki/silkboard/.github/workflows/release.yml` as the
 required release suite, triggered by the release tag and checking its exact
-commit. The registered numeric workflow ID still needs read-back evidence.
+commit. On 2026-10-17, GitHub's workflow API reported the active release
+workflow ID `387356305` after PR #8 merged. This records registration,
+not a successful tag-triggered release run.
 
 ## CI and release gate adaptation, 2026-10-17
 

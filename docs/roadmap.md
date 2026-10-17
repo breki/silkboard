@@ -107,7 +107,8 @@ Selected with the owner on 2026-10-16; implementation remains pending.
 - Require the release-suite workflow at
   `breki/silkboard/.github/workflows/release.yml`, triggered by the release
   tag, to pass all required gates for that tag's exact commit. Selected on
-  2026-10-17; record the registered GitHub workflow ID when available.
+  2026-10-17; GitHub registered workflow ID `387356305`, read back after
+  PR #8 merged. A successful tag-triggered run remains required.
 - Poll every ten minutes, including reconsidering tags awaiting checks.
   Select the highest newer stable `vMAJOR.MINOR.PATCH` version. Exclude
   prereleases; downgrades require explicit operator action.
@@ -116,8 +117,9 @@ Selected with the owner on 2026-10-16; implementation remains pending.
 
 ### Decisions and evidence still needed
 
-- Install the agreed public-key trust configuration and record the registered
-  GitHub ID of the agreed release workflow once it exists.
+- Install the agreed public-key trust configuration and workflow identity
+  in the production updater. Registration evidence is in
+  [release preparation](releases.md).
 - Production Silkboard provisioning and measurements. The representative
   rustbase trial passed guest boot, in-VM builds, private access, ballooning,
   and guest reboot recovery; it does not establish the delivery pipeline.

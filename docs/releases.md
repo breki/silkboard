@@ -22,12 +22,13 @@ job prevents a successful release run. CI's normal PR run is useful feedback;
 release eligibility requires the tag-triggered release workflow.
 
 The future updater must use an independently installed public trust file,
-not a trust file fetched from an unverified candidate. After workflow
-registration, read back its numeric ID and record it here before configuring
-production eligibility. Bind evidence to repository, registered workflow ID
-and path, push event, release tag, exact peeled commit, and completed success.
+not a trust file fetched from an unverified candidate. GitHub's workflow API
+registered the active release workflow as ID `387356305`, read back on
+2026-10-17 after PR #8 merged. Bind evidence to repository, registered workflow
+ID and path, push event, release tag, exact peeled commit, and completed success.
 Do not accept matching display names or checks on a different revision.
-Registration/run evidence is pending until GitHub has observed the workflow.
+No tag-triggered release run has been verified yet; registration alone does
+not establish release eligibility.
 
 ## Local preparation
 
