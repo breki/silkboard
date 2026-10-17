@@ -251,3 +251,14 @@ implement that requirement. Four-request batches, in-invocation npm
 deduplication and stopping after a failed batch are Silkboard choices.
 No upstream code, new dependency, verdict cache, release admission or
 production configuration is introduced.
+
+## Rust dependency-build caching, 2026-10-18
+
+After the #24 research, the owner explicitly chose to create a follow-up issue
+and implement the proposed caches in a separate PR. Issue #31 supersedes the
+investigation-only boundary for that implementation. The
+[cache procedure](../ci-rust-build-cache.md) describes three dependency-only
+archives, configuration fingerprints, exact-head PR namespaces and verified
+workspace cleanup. Existing Cargo/cargo-llvm-cov cleaning and the already
+pinned cache action are reused; new Rust helpers own planning and verification.
+No new dependency, required release job or production configuration is added.
