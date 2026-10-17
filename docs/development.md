@@ -82,10 +82,11 @@ cargo audit --deny warnings
 
 The Rust tests cover API responses, rejected mutation routes, static asset
 serving, build identity validation, and existing repository tooling. Frontend
-component tests cover loading, identity, and failed requests. The frontend
+component tests cover loading, identity, failed requests, and timeouts; the
+isolated Chromium suite checks the built app and mobile layout. The frontend
 check runs types, lint, formatting, tests, and the production build.
-See [tooling status](ai-agents/tooling.md) for unavailable aggregate/release
-gates. These commands do not establish a Pi deployment.
+Run `cargo xtask validate --check` for the full required suite after
+installing [the gate prerequisites](ai-agents/tooling.md). These commands do not establish a Pi deployment.
 
 The frontend lockfile retains upstream versions where possible, with security
 patches selected after advisory checks. Vitest is pinned to 4.1.11, and
@@ -95,9 +96,11 @@ updates; do not blindly refresh to newer patches. Both lockfiles must remain
 committed. npm packages are build/test dependencies; production serves only
 compiled static assets.
 
-A standalone coverage spot check can use `cargo llvm-cov --workspace
---ignore-filename-regex 'src/main.rs' --summary-only` when installed. This
-measures the application library and build identity validation; it excludes
-binary entry points, including xtask. The application entry point contains
-listener, file, and signal I/O, checked separately by a live local smoke run.
-This is not the pending workspace coverage gate.
+Use `cargo xtask coverage` for the enforced Rust coverage gate, including
+application and xtask library logic. Binary entry points are thin I/O adapters
+excluded from coverage; integration tests exercise their observable behavior.
+`cargo xtask frontend-coverage` enforces frontend coverage and
+`cargo xtask browser-test` runs Chromium on the built assets. Install Chromium
+using the tooling prerequisites, and build the frontend before a standalone
+browser run. The browser server uses dedicated loopback port 38124 and refuses
+to reuse an existing server.

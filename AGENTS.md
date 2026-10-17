@@ -54,7 +54,8 @@ services as evidence of a working VM deployment.
 ## Current tooling
 
 The Cargo workspace contains the minimal status application, repository
-tooling, and hook tests. The Svelte frontend builds locally; no production
+tooling, full validation, and hook tests. CI/release workflows are configured.
+The Svelte frontend builds locally; no production
 application deployment is established yet. Workflow wrappers are instructions,
 not executable implementations of missing helpers.
 [Tooling status](docs/ai-agents/tooling.md) distinguishes current checks

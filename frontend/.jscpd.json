@@ -1,0 +1,5 @@
+{
+  "threshold": 6,
+  "reporters": ["console"],
+  "ignore": ["**/*.test.js", "**/vite-env.d.ts"]
+}

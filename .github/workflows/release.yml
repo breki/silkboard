@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+permissions:
+  contents: read
+
+jobs:
+  admission:
+    name: Signed stable tag and exact revision
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup override set 1.93.1
+      - name: Verify tag, signer, version and clean revision
+        run: cargo xtask release-check "$GITHUB_REF_NAME"
+
+  gates:
+    needs: admission
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build the checked release revision
+    needs: gates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.14.1
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup override set 1.93.1
+      - name: Build release frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Verify and build release backend
+        run: |
+          cargo xtask release-check "$GITHUB_REF_NAME"
+          SILKBOARD_RELEASE_TAG="$GITHUB_REF_NAME" SILKBOARD_COMMIT="$(git rev-parse HEAD)" cargo build --locked --release -p silkboard-web

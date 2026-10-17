@@ -17,13 +17,16 @@ stale availability note.
 4. Run full validation, supported cross-target lint checks, and a standalone
    advisory audit that fails if unavailable. Verify checks cover the exact
    tree being tagged; changes after a check require relevant revalidation.
-5. Commit only release bookkeeping with `release: vX.Y.Z` and create an
-   annotated tag matching that version. Preserve configured signing. A failed
+5. Commit only release bookkeeping with `release: vX.Y.Z` and create a
+   signed annotated tag matching that version. Preserve configured signing
+   and use the trusted SSH signer recorded in the roadmap. A failed
    gate leaves visible bookkeeping edits but no release commit or tag.
 6. Report checks and next action. Do not push a tag merely because a local
    release was requested. If pushing is authorized, account for its ability
    to trigger deployment and check the agreed eligibility policy first.
 
 An annotated tag is not proof of trusted signatures or passing GitHub checks.
-Those deployment-policy decisions remain open in the roadmap. Do not create
+Use the signer and release workflow selected in the roadmap; verify the local
+tag with `cargo xtask release-check TAG` and require separate exact-revision
+GitHub release-suite evidence for eligibility. Do not create
 a GitHub Release object or deploy as an unstated extension of this workflow.
