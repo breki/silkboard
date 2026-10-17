@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.1 - 2026-10-17
+
 - Preserve signed tag objects during GitHub release checkouts by selecting
   the event commit explicitly.
 
