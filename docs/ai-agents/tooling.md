@@ -101,7 +101,9 @@ the verified initial production deployment, separate from xtask and the app.
 The standalone [updater](../automatic-upgrades.md) has local behavioral checks;
 it is installed with verified admission and scheduled polling. Live upgrade
 and recovery evidence remain pending. It is not
-an xtask deployment command.
+an xtask deployment command. The [in-repository toolkit](../deployment-toolkit.md)
+adds a reusable engine, policy evaluator and structured operator interface;
+its newer installed-code/state format has not been deployed to production.
 
 ## Pending interfaces and deployment
 

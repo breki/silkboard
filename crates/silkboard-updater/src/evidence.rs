@@ -1,32 +1,36 @@
 //! GitHub release-suite identity and exact-revision evidence.
 
-use crate::Release;
+use crate::{Release, profile::Policy};
 use serde_json::Value;
 
 /// Return the newest matching successful tag-push run, rejecting foreign evidence.
 #[must_use]
-pub fn passing_run(response: &Value, release: &Release) -> Option<u64> {
+pub fn passing_run_for(
+    response: &Value,
+    release: &Release,
+    policy: &Policy,
+) -> Option<u64> {
     let runs = response["workflow_runs"].as_array()?;
     let run = runs.iter().max_by_key(|r| r["id"].as_u64().unwrap_or(0))?;
-    valid_run(run, release)
+    valid_run_for(run, release, policy)
         .then(|| run["id"].as_u64())
         .flatten()
 }
 
 /// Verify the fixed registered workflow, independent of repository content.
 #[must_use]
-pub fn valid_workflow(workflow: &Value) -> bool {
-    workflow["id"] == 387_356_305_u64
-        && workflow["path"] == ".github/workflows/release.yml"
+pub fn valid_workflow_for(workflow: &Value, policy: &Policy) -> bool {
+    workflow["id"] == policy.workflow_id()
+        && workflow["path"] == policy.workflow_path()
         && workflow["state"] == "active"
 }
 
 /// Require successful completion of the exact repository, tag and workflow.
 #[must_use]
-pub fn valid_run(run: &Value, release: &Release) -> bool {
+pub fn valid_run_for(run: &Value, release: &Release, policy: &Policy) -> bool {
     run["id"].as_u64().is_some_and(|id| id > 0)
-        && run["workflow_id"] == 387_356_305_u64
-        && run["path"] == ".github/workflows/release.yml"
+        && run["workflow_id"] == policy.workflow_id()
+        && run["path"] == policy.workflow_path()
         && run["event"] == "push"
         && run["head_branch"] == release.tag()
         && run["head_sha"] == release.commit()
@@ -34,8 +38,8 @@ pub fn valid_run(run: &Value, release: &Release) -> bool {
         && run["conclusion"] == "success"
         && run["run_attempt"].as_u64().is_some_and(|n| n > 0)
         && ["repository", "head_repository"].iter().all(|key| {
-            run[key]["id"] == 1_417_054_470_u64
-                && run[key]["full_name"] == "breki/silkboard"
+            run[key]["id"] == policy.repository_id()
+                && run[key]["full_name"] == policy.repository()
         })
         && run["referenced_workflows"].as_array().is_some_and(|refs| {
             refs.len() == 1
@@ -43,25 +47,23 @@ pub fn valid_run(run: &Value, release: &Release) -> bool {
                 && refs[0]["sha"] == release.commit()
                 && refs[0]["path"]
                     == format!(
-                        "breki/silkboard/.github/workflows/ci.yml@{}",
+                        "{}/{}@{}",
+                        policy.repository(),
+                        policy.ci_path(),
                         release.commit()
                     )
         })
 }
 
-/// Require all three gates, with no missing, skipped, or additional jobs.
+/// Require the complete configured gate set, rejecting skipped/duplicate/extra jobs.
 #[must_use]
-pub fn passing_jobs(response: &Value) -> bool {
+pub fn passing_jobs_for(response: &Value, policy: &Policy) -> bool {
     let Some(jobs) = response["jobs"].as_array() else {
         return false;
     };
-    let required = [
-        "Signed stable tag and exact revision",
-        "gates / Full validation (Linux)",
-        "Build the checked release revision",
-    ];
-    response["total_count"] == 3
-        && jobs.len() == 3
+    let required = policy.required_jobs();
+    response["total_count"] == required.len()
+        && jobs.len() == required.len()
         && required.iter().all(|name| {
             jobs.iter()
                 .filter(|job| {
@@ -72,4 +74,28 @@ pub fn passing_jobs(response: &Value) -> bool {
                 .count()
                 == 1
         })
+}
+
+/// Apply the canonical Silkboard policy (compatibility API).
+#[must_use]
+pub fn passing_run(response: &Value, release: &Release) -> Option<u64> {
+    passing_run_for(response, release, &Policy::silkboard())
+}
+
+/// Check Silkboard’s registered release workflow.
+#[must_use]
+pub fn valid_workflow(workflow: &Value) -> bool {
+    valid_workflow_for(workflow, &Policy::silkboard())
+}
+
+/// Check Silkboard’s exact tag-triggered successful run.
+#[must_use]
+pub fn valid_run(run: &Value, release: &Release) -> bool {
+    valid_run_for(run, release, &Policy::silkboard())
+}
+
+/// Check Silkboard’s complete successful job set.
+#[must_use]
+pub fn passing_jobs(response: &Value) -> bool {
+    passing_jobs_for(response, &Policy::silkboard())
 }

@@ -2,7 +2,9 @@
 
 Operator bootstrap procedure for issue #5. Automatic polling, eligibility,
 recovery, and retries have a separate [updater procedure](../../docs/automatic-upgrades.md)
-for issue #6. Admission and polling are verified; live upgrade and recovery
+for issue #6. The [in-repository toolkit](../../docs/deployment-toolkit.md)
+adds operator policy, structured reports and state-version compatibility;
+read its upgrade notes before installing new updater code. Admission and polling are verified; live upgrade and recovery
 demonstrations remain pending. Do not install
 the host/guest-agent scripts in the dashboard or build account.
 

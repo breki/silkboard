@@ -1,9 +1,12 @@
 # Reusable deployment and upgrade toolkit: feasibility
 
 Assessment for [issue #14](https://github.com/breki/silkboard/issues/14),
-2026-10-17. This is a proposal based on inspected source, not an implemented
-interface or an approved new milestone. No toolkit has been extracted,
-published, installed, or substituted for the production updater.
+2026-10-17. This assessment records the original design proposal and source
+baseline. The owner subsequently authorized the first
+[in-repository implementation](deployment-toolkit.md), before the remaining
+live reference tests. No toolkit has been extracted, published or substituted
+for the installed production updater. Later adoption/stabilization remains
+subject to the evidence and owner decisions described here.
 
 ## Finding and recommendation
 
@@ -22,13 +25,15 @@ do not make security optional merely to accommodate different applications.
 Provisioning should supply the environment the toolkit requires, using
 application-specific scripts rather than a new general VM manager.
 
-The next implementation step should be considered after issue #6 demonstrates
+The original sequencing recommendation was to start implementation after
+issue #6 demonstrates
 live upgrade, rollback, retry and reboot recovery. First characterize that
 behavior and the current state format, then introduce one operator-owned
 profile without changing Silkboard behavior. A second, separately authorized
 consumer should test whether the interface is useful before extraction.
-This sequencing is a recommendation, not a new roadmap commitment or a
-GitHub blocking relationship.
+The owner has now authorized the initial local implementation. Live proof
+remains required for operational claims and stabilization; the original
+sequencing recommendation is not a GitHub blocking relationship.
 
 ## Evidence and current limits
 
@@ -98,10 +103,10 @@ policy to remain useful sources of design comparisons.
 
 ## Concrete interface sketches
 
-The following sketches are illustrative only. No manifest parser, generic
-`deployctl` command, public SDK, or profile registry is implemented by this
-assessment. They are examples to evaluate during a separately authorized
-prototype, not operator instructions to run now.
+The following are original design sketches, not the implemented schema. The
+[current interface](deployment-toolkit.md) uses validated JSON and registers
+only Silkboard. These broader TOML/profile sketches remain illustrative,
+not operator instructions or a public SDK commitment.
 
 An operator-owned profile could bind identity, evidence and installed adapters:
 
@@ -254,8 +259,8 @@ Rechecked the roadmap's local source baselines:
   marked planning. It supports a comparison of intended boundaries, not a
   claim that Hoard is a second working pull-updater consumer.
 
-No consumer adoption, prototype schedule, shared-project name, public
+The owner authorized the first in-repository implementation after this
+assessment. No second-consumer adoption, shared-project name, public
 publication, additional provider/channel, or extraction has been chosen.
-The recommendation is to finish Silkboard's live proof, then decide whether
-to authorize the narrow internal prototype and a named second consumer.
-This investigation can be accepted independently of those later decisions.
+Finish Silkboard's live proof before treating the reference as operational,
+then evaluate a named second consumer and the remaining stabilization work.

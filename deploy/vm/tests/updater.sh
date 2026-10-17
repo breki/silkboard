@@ -42,3 +42,29 @@ if printf 'protocol=https\nhost=example.com\n\n' |
     bash "$root/deploy/vm/git-credential.sh" get > "$work/rejected"; then exit 1; fi
 [[ ! -s $work/rejected ]]
 echo 'Updater shell boundaries: snapshot modes/identity and secret transport passed.'
+
+# Both Toolkit and compatibility commands route through the same installed lock.
+source "$root/deploy/vm/deployctl.sh"
+deployctl_exec() { printf '%s\n' "$@" > "$fixture/toolkit-args"; }
+for operation in poll status; do
+    deployctl_main "$operation" silkboard
+    [[ $(/bin/cat "$fixture/toolkit-args") == "$operation" ]]
+done
+for operation in inspect retry; do
+    deployctl_main "$operation" silkboard v0.2.0
+    [[ $(/bin/cat "$fixture/toolkit-args") == "$(printf '%s\n%s' "$operation" v0.2.0)" ]]
+done
+if deployctl_main poll other; then exit 1; fi
+if deployctl_main --exec silkboard; then exit 1; fi
+if deployctl_main poll silkboard extra; then exit 1; fi
+if deployctl_main retry silkboard; then exit 1; fi
+if deployctl_main; then exit 1; fi
+# Generic evidence transport still restricts the URL path and hides the token.
+bash "$root/deploy/vm/github-read.sh" example/site 'actions/workflows/57' > "$work/result"
+grep -q '^https://api.github.com/repos/example/site/actions/workflows/57$' "$work/argv"
+for repository in '../site' 'example/..' 'example/site?token=x' 'example/site/extra'; do
+    if bash "$root/deploy/vm/github-read.sh" "$repository" 'actions/workflows/57'; then exit 1; fi
+done
+if bash "$root/deploy/vm/github-read.sh" example/site 'actions/../../user'; then
+    echo 'API helper accepted path traversal' >&2; exit 1
+fi

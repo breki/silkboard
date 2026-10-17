@@ -1,6 +1,11 @@
 //! Root-only installed updater entry point; serialization is owned by its wrapper.
 
-use silkboard_updater::{Backend, linux::Linux, poll, retry};
+use silkboard_updater::{
+    cli::{self, Operation},
+    linux::Linux,
+    outcome::{Error, Stage},
+    profile::Policy,
+};
 use std::process::{Command, Stdio};
 
 fn command(program: &str, args: &[&str]) -> Result<String, String> {
@@ -13,6 +18,7 @@ fn command(program: &str, args: &[&str]) -> Result<String, String> {
         .env("LC_ALL", "C")
         .stdin(Stdio::null());
     if args.contains(&"/usr/local/libexec/silkboard/build") {
+        command.stdout(std::io::stderr());
         let status = command.status().map_err(|e| e.to_string())?;
         return if status.success() {
             Ok(String::new())
@@ -31,41 +37,45 @@ fn command(program: &str, args: &[&str]) -> Result<String, String> {
 }
 
 fn main() {
-    let mut backend = Linux::production(command);
     let arguments: Vec<_> = std::env::args().skip(1).collect();
-    let result = match arguments
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>()
-        .as_slice()
-    {
-        ["poll"] => poll(&mut backend),
-        ["retry", tag] => retry(&mut backend, tag),
-        ["status"] => backend
-            .load()
-            .and_then(|s| {
-                serde_json::to_string_pretty(&s).map_err(|e| e.to_string())
-            })
-            .map(|s| println!("{s}")),
-        ["inspect", tag] => backend
-            .refresh()
-            .and_then(|_| backend.admit(tag))
-            .and_then(|release| {
-                release.map_or_else(
-                    || Err("release is not eligible".into()),
-                    |r| {
-                        println!("Eligible {} ({})", r.tag(), r.commit());
-                        Ok(())
-                    },
-                )
-            }),
-        _ => Err(
-            "usage: silkboard-update poll | status | retry TAG | inspect TAG"
-                .into(),
-        ),
-    };
-    if let Err(error) = result {
-        eprintln!("silkboard updater: {error}");
-        std::process::exit(1);
+    let json = arguments.iter().any(|arg| arg == "--json");
+    let result = (|| {
+        let request = cli::parse(&arguments)?;
+        if request.operation == Operation::Help {
+            return Ok(cli::Report::Help {
+                usage: cli::USAGE.into(),
+            });
+        }
+        let policy = Policy::installed()
+            .map_err(|e| Error::new(Stage::Configuration, e))?;
+        let mut backend = Linux::configured(command, policy.clone())
+            .map_err(|e| Error::new(Stage::Configuration, e))?;
+        cli::execute(
+            &request.operation,
+            &mut backend,
+            &policy,
+            silkboard_updater::storage::SILKBOARD_ADAPTER,
+        )
+    })()
+    .and_then(|report| {
+        if json {
+            cli::machine(&report)
+        } else {
+            cli::human(&report)
+        }
+    });
+    match result {
+        Ok(report) => println!("{report}"),
+        Err(error) => {
+            if json {
+                println!(
+                    "{}",
+                    serde_json::json!({"schema":1,"outcome":"error", "error":error})
+                );
+            } else {
+                eprintln!("silkboard updater: {error}");
+            }
+            std::process::exit(1);
+        }
     }
 }

@@ -24,6 +24,11 @@ for pair in 'guest-build.sh build' 'guest-stage.sh stage' 'github-read.sh github
     install -m 0755 "$directory/$source" "/usr/local/libexec/silkboard/$destination"
 done
 install -m 0755 "$directory/update.sh" /usr/local/sbin/silkboard-update
+install -m 0755 "$directory/deployctl.sh" /usr/local/sbin/deployctl
+# Never overwrite an independently installed operator policy on upgrades.
+if [[ ! -e /etc/silkboard/deployment.json && ! -L /etc/silkboard/deployment.json ]]; then
+    install -m 0644 "$directory/deployment.json" /etc/silkboard/deployment.json
+fi
 install -m 0600 "$credential" /etc/silkboard/updater-token
 if [[ ! -d /var/lib/silkboard-fetch/repo.git ]]; then
     runuser -u silkfetch -- git init --bare /var/lib/silkboard-fetch/repo.git

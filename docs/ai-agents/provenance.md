@@ -187,3 +187,14 @@ Library/CLI profiles, state compatibility work, second-consumer adoption and
 extraction criteria are proposals, not delivered capabilities or approved
 milestones. No upstream code, template baseline, application behavior,
 production configuration or trust policy changes in this investigation.
+
+## Deployment toolkit implementation, 2026-10-17
+
+The owner explicitly authorized the initial implementation after the
+feasibility assessment, superseding its suggested wait before prototype work.
+The existing Silkboard updater supplies the engine, Linux adapter, shell
+credential/lock handoffs and default trust policy; no upstream implementation
+is newly imported. The [toolkit procedure](../deployment-toolkit.md) records
+new typed reports, validated policy, legacy/schema-1 state compatibility and
+installation boundaries. Production code is not replaced by this change;
+second-consumer adoption and repository extraction are not authorized.

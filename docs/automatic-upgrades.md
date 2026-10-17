@@ -182,4 +182,7 @@ installed release does not demonstrate build or activation of a newer release.
 
 The [deployment toolkit feasibility assessment](deployment-toolkit-feasibility.md)
 examines reuse of these boundaries. Its interfaces and extraction sequence
-are proposals; the current updater and operator procedure remain unchanged.
+are broader proposals. An [initial in-repository toolkit](deployment-toolkit.md)
+now implements the engine/policy/CLI boundary; it has not replaced the
+installed updater. Its state-format and privileged-installation compatibility
+requirements apply before adopting that version.
