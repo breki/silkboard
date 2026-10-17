@@ -1,7 +1,7 @@
 # Automatic upgrades and recovery
 
-Issue [#6](https://github.com/breki/silkboard/issues/6). Implementation is
-under development. The production guest still runs the initial `v0.1.1`;
+Issue [#6](https://github.com/breki/silkboard/issues/6). The updater is installed
+and polling in production. The guest still runs the initial `v0.1.1`;
 automatic upgrade, rollback, retry, and updater reboot evidence are pending.
 
 ## Release admission
@@ -155,6 +155,25 @@ Local behavioral tests cover numeric selection, pending check reconsideration,
 workflow/run/job binding, failed build/start/health, revoked eligibility,
 manual retry, interrupted recovery, private persistent state, actual symlink
 switching, artifact snapshots, and secret transport without a real token.
-These tests do not establish a working production updater. Live automatic
-upgrade, rollback/retry, account separation, and guest reboot demonstrations
-remain required before issue #6 or milestone 1 is complete.
+These tests alone do not establish a working production delivery pipeline.
+
+On 2026-10-17, the production guest verified signed source commit
+`49756375c166026e6cd6e40cf3bdac5cfc2a18f4` and built the ARM64 updater as
+`silkbuild`. The installed binary has SHA256
+`7cd60866d5a3bceaa37b98b5a8e07fbd7274fc7db0b4642875dd309bfb41b07c`.
+The root-owned token is mode 600; both the application and builder were
+confirmed unable to read it. Required private Contents/read and Actions/read
+requests succeeded, and temporary credential copies were removed.
+
+The installed signer and workflow identity admitted signed `v0.1.1` at
+`c68a53902d8e9552abee2d3488645800f856986e`, using release-suite run
+`39003125429`, attempt 1. The enabled ten-minute timer completed its scheduled
+11:50 UTC poll successfully, reporting no newer eligible release. The
+application remained healthy with that exact identity. The temporary private
+credential form was removed; Tailscale Serve exposes only the application
+through private port 443. Guest installation evidence is retained in
+`/var/log/silkboard-updater-install-4975637.log` and the service journal.
+
+Live automatic upgrade, rollback/retry, and updater reboot demonstrations
+remain required before issue #6 or milestone 1 is complete. Polling an already
+installed release does not demonstrate build or activation of a newer release.

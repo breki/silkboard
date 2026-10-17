@@ -11,7 +11,8 @@ checks, and recover the working release on failure or interrupted activation.
 Failed tags remain blocked until manual retry; newer tags remain eligible.
 
 The owner selected a fine-grained GitHub token restricted to this repository
-with Contents/read and Actions/read on 2026-10-17. Installation is pending.
+with Contents/read and Actions/read on 2026-10-17. It is installed root-owned
+mode 600; the required private API reads succeeded.
 The token belongs only to the downloader, never the builder or application.
 
 Implement the policy and orchestration in a standalone Rust workspace crate.
@@ -38,12 +39,17 @@ recover it before considering another upgrade. Keep the previous release.
   Hoard release command and proposed pull updater; proposal is not operational.
 - GitHub read-back confirms repository ID `1417054470`, workflow ID
   `387356305`, and the three successful jobs in the initial release suite.
-- Credential creation/installation is awaiting the owner's Ready response.
+- Credential intake through a temporary private phone-accessible form succeeded;
+  the form and temporary credential copies were removed.
 - Local implementation complete: full read-only validation, ShellCheck,
   ARM64 lint, and actual Git/SSH signature tests pass. Full Rust coverage is
   96.4%; every production module exceeds the per-file threshold.
 - Sequential independent artisan, red-team, and fresh-reader reviews found no
   actionable findings. Frozen snapshots are retained locally.
-- Read-only guest checks confirm the existing `v0.1.1` service and Tailscale
-  remain active. No updater installation, enablement, or application upgrade
-  has occurred. Production acceptance and release publication remain pending.
+- The reviewed updater at `4975637` is installed, and its ten-minute timer is
+  enabled. Exact signed `v0.1.1` admission and the scheduled 11:50 UTC poll
+  passed; application and builder cannot read the token. See
+  [production evidence](../automatic-upgrades.md#verification-status).
+- The application remains healthy on `v0.1.1`. Automatic upgrade, rollback,
+  retry, and updater reboot acceptance remain pending. PR #11 is a draft;
+  merge and a new release publication require owner decisions.

@@ -99,7 +99,8 @@ See [local development](../development.md) for application commands and
 The [VM bootstrap](../../deploy/vm/README.md) provides operator scripts for
 the verified initial production deployment, separate from xtask and the app.
 The standalone [updater](../automatic-upgrades.md) has local behavioral checks;
-its privileged installation and live recovery evidence are pending. It is not
+it is installed with verified admission and scheduled polling. Live upgrade
+and recovery evidence remain pending. It is not
 an xtask deployment command.
 
 ## Pending interfaces and deployment
@@ -110,7 +111,7 @@ an xtask deployment command.
 | Records | `cargo xtask records-check`, structured records tooling |
 | Changelog | `cargo xtask changelog add` |
 | Template maintenance | sync-candidates, feedback-add, backfeed helpers |
-| Production delivery | Install and verify automatic updater, upgrades and recovery |
+| Production delivery | Verify live automatic upgrades and recovery |
 
 Version and changelog bookkeeping remain manual under the release workflow.
 GitHub release workflow registration and successful run evidence must be

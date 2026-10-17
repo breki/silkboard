@@ -113,7 +113,8 @@ The owner selected the existing Git SSH signing key as the trusted release-tag
 signer through the interactive question UI. The roadmap records its public
 fingerprint and the separation of private signing material from CI and the
 dashboard. This is an owner decision, not an upstream template sync.
-Installation of the public trust configuration in production remains pending.
+The public trust configuration is installed; production admission of signed
+`v0.1.1` is recorded in [updater evidence](../automatic-upgrades.md#verification-status).
 
 The owner also selected `breki/silkboard/.github/workflows/release.yml` as the
 required release suite, triggered by the release tag and checking its exact
@@ -165,6 +166,9 @@ document remains a proposal, not an implemented source of deployment evidence.
 Silkboard adds its own Rust state machine, exact workflow/run/job admission,
 separate credential-bearing downloader, unprivileged build, root-owned staging,
 and persistent interrupted-upgrade recovery. The owner selected a restricted
-fine-grained token through the question UI. Production verification remains
-pending; see [the updater procedure](../automatic-upgrades.md). This does not
+fine-grained token through the question UI. Its private phone-accessible
+intake, protected installation, required API reads, initial-release admission,
+and scheduled polling were verified on the production guest. Automatic
+upgrade and recovery demonstrations remain pending; see
+[the updater procedure](../automatic-upgrades.md). This does not
 advance the application or guidance template baseline.

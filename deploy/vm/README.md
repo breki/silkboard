@@ -2,7 +2,8 @@
 
 Operator bootstrap procedure for issue #5. Automatic polling, eligibility,
 recovery, and retries have a separate [updater procedure](../../docs/automatic-upgrades.md)
-for issue #6; its production verification is still pending. Do not install
+for issue #6. Admission and polling are verified; live upgrade and recovery
+demonstrations remain pending. Do not install
 the host/guest-agent scripts in the dashboard or build account.
 
 ## Boundaries and prerequisites
@@ -143,5 +144,5 @@ Reboot only the guest, verify its boot ID changes, and repeat strict SSH,
 HTTPS, identity and health checks. Verify libvirt autostart, guest application
 and tailscaled enabled state. A host reboot is outside this test.
 
-Keep the initial release and logs until the updater/recovery workflow exists.
+Keep the initial release and logs while upgrade/recovery verification is pending.
 Do not delete the trial as an implied provisioning step; cleanup is issue #2.

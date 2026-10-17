@@ -85,7 +85,7 @@ the dedicated guest, initial release, private access, and guest reboot recovery.
 ### Agreed deployment decisions
 
 Selected with the owner on 2026-10-16. Initial provisioning is verified;
-the automatic updater remains pending.
+the updater is installed and polling; live upgrade/recovery proof is pending.
 
 - Target malina with a dedicated QEMU/KVM guest managed by libvirt, running
   minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
@@ -119,17 +119,17 @@ the automatic updater remains pending.
   tag until manual retry, while continuing to consider newer eligible tags.
 - Use a fine-grained GitHub token restricted to `breki/silkboard`, with
   Contents/read and Actions/read, for the separate downloader. Selected on
-  2026-10-17; credential installation and live updater verification are pending.
+  2026-10-17; credential installation and required private API reads are verified.
 
 ### Decisions and evidence still needed
 
-- Install the agreed public-key trust configuration and workflow identity
-  in the production updater. Registration evidence is in
-  [release preparation](releases.md).
-- Automatic release polling, eligibility checks, upgrade activation, and
-  demonstrated rollback and retry behavior. The initial production deployment
-  is operational; the [updater implementation](automatic-upgrades.md) is under
-  development and the automatic delivery pipeline is not verified yet.
+- The installed public-key trust configuration and workflow identity admitted
+  the existing signed release, and scheduled polling succeeded. See
+  [updater evidence](automatic-upgrades.md#verification-status).
+- Demonstrate automatic upgrade activation, pending-check reconsideration,
+  rollback, manual retry, and updater reboot recovery on the production guest.
+  The initial deployment and polling are operational; the complete automatic
+  delivery pipeline is not verified yet.
 
 ## Later milestones
 
