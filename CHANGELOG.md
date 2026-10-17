@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Cache pinned CI gate tools and npm downloads while retaining full validation
+  and separate PR cache keys.
+
 - Remove the completed resource-trial VM and its registration, retaining
   measurements and shared production virtualization infrastructure.
 

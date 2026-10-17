@@ -208,3 +208,16 @@ The owner removed the identified Tailscale device; host tailnet readback
 confirmed its absence. The sibling homelab trial runbook supplies the original
 resource inventory and is updated with the removal. No upstream source,
 template baseline, production release or shared resource policy changes.
+
+## CI caching, 2026-10-17
+
+The owner authorized caching pinned CI tools and npm downloads after observing
+tool installation dominate run 39044784280. GitHub's cache action and
+setup-node documentation supply restore/save and npm cache semantics. The
+new cache action is pinned to official v4.3.0 commit
+`0057852bfaa89a56745cba8c7296529d2fc39830` (2025-09-24), without changing
+existing tool or dependency versions. Exact version/workflow keys, separate
+PR namespaces and pre-application cache saves are Silkboard choices. This
+supersedes the earlier fresh-only CI tool installation policy; release trust
+and validation gates remain required. No application/template baseline or
+production installation changes.
