@@ -1,7 +1,8 @@
 # Silkboard Roadmap
 
 Status: Milestone 1 in progress; the minimal application is implemented.
-Release gates are configured; production deployment remains pending.
+Release gates and initial production deployment are verified; automatic
+upgrades and recovery remain pending.
 Later milestones are open.
 
 This roadmap replaces the original milestone list in the architecture proposal.
@@ -78,12 +79,13 @@ not inspect live services on the Pi.
 
 These deployments document host services on malina, not a reusable VM deployment
 setup. The subsequent [VM resource trial](deployment-vm-trial.md) verified a
-representative guest; production Silkboard provisioning and networking still
-need to be established.
+representative guest. [Production provisioning](production-vm.md) now verifies
+the dedicated guest, initial release, private access, and guest reboot recovery.
 
 ### Agreed deployment decisions
 
-Selected with the owner on 2026-10-16; implementation remains pending.
+Selected with the owner on 2026-10-16. Initial provisioning is verified;
+the automatic updater remains pending.
 
 - Target malina with a dedicated QEMU/KVM guest managed by libvirt, running
   minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
@@ -108,7 +110,8 @@ Selected with the owner on 2026-10-16; implementation remains pending.
   `breki/silkboard/.github/workflows/release.yml`, triggered by the release
   tag, to pass all required gates for that tag's exact commit. Selected on
   2026-10-17; GitHub registered workflow ID `387356305`, read back after
-  PR #8 merged. A successful tag-triggered run remains required.
+  PR #8 merged. Signed `v0.1.1` passed its exact tag-triggered suite; see
+  [release evidence](releases.md#verified-initial-release).
 - Poll every ten minutes, including reconsidering tags awaiting checks.
   Select the highest newer stable `vMAJOR.MINOR.PATCH` version. Exclude
   prereleases; downgrades require explicit operator action.
@@ -120,11 +123,9 @@ Selected with the owner on 2026-10-16; implementation remains pending.
 - Install the agreed public-key trust configuration and workflow identity
   in the production updater. Registration evidence is in
   [release preparation](releases.md).
-- Production Silkboard provisioning and measurements. The representative
-  rustbase trial passed guest boot, in-VM builds, private access, ballooning,
-  and guest reboot recovery; it does not establish the delivery pipeline.
-- Production provisioning, release activation, and demonstrated rollback and
-  retry behavior. The deployment pipeline is not operational yet.
+- Automatic release polling, eligibility checks, upgrade activation, and
+  demonstrated rollback and retry behavior. The initial production deployment
+  is operational; the automatic delivery pipeline is not implemented yet.
 
 ## Later milestones
 

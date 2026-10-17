@@ -19,8 +19,9 @@ You can add tasks remotely; project agents fetch them and publish progress.
 
 ## Status
 
-The minimal Rust/Axum and Svelte/Vite status application is implemented.
-Production deployment, automatic upgrades, and the sync client remain pending.
+The minimal Rust/Axum and Svelte/Vite status application runs in its dedicated
+production VM with private HTTPS. See [deployment evidence](docs/production-vm.md).
+Automatic upgrades and the sync client remain pending.
 See [local development](docs/development.md) for build, run, and check commands.
 
 Read [the architecture](docs/architecture.md) for requirements, security boundaries,
@@ -33,8 +34,9 @@ API design, and Bombyx lifecycle integration.
    VM, and automatically upgraded from verified, tagged GitHub revisions.
 
 See [the roadmap](docs/roadmap.md) for completion criteria, existing deployment
-patterns, and open decisions. The status application is available locally;
-the deployment pipeline remains pending. Later milestones remain to be defined.
+patterns, and open decisions. The status application is deployed privately;
+automatic upgrade and recovery work remains pending. Later milestones remain
+to be defined.
 
 ## Agent guidance
 

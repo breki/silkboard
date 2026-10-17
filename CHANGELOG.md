@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add repeatable production VM bootstrap, isolated in-guest release builds,
+  a sandboxed application service, and deployment verification guidance.
+
 ## 0.1.1 - 2026-10-17
 
 - Preserve signed tag objects during GitHub release checkouts by selecting

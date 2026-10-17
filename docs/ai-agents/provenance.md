@@ -138,3 +138,18 @@ frontend policy includes license/source checks, coverage and an isolated
 Chromium suite. The trusted SSH key and release workflow identity follow the
 owner's interactive decisions above. No release, merge, or deployment is
 implied by implementing these commands.
+
+## Production VM bootstrap, 2026-10-17
+
+Used the completed homelab trial runbook at revision
+`2677b374891e0a26004fb233081b9b528ccbef81` as the source for Debian image,
+libvirt/passt, cloud-init, guest-agent and resource configuration. The new
+bootstrap uses a separate production domain/disk and fixed RAM without a
+balloon device. It preserves the trial and existing host services.
+
+Reviewed MuTrack's tag updater, Phren's pre-build signature verification,
+and Hoard's release guard and proposed pull updater through the
+[roadmap sources](../roadmap.md#existing-patterns-checked). The new scripts
+provide initial provisioning only; they do not claim to implement Hoard's
+proposal or Silkboard's automatic updater. This does not advance either
+application or guidance template baseline.
