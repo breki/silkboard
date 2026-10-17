@@ -106,3 +106,33 @@ and cooldown-compatible pins. All resolved Cargo and npm versions were
 checked against registry publication dates on 2026-10-17; none required a
 14-day cooldown exception. This does not advance the guidance baseline or
 import rustbase deployment, CI, coverage, duplication, or release automation.
+
+## Release signer selection, 2026-10-17
+
+The owner selected the existing Git SSH signing key as the trusted release-tag
+signer through the interactive question UI. The roadmap records its public
+fingerprint and the separation of private signing material from CI and the
+dashboard. This is an owner decision, not an upstream template sync. Workflow
+identity and installation of the public trust configuration remain pending.
+
+The owner also selected `breki/silkboard/.github/workflows/release.yml` as the
+required release suite, triggered by the release tag and checking its exact
+commit. The registered numeric workflow ID still needs read-back evidence.
+
+## CI and release gate adaptation, 2026-10-17
+
+Selectively adapted rustbase's validation ordering, external tool invocations,
+coverage/duplication thresholds, dependency registry date queries, cargo-deny
+policy, and reusable CI/release structure from
+`6528907cea4e1e2e369fe260ccd0432b29c557b3`. Rewrote the orchestration as a
+small tested xtask library while retaining existing hook tests and Rustdoc
+flags. The [upstream notice](../../THIRD_PARTY_NOTICES.md) also covers this
+adaptation. This does not advance the guidance baseline.
+
+Intentional differences: unavailable audits/registries/tools always fail;
+all locked versions are age-checked without a bypass; Linux CI retains Unix
+hook tests and cross-lints ARM64; coverage includes xtask business logic;
+frontend policy includes license/source checks, coverage and an isolated
+Chromium suite. The trusted SSH key and release workflow identity follow the
+owner's interactive decisions above. No release, merge, or deployment is
+implied by implementing these commands.

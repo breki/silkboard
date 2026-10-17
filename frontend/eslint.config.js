@@ -38,5 +38,5 @@ export default [
       parserOptions: { parser: tsParser },
     },
   },
-  { ignores: ["dist/"] },
+  { ignores: ["dist/", "coverage/", "test-results/", "playwright-report/"] },
 ];

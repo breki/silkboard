@@ -1,7 +1,8 @@
 # Quality and verification
 
-These policies apply from the first application code. Their automated gates
-are pending; see [tooling status](tooling.md).
+These policies apply from the first application code. The shared validator
+and CI/release workflows enforce the gates; see
+[tooling status](tooling.md) for prerequisites and pending interfaces.
 
 ## Code and tests
 

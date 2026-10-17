@@ -12,3 +12,6 @@ workspace = true
 [[test]]
 name = "stop_check"
 path = "../.codex/hooks/tests/stop_check.rs"
+
+[dependencies]
+serde_json = "1"

@@ -42,4 +42,6 @@ Start with [AGENTS.md](AGENTS.md). Codex and Claude Code share the same
 [workflow canon](docs/ai-agents/catalog.md); their wrappers contain only
 routing instructions. The Cargo workspace provides the application, repository
 checks, and hook tests. The frontend has local build and checks; full release
-gates remain pending. See [tooling status](docs/ai-agents/tooling.md) for available commands.
+gates are configured. See [tooling status](docs/ai-agents/tooling.md) for
+available commands and [release preparation](docs/releases.md) for evidence
+requirements.

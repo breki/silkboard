@@ -66,3 +66,29 @@ test.each(["network", "http", "invalid"])(
     expect(screen.queryByText("Healthy")).toBeNull();
   },
 );
+
+test("a stalled request times out and offers recovery", async () => {
+  vi.useFakeTimers();
+  try {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url, { signal }) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener("abort", () =>
+              reject(new Error("aborted")),
+            );
+          }),
+      ),
+    );
+    render(App);
+    expect(screen.getByRole("status")).toBeTruthy();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Reload to try again",
+    );
+    expect(screen.queryByText("Healthy")).toBeNull();
+  } finally {
+    vi.useRealTimers();
+  }
+});

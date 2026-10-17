@@ -1,7 +1,8 @@
 # Silkboard Roadmap
 
 Status: Milestone 1 in progress; the minimal application is implemented.
-Deployment and release gates remain pending. Later milestones are open.
+Release gates are configured; production deployment remains pending.
+Later milestones are open.
 
 This roadmap replaces the original milestone list in the architecture proposal.
 Milestones follow the owner's priorities; later product scope is not yet set.
@@ -99,6 +100,14 @@ Selected with the owner on 2026-10-16; implementation remains pending.
   subject to name availability.
 - Require a trusted signed release tag and a passing full release suite for
   the tagged revision, including the agreed CI and release quality gates.
+- Trust the owner's existing Git SSH signing key for release tags: ED25519
+  fingerprint `SHA256:D+XaRkaUyW9uBQ8dMDp+XmZV6QH255p9g58auXRQwf8`.
+  Selected on 2026-10-17; private signing material stays outside CI and the
+  dashboard.
+- Require the release-suite workflow at
+  `breki/silkboard/.github/workflows/release.yml`, triggered by the release
+  tag, to pass all required gates for that tag's exact commit. Selected on
+  2026-10-17; record the registered GitHub workflow ID when available.
 - Poll every ten minutes, including reconsidering tags awaiting checks.
   Select the highest newer stable `vMAJOR.MINOR.PATCH` version. Exclude
   prereleases; downgrades require explicit operator action.
@@ -107,8 +116,8 @@ Selected with the owner on 2026-10-16; implementation remains pending.
 
 ### Decisions and evidence still needed
 
-- Trusted signer/key configuration and the exact GitHub workflow identity
-  used to establish a successful full release suite.
+- Install the agreed public-key trust configuration and record the registered
+  GitHub ID of the agreed release workflow once it exists.
 - Production Silkboard provisioning and measurements. The representative
   rustbase trial passed guest boot, in-VM builds, private access, ballooning,
   and guest reboot recovery; it does not establish the delivery pipeline.
