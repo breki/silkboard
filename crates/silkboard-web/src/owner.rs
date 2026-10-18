@@ -1,5 +1,6 @@
 //! Single-owner browser authentication, independent of publisher credentials.
 
+mod feed;
 mod http;
 mod storage;
 
@@ -27,6 +28,8 @@ pub enum AuthError {
     Limited,
     /// Storage, password-hash or entropy operation failed.
     Unavailable,
+    /// An authenticated read addressed a nonexistent project or session.
+    NotFound,
 }
 
 impl std::fmt::Display for AuthError {
@@ -37,6 +40,7 @@ impl std::fmt::Display for AuthError {
             Self::Forbidden => "owner request rejected",
             Self::Limited => "owner login temporarily limited",
             Self::Unavailable => "owner authentication unavailable",
+            Self::NotFound => "progress resource not found",
         })
     }
 }
@@ -117,6 +121,25 @@ impl OwnerAuth {
         }
         attempts.count += 1;
         Ok(())
+    }
+
+    async fn query<T: Send + 'static>(
+        &self,
+        query: impl FnOnce(&ProgressStore) -> Result<T, AuthError> + Send + 'static,
+    ) -> Result<T, AuthError> {
+        let permit = self
+            .0
+            .store_slots
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| AuthError::Unavailable)?;
+        let store = self.0.store.clone();
+        tokio::task::spawn_blocking(move || {
+            let _permit = permit;
+            query(&store)
+        })
+        .await
+        .map_err(|_| AuthError::Unavailable)?
     }
 }
 

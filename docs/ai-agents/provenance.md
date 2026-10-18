@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Owner progress feed, 2026-10-18
+
+Issue #38 authorizes the mobile owner feed. The existing ingestion identity,
+SQLite store and protected owner router supply its boundaries. New bounded
+queries and Svelte components implement the [feed contract](../owner-feed.md)
+without new dependencies, schema changes or additional agent authority.
+The existing Playwright suite now uses a disposable OpenSSL HTTPS proxy and
+the real backend to verify secure cookies and phone behavior. Production
+configuration, credentials and rollout remain #39 work; broad architecture
+alignment remains separate from this implementation.
+
 ## Owner authentication, 2026-10-18
 
 Issue #35 authorizes the single-owner authentication foundation for milestone

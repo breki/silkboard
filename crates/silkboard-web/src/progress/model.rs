@@ -60,7 +60,7 @@ impl ProgressEvent {
     }
 }
 
-pub(super) fn project(value: &str) -> Result<(), ProgressError> {
+pub(crate) fn project(value: &str) -> Result<(), ProgressError> {
     if value.is_empty()
         || value.len() > 64
         || !value

@@ -38,7 +38,9 @@ The server handles Ctrl+C and, on Unix, SIGTERM for graceful shutdown.
 `SILKBOARD_DATABASE` enables the publish-only API; see the ingestion guide
 for private storage and local credential provisioning. It is unset by default.
 `SILKBOARD_OWNER_ORIGIN` additionally enables the
-[owner authentication API](owner-login.md); browser UI is separate work.
+[owner authentication API](owner-login.md) and [progress feed](owner-feed.md).
+Use an HTTPS proxy for owner login; the HTTP Vite server alone cannot supply
+the secure owner cookie.
 
 For frontend hot reload, keep the backend running and in another terminal:
 
@@ -108,5 +110,7 @@ excluded from coverage; integration tests exercise their observable behavior.
 `cargo xtask frontend-coverage` enforces frontend coverage and
 `cargo xtask browser-test` runs Chromium on the built assets. Install Chromium
 using the tooling prerequisites, and build the frontend before a standalone
-browser run. The browser server uses dedicated loopback port 38124 and refuses
-to reuse an existing server.
+browser run. The browser fixture requires OpenSSL and dedicated loopback
+ports 38124 (HTTPS proxy) and 38125 (Rust backend), refusing existing servers.
+It uses private temporary storage and test credentials; see the
+[feed verification](owner-feed.md#verification).

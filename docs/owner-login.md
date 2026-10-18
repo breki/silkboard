@@ -2,9 +2,9 @@
 
 The backend for [#35](https://github.com/breki/silkboard/issues/35) provides
 single-owner password login, durable browser sessions and a protected owner
-API namespace. The login form and project feed are part of
-[#38](https://github.com/breki/silkboard/issues/38); no feed-reading endpoint
-exists yet. Agents retain separate publish-only credentials. This does not
+API namespace. The [owner feed](owner-feed.md) provides the login form and
+protected project/session/history reads for #38.
+Agents retain separate publish-only credentials. This does not
 install production credentials or enable a production service.
 
 ## Operator setup and reset
@@ -94,7 +94,7 @@ no secrets or SQL are included. Restarting resets only the in-memory budget,
 not session expiry or revocation.
 
 Every request under `/api/owner` passes the authentication guard, including
-unknown routes. Future feed/session reads must be registered inside that
+unknown routes. Feed/session reads are registered inside that
 protected router. Publisher bearer tokens are ignored there; supplying one
 as an owner cookie also fails. Conversely, an owner cookie cannot publish
 progress without a separate publisher bearer token. Health/status routes

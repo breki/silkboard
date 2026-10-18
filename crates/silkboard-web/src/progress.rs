@@ -5,6 +5,7 @@ mod model;
 mod operator;
 
 pub(crate) use http::routes;
+pub(crate) use model::project as validate_project;
 pub use model::{Acknowledgement, ProgressEvent};
 pub use operator::publisher_command;
 

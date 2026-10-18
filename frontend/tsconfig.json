@@ -4,6 +4,6 @@
     "noEmit": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*", "e2e/**/*", "playwright.config.ts"],
+  "include": ["src/**/*", "e2e/**/*"],
   "exclude": ["node_modules", "dist"]
 }
