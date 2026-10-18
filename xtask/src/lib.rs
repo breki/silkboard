@@ -3,6 +3,7 @@
 use std::path::Path;
 
 pub mod ci;
+mod ci_cache;
 mod dependencies;
 mod release;
 
@@ -16,7 +17,8 @@ pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
 [--target TARGET]|doc|test [FILTER]|validate [--check]|coverage|dupes|deny|\
 audit|dep-age-check|frontend|frontend-check|frontend-fmt [--check]|\
 frontend-test|frontend-coverage|frontend-dupes|browser-test|\
-release-check TAG|canon-check|ci-mode EVENT BASE HEAD>";
+release-check TAG|canon-check|ci-mode EVENT BASE HEAD|ci-cache-plan|\
+ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY>";
 
 /// Run a supported repository task.
 ///
@@ -37,6 +39,10 @@ pub fn dispatch(
         ["dep-age-check"] => dependencies::check(root, runner),
         ["release-check", tag] => release::check(root, runner, tag),
         ["canon-check"] => canon_check(root),
+        ["ci-cache-plan"] => ci_cache::print_plan(root, runner),
+        ["ci-cache-prune", temp, expected_key] => {
+            ci_cache::prune_checked(root, runner, Path::new(temp), expected_key)
+        }
         ["ci-mode", event, base, head] => {
             println!("{}", ci::mode(root, runner, event, base, head).as_str());
             Ok(())
@@ -94,25 +100,7 @@ pub fn dispatch(
             cargo(root, runner, &["audit", "--deny", "warnings"])?;
             npm(root, runner, &["audit", "--audit-level=low"])
         }
-        ["coverage"] => {
-            cargo(root, runner, &["llvm-cov", "clean", "--workspace"])?;
-            cargo(
-                root,
-                runner,
-                &[
-                    "llvm-cov",
-                    "--locked",
-                    "--workspace",
-                    "--ignore-filename-regex",
-                    r"src[/\\]main\.rs$",
-                    "--fail-under-lines",
-                    "90",
-                    "--fail-under-file-lines",
-                    "85",
-                    "--summary-only",
-                ],
-            )
-        }
+        ["coverage"] => coverage(root, runner),
         ["dupes"] => {
             for directory in
                 ["crates/silkboard-web", "crates/silkboard-updater", "xtask"]
@@ -152,6 +140,26 @@ fn report(output: &str) {
     if !output.trim().is_empty() {
         println!("{output}");
     }
+}
+
+fn coverage(root: &Path, runner: &mut Runner<'_>) -> Result<(), String> {
+    cargo(root, runner, &["llvm-cov", "clean", "--workspace"])?;
+    cargo(
+        root,
+        runner,
+        &[
+            "llvm-cov",
+            "--locked",
+            "--workspace",
+            "--ignore-filename-regex",
+            r"src[/\\]main\.rs$",
+            "--fail-under-lines",
+            "90",
+            "--fail-under-file-lines",
+            "85",
+            "--summary-only",
+        ],
+    )
 }
 
 fn cargo(
@@ -299,6 +307,8 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "release-check"
                     | "canon-check"
                     | "ci-mode"
+                    | "ci-cache-plan"
+                    | "ci-cache-prune"
                     | "--help"
                     | "-h"
             ) {
