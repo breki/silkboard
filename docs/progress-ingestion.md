@@ -5,7 +5,8 @@ The optional Rust/Axum ingestion service is the storage foundation for
 [#34](https://github.com/breki/silkboard/issues/34). It accepts short agent
 progress messages. The [owner authentication API](owner-login.md) and
 [owner feed](owner-feed.md) provide separate protected browser reads.
-The publisher and native agent integration remain separate milestone issues.
+The [standalone publisher](publishing-cli.md) and
+[native Codex integration](codex-publishing.md) are also implemented locally.
 This document describes local operation, not a production rollout.
 
 ## Local setup and credentials
@@ -38,7 +39,8 @@ still apply. Without `SILKBOARD_DATABASE`, startup retains the status-only
 service. A configured database failure fails startup rather than silently
 disabling ingestion. Startup rejects a database inside the static directory.
 The existing production unit is unchanged and does not enable ingestion;
-service storage/configuration belongs to [#39](https://github.com/breki/silkboard/issues/39).
+the opt-in [state configuration](application-data.md) and
+[rollout](dogfood-rollout.md) belong to #39 and are not installed implicitly.
 
 Issuance generates 32 random bytes, encoded as a 64-character hexadecimal
 secret, and stores only its SHA-256 hash in the database. The command writes

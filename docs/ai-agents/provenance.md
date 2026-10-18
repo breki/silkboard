@@ -1,5 +1,18 @@
 # Canon provenance
 
+## Initial dogfood rollout preparation, 2026-10-18
+
+Issue #39 requires aligning the original architecture proposal with the agreed
+milestone-2 publish-only model. README, architecture and agent guidance now
+describe implemented foundations separately from production v0.2.2. The
+[rollout](../dogfood-rollout.md) and [data guide](../application-data.md) record
+opt-in persistent state, review/publication/installation boundaries and pending
+live evidence. SQLite VACUUM INTO and systemd StateDirectory documentation
+supply the snapshot and sandbox interfaces. Restore revokes copied publisher
+tokens, browser sessions and pending links rather than reviving stale authority.
+No new schema, dependency, backup schedule/destination, production credential
+or privileged updater behavior is adopted by this preparation.
+
 ## Owner publisher credential management, 2026-10-18
 
 Issue #44 authorizes phone issuance, safe metadata and revocation under the

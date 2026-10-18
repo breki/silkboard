@@ -11,7 +11,9 @@ Bombyx-managed VMs. Milestone 1 is the complete deployment pipeline and a
 minimal status page, based on rustbase's Rust/Axum and Svelte/Vite stack.
 It must run in a dedicated Raspberry Pi VM and automatically upgrade from
 eligible verified, tagged GitHub revisions, with health checks and recovery.
-Later milestones have not been agreed.
+Milestone 2 is agreed: publish-only agent progress dogfooding, Codex first.
+GitHub remains the task tracker. Agents never fetch dashboard tasks/content
+or receive execution permission from Silkboard. Scope after milestone 2 is unset.
 
 ## Working agreement
 
@@ -53,8 +55,12 @@ services as evidence of a working VM deployment.
 
 ## Current tooling
 
-The Cargo workspace contains the minimal status application, repository
-tooling, full validation, and hook tests. CI/release workflows are configured.
+The Cargo workspace contains the status/progress application, standalone
+publisher, updater, repository tooling, full validation and hook tests.
+Owner setup/feed/token management and Codex reporting are locally verified;
+production activation, persistent data and live acceptance remain #39. Follow
+the [rollout procedure](docs/dogfood-rollout.md), and keep production claims
+separate from local snapshot/process tests. CI/release workflows are configured.
 The minimal application runs in its dedicated production VM with private
 HTTPS; automatic upgrades and live rollback/retry are verified. Updater reboot
 recovery remains pending. Workflow wrappers are instructions, not executable

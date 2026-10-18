@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Prepare production agent-progress dogfooding with opt-in private service
+  storage, consistent SQLite snapshots and safe isolated restore. Align current
+  architecture and agent guidance with publish-only observation.
+
 - Add owner-only publisher credential issuance and revocation with safe metadata
   pages, one-time phone copy/download and transaction-time session checks.
 

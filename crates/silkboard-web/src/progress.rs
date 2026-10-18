@@ -3,12 +3,14 @@
 mod http;
 mod model;
 mod operator;
+mod snapshot;
 
 pub(crate) use http::routes;
 pub(crate) use model::identity as validate_identity;
 pub(crate) use model::project as validate_project;
 pub use model::{Acknowledgement, ProgressEvent};
 pub use operator::publisher_command;
+pub use snapshot::database_command;
 
 use std::{
     path::Path,

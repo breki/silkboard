@@ -126,7 +126,10 @@ migrate closed; newer schemas are refused. Binaries supporting only older
 schemas cannot open schema 3; restoring an older application
 that uses this database needs a compatible backup or a reviewed migration
 procedure. Do not automatically downgrade or delete authentication data.
-Backup/restore and production upgrade verification remain #39 work.
+The [data guide](application-data.md) provides private backup/new-path restore;
+restores retain passwords/history but revoke restored publisher credentials,
+browser sessions and pending setup links. Production upgrade/restore evidence
+remains #39 work.
 
 Run `cargo test -p silkboard-web` for authentication, origin/CSRF rejection,
 publisher isolation, reset/logout/expiry, restarts, malformed hash handling,
