@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add the owner mobile progress feed with login/logout, distinct agent
+  sessions, paginated history, visible-page refresh and safe text display.
+
 - Add optional single-owner password authentication with durable expiring
   browser sessions, logout, operator password reset and protected owner routes.
 

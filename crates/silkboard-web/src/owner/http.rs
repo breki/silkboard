@@ -23,6 +23,7 @@ struct Login {
 pub(crate) fn routes(auth: OwnerAuth) -> Router {
     // Future feed/session reads MUST be registered inside this protected router.
     let protected = Router::new()
+        .merge(super::feed::routes())
         .route("/session", get(session))
         .route("/logout", post(logout))
         .fallback(|| async { StatusCode::NOT_FOUND })
@@ -181,6 +182,7 @@ impl IntoResponse for AuthError {
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::Limited => StatusCode::TOO_MANY_REQUESTS,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
+            Self::NotFound => StatusCode::NOT_FOUND,
         };
         let mut response =
             (status, Json(serde_json::json!({"error":self.to_string()})))

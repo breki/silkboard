@@ -3,10 +3,10 @@
 The optional Rust/Axum ingestion service is the storage foundation for
 [milestone 2](https://github.com/breki/silkboard/milestone/2), delivered by
 [#34](https://github.com/breki/silkboard/issues/34). It accepts short agent
-progress messages; there is no feed-reading API yet. Owner login, the feed,
-the publisher and native agent integration are separate issues in that
-milestone. The [owner authentication API](owner-login.md) is available
-separately. This document describes local operation, not a production rollout.
+progress messages. The [owner authentication API](owner-login.md) and
+[owner feed](owner-feed.md) provide separate protected browser reads.
+The publisher and native agent integration remain separate milestone issues.
+This document describes local operation, not a production rollout.
 
 ## Local setup and credentials
 

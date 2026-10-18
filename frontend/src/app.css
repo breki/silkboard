@@ -1,34 +1,247 @@
 :root {
   font-family: system-ui, sans-serif;
   color: #e7edf2;
-  background: #14212b;
-  line-height: 1.6;
+  background: #0c171e;
+  line-height: 1.55;
   color-scheme: dark;
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
 }
 body {
   margin: 0;
 }
 main {
-  max-width: 48rem;
-  margin: 8vh auto;
-  padding: 2rem;
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: clamp(1rem, 4vw, 2.75rem);
+}
+.masthead {
+  margin: 1rem 0 2.5rem;
+}
+h1,
+h2,
+h3,
+h4,
+h5 {
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 h1 {
-  margin-bottom: 0;
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  letter-spacing: -0.05em;
+  margin: 0;
 }
-.healthy {
-  color: #9fe4bc;
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.2rem;
+}
+h4 {
+  font-size: 1.15rem;
+  margin: 0;
+}
+h5 {
+  font-size: 1rem;
+  margin: 0;
+}
+.eyebrow {
+  color: #a3c1ce;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+  margin-bottom: 0.5rem;
+}
+.section-heading,
+.card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.section-heading {
+  margin-bottom: 1rem;
+}
+.section-heading h2 {
+  margin: 0;
+}
+.panel,
+.session-card {
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: #14242e;
+  border: 1px solid #2a424f;
+  border-radius: 0.8rem;
+}
+.login {
+  max-width: 34rem;
+}
+.login h2 {
+  margin-top: 0;
+}
+form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+label {
+  display: block;
+  font-weight: 600;
+}
+button,
+input,
+select {
+  font: inherit;
+  min-height: 2.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #587482;
+  padding: 0.55rem 0.8rem;
+  max-width: 100%;
+}
+button {
+  color: #d5f2e6;
+  background: #1a343b;
+  cursor: pointer;
+}
+button:hover {
+  background: #244751;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.primary {
+  background: #afe0ca;
+  color: #102921;
   font-weight: 700;
 }
+.primary:hover {
+  background: #c0edda;
+}
+input,
+select {
+  width: 100%;
+  background: #0b1820;
+  color: #eef6fb;
+}
+:focus-visible {
+  outline: 3px solid #c0e9dc;
+  outline-offset: 3px;
+}
+.project-picker {
+  max-width: 26rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.session-heading {
+  margin: 1.5rem 0 1rem;
+}
+.session-heading h3 {
+  margin-bottom: 0.25rem;
+}
+.session-heading p,
+.muted,
+.timestamp {
+  color: #a9bfcb;
+  font-size: 0.85rem;
+}
+.sessions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 27rem), 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+.tool {
+  font-size: 0.78rem;
+  color: #bbe8d5;
+  border: 1px solid #416353;
+  border-radius: 0.3rem;
+  padding: 0.15rem 0.4rem;
+  max-width: 50%;
+  overflow-wrap: anywhere;
+}
+.identity {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  margin: 1rem 0;
+}
 dt {
-  margin-top: 1rem;
-  color: #b4c6d5;
+  color: #a9bfcb;
 }
 dd {
   margin: 0;
   overflow-wrap: anywhere;
   font-family: ui-monospace, monospace;
 }
+.latest-message,
+.history li p {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.latest-message {
+  font-size: 1.1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+.timestamp {
+  margin: 0 0 1rem;
+}
+.history {
+  border-top: 1px solid #38515f;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+.history ol {
+  margin: 1rem 0;
+  padding-left: 1.25rem;
+}
+.history li {
+  padding: 0.35rem 0 0.75rem 0.25rem;
+}
+.history li time {
+  font-size: 0.8rem;
+  color: #a9bfcb;
+}
+.history li p {
+  margin: 0.25rem 0;
+}
+.page-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.page-controls:empty {
+  display: none;
+}
+.empty {
+  padding: 1.5rem 0;
+  color: #b3c9d5;
+}
+.notice {
+  margin: 1rem 0;
+}
 [role="alert"] {
   color: #ffbbad;
+  overflow-wrap: anywhere;
+}
+.status-panel {
+  border-top: 1px solid #2a424f;
+  margin-top: 3rem;
+  padding-top: 1rem;
+  font-size: 0.85rem;
+}
+.status-panel h2 {
+  font-size: 1.1rem;
+}
+.status-panel dl {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+}
+.healthy {
+  color: #9fe4bc;
+  font-weight: 700;
 }

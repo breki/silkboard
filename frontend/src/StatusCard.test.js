@@ -1,6 +1,6 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/svelte";
 import { afterEach, expect, test, vi } from "vitest";
-import App from "./App.svelte";
+import StatusCard from "./StatusCard.svelte";
 
 afterEach(() => {
   cleanup();
@@ -18,7 +18,7 @@ test("shows loading, then backend identity and health", async () => {
     .fn()
     .mockResolvedValue({ ok: true, json: async () => status });
   vi.stubGlobal("fetch", fetch);
-  render(App);
+  render(StatusCard);
   expect(screen.getByRole("status").textContent).toContain("Loading");
   await screen.findByText(status.commit);
   expect(screen.getByText("Healthy")).toBeTruthy();
@@ -43,7 +43,7 @@ test("development identity is visibly unknown", async () => {
       }),
     }),
   );
-  render(App);
+  render(StatusCard);
   await waitFor(() => expect(screen.getAllByText("unknown")).toHaveLength(2));
 });
 
@@ -59,7 +59,7 @@ test.each(["network", "http", "invalid"])(
             json: async () => ({}),
           }),
     );
-    render(App);
+    render(StatusCard);
     expect((await screen.findByRole("alert")).textContent).toContain(
       "Unable to load",
     );
@@ -81,7 +81,7 @@ test("a stalled request times out and offers recovery", async () => {
           }),
       ),
     );
-    render(App);
+    render(StatusCard);
     expect(screen.getByRole("status")).toBeTruthy();
     await vi.advanceTimersByTimeAsync(10000);
     expect(screen.getByRole("alert").textContent).toContain(
