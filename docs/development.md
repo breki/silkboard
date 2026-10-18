@@ -1,9 +1,10 @@
 # Local application development
 
 The minimal application adapts rustbase's Axum backend and Svelte/Vite
-frontend. It serves a status page, `/health`, and `/api/status`. It has no
-project data, execution API, VM access, or updater credentials. Production
-provisioning and automatic upgrades remain separate work.
+frontend. It serves a status page, `/health`, and `/api/status`, with optional
+[persistent progress ingestion](progress-ingestion.md). It has no execution
+API, VM access, or updater credentials. Production provisioning and automatic
+upgrades remain separate work.
 
 ## Prerequisites and first run
 
@@ -34,6 +35,8 @@ it does not inspect Git, contact GitHub, or run commands.
 `frontend/dist`, relative to the process's working directory). Keep it
 limited to public assets. Startup fails if `index.html` is missing.
 The server handles Ctrl+C and, on Unix, SIGTERM for graceful shutdown.
+`SILKBOARD_DATABASE` enables the publish-only API; see the ingestion guide
+for private storage and local credential provisioning. It is unset by default.
 
 For frontend hot reload, keep the backend running and in another terminal:
 

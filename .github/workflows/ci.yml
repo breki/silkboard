@@ -197,7 +197,10 @@ jobs:
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         env:
           CARGO_TARGET_DIR: ${{ env.CI_ARM64_TARGET_DIR }}
-        run: cargo xtask clippy --target aarch64-unknown-linux-gnu
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu
+          cargo xtask clippy --target aarch64-unknown-linux-gnu
       # Explicit saves happen only after the full gate suite and ARM64 pass.
       # No workspace binaries, reports, raw profiles or verdicts are archived.
       - name: Clean and verify dependency-only Rust archives

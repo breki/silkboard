@@ -4,6 +4,18 @@ use std::{net::SocketAddr, path::PathBuf};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let database = std::env::var_os("SILKBOARD_DATABASE").map(PathBuf::from);
+    if args.first().map(String::as_str) == Some("publisher") {
+        let path =
+            database.ok_or("publisher commands require SILKBOARD_DATABASE")?;
+        silkboard_web::progress::publisher_command(&path, &args[1..])?;
+        eprintln!("Publisher credential operation completed");
+        return Ok(());
+    }
+    if !args.is_empty() {
+        return Err("unknown arguments".into());
+    }
     let address: SocketAddr = std::env::var("SILKBOARD_LISTEN")
         .unwrap_or_else(|_| "127.0.0.1:3000".into())
         .parse()?;
@@ -13,9 +25,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
     // Refuse to advertise a running service with no status page installed.
     tokio::fs::metadata(frontend.join("index.html")).await?;
+    let router = if let Some(path) = database {
+        // Never make the database downloadable through the static asset service.
+        let parent = path
+            .parent()
+            .ok_or("database path needs a parent")?
+            .canonicalize()?;
+        if parent.starts_with(frontend.canonicalize()?) {
+            return Err(
+                "database must be outside the static asset directory".into()
+            );
+        }
+        let store = silkboard_web::progress::ProgressStore::open(&path)?;
+        silkboard_web::create_progress_router(&frontend, store)
+    } else {
+        silkboard_web::create_router(&frontend)
+    };
     let listener = tokio::net::TcpListener::bind(address).await?;
     eprintln!("Silkboard listening on http://{}", listener.local_addr()?);
-    axum::serve(listener, silkboard_web::create_router(&frontend))
+    axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await?;
     Ok(())

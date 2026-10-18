@@ -3,10 +3,10 @@
 Status: Milestone 1 in progress; the minimal application is implemented.
 Release gates, production deployment, automatic upgrades and live rollback/retry
 are verified. Updater reboot recovery and the remaining evidence below are pending.
-Later milestones are open.
+Milestone 2 is agreed independently: agent progress dogfooding.
 
 This roadmap replaces the original milestone list in the architecture proposal.
-Milestones follow the owner's priorities; later product scope is not yet set.
+Milestones follow the owner's priorities; scope after milestone 2 is not set.
 
 ## 1. Complete deployment pipeline with a minimal status page
 
@@ -133,8 +133,31 @@ Updater reboot recovery remains pending.
   [#18](https://github.com/breki/silkboard/issues/18). The complete automatic
   delivery pipeline is not verified yet; local tests do not fill these gaps.
 
+## 2. Agent progress dogfooding
+
+Agreed with the owner on 2026-10-18. The [GitHub milestone](https://github.com/breki/silkboard/milestone/2)
+owns delivery tracking. This work starts on the current development setup;
+milestone 1 reboot/pending-check evidence and the Bombyx VM migration are
+independent work, not prerequisites.
+
+- Silkboard's own Codex and Claude development agents automatically publish
+  basic short progress messages during ordinary work.
+- Identity includes project, hostname, tool, native session ID and subagent
+  ID when applicable. Optional readable names do not replace identity.
+- Agents publish only: they never read dashboard content or receive tasks,
+  commands or execution permissions from Silkboard. GitHub remains the task
+  tracker. This supersedes the architecture proposal's task-fetch direction.
+- Persist messages in SQLite; use project-scoped publisher credentials and
+  a shared local publishing client with durable, duplicate-safe retries.
+- Only the owner reads the feed, through a separate Silkboard login and
+  a mobile-friendly project/session history page over private HTTPS.
+- Completion requires real Codex and Claude publishing to production and
+  owner phone verification through the normal reviewed release process.
+
+The [ingestion guide](progress-ingestion.md) describes the optional backend
+foundation. It does not establish completion of this milestone.
+
 ## Later milestones
 
-To be defined with the owner after the deployment milestone. Project overview,
-agent handoffs, and task coordination remain product ideas, not an agreed
-delivery sequence.
+To be defined with the owner. Task coordination and persistent handoff
+sharing are not part of the agreed agent progress milestone.
