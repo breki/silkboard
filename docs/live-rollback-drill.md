@@ -1,9 +1,46 @@
 # Live rollback and retry drill
 
 This is the procedure for [issue #17](https://github.com/breki/silkboard/issues/17).
-The owner selected two valid patch releases. Execution and publication remain
-pending explicit approval; the read-only preflight below is observed evidence.
-This is not evidence that production rollback or retry already works.
+The owner selected two valid patch releases and approved phase 1. Its observed
+rollback, blocking and retry results are recorded below. Publishing v0.2.2 and
+demonstrating newer-release activation remain pending separate approval.
+
+## Observed phase 1, 2026-10-18
+
+Signed v0.2.1 targets `e71fa38d4b6d3328c628d6666a0a4bb791a3f0eb`.
+Its exact tag-push [release suite, attempt 1](https://github.com/breki/silkboard/actions/runs/39092653396/attempts/1)
+passed all three required jobs. The installed updater independently admitted
+that same tag/commit before the fault was installed and repeated admission
+before each activation attempt. The fault was guest-only; no broken
+application code was published.
+
+| UTC | Observed result |
+| --- | --- |
+| 03:17:51 | First controlled poll started; state recorded the v0.2.0 previous release, exact v0.2.1 candidate and candidate block before building. |
+| 03:23:13–15 | Candidate startup check failed; updater restored v0.2.0 and verified health. Pending work cleared; v0.2.1 stayed blocked. |
+| 03:24:20–21 | A separate poll succeeded without rebuilding or activating the blocked candidate; state and healthy identity stayed unchanged. |
+| 03:25:01 | Manual retry removed only v0.2.1 from the block set, kept pending null and current identity unchanged, then inspection and a new poll repeated ordinary admission. |
+| 03:30:24–26 | The genuine retry reached the same startup fault and again restored healthy v0.2.0, cleared pending work and retained the candidate block. |
+| 03:31:17 | Fault removed and systemd reloaded; effective application/updater units matched their pre-drill copies, and the updater checksum was unchanged. |
+
+Both guest endpoints and private HTTPS confirmed healthy v0.2.0 at
+`6a24145a6f5404e210f7597001d02e166b023889` after cleanup. State is
+`blocked: ["v0.2.1"]`, `pending: null`. The updater service's exit code 1 on
+each fault attempt is the expected failure result after successful rollback,
+not a passing deployment of v0.2.1. The intervening blocked poll exited 0.
+
+Invocation identities are `58c64d20db6c4a4995c546e4459f7445` (first),
+`af9de1d83b7f403b907637c30c631edd` (blocked poll), and
+`0e315d098c5246f89836ee56f046e0e6` (retry). Root-only guest evidence is retained
+under `/var/log/silkboard-drill-17-20261018`: per-invocation journals, service
+results, before/after state and health, retry-cleared state, unit comparisons,
+and the resolved fault condition. No credential values are included.
+
+The timer remains paused, as specified below, while the newer-release phase
+is prepared. v0.2.2 is not published. Acceptance that a newer eligible release
+can activate while the older failed tag remains blocked is still unrun.
+Reboot/interrupted recovery remains #18; this drill did not remove credentials
+or simulate network loss during recovery.
 
 ## Scope and observed baseline
 

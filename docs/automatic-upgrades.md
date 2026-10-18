@@ -183,10 +183,15 @@ confirmed that exact release through both guest health endpoints and private
 HTTPS, an active timer, and no pending transaction or blocked tag. The installed
 updater checksum remains the one above.
 
-Live rollback/retry and updater reboot demonstrations remain required for
-milestone 1. The [controlled rollback drill](live-rollback-drill.md) records
-the owner-selected two-release plan and observed baseline; its disruptive
-steps and release publication are not yet authorized or executed.
+On 2026-10-18, the owner-approved first phase of the
+[controlled rollback drill](live-rollback-drill.md#observed-phase-1-2026-10-18)
+demonstrated two candidate-specific startup failures, healthy rollback to
+v0.2.0, persistent v0.2.1 blocking across a separate poll, and explicit retry
+with ordinary signed/exact-suite admission. The temporary fault was removed;
+units and the installed updater are unchanged. There is no pending transaction.
+The timer is paused for phase 2, and v0.2.1 remains blocked. Activation of a
+newer eligible v0.2.2 while that block remains, and updater reboot recovery,
+are still unverified. Issue #17 and milestone 1 remain incomplete.
 
 ## Reuse assessment
 

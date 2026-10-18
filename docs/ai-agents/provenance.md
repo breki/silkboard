@@ -282,5 +282,7 @@ newer-release verification. The [drill](../live-rollback-drill.md) is a
 Silkboard operator procedure matched to installed updater `4975637`, not an
 installation of the newer toolkit. Read-only guest checks and its journal
 support the baseline and existing v0.2.0 activation evidence. The procedure
-does not itself authorize publication or disruption; live fault outcomes
-remain unverified. No upstream code or deployment policy is changed.
+does not itself authorize publication or disruption. After separate owner
+approval, phase 1 observed real activation failures, healthy rollback, durable
+blocking and explicit retry using ordinary admission. Newer-release and reboot
+acceptance remain pending. No upstream code or deployment policy is changed.
