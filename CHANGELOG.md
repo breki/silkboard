@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add owner-only publisher credential issuance and revocation with safe metadata
+  pages, one-time phone copy/download and transaction-time session checks.
+
 - Add phone-friendly first-owner registration using expiring one-time setup
   links, atomic permanent closure and publisher ingestion locked until owner
   initialization completes.

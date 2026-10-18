@@ -2,6 +2,7 @@
 
 mod feed;
 mod http;
+mod publishers;
 mod setup;
 mod storage;
 
@@ -34,6 +35,8 @@ pub enum AuthError {
     NotFound,
     /// First-owner registration has permanently closed.
     SetupClosed,
+    /// An installation label is already used, including revoked credentials.
+    Conflict,
 }
 
 impl std::fmt::Display for AuthError {
@@ -46,6 +49,7 @@ impl std::fmt::Display for AuthError {
             Self::Unavailable => "owner authentication unavailable",
             Self::NotFound => "progress resource not found",
             Self::SetupClosed => "owner setup is already complete",
+            Self::Conflict => "publisher installation label already exists",
         })
     }
 }

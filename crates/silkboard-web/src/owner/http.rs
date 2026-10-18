@@ -28,9 +28,10 @@ struct Registration {
 }
 
 pub(crate) fn routes(auth: OwnerAuth) -> Router {
-    // Future feed/session reads MUST be registered inside this protected router.
+    // Owner APIs, including credential mutations, MUST stay in this guarded router.
     let protected = Router::new()
         .merge(super::feed::routes())
+        .merge(super::publishers::routes())
         .route("/session", get(session))
         .route("/logout", post(logout))
         .fallback(|| async { StatusCode::NOT_FOUND })
@@ -153,7 +154,7 @@ async fn guard(
 }
 
 #[derive(Clone)]
-struct OwnerSession(String);
+pub(super) struct OwnerSession(pub(super) String);
 
 async fn session(
     axum::Extension(session): axum::Extension<OwnerSession>,
@@ -192,6 +193,7 @@ impl IntoResponse for AuthError {
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::NotFound => StatusCode::NOT_FOUND,
             Self::SetupClosed => StatusCode::GONE,
+            Self::Conflict => StatusCode::CONFLICT,
         };
         let mut response =
             (status, Json(serde_json::json!({"error":self.to_string()})))

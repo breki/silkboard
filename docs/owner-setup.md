@@ -77,8 +77,8 @@ expired, replaced or invalid link gives a safe explanation; exhausted attempt
 budgets ask you to wait a minute. An interrupted response may have registered
 the owner: follow **Already registered? Sign in** or the normal site and try
 the chosen password. After success, the link is consumed and **Sign in to
-Silkboard** uses normal [owner login](owner-login.md). Publisher token management
-remains separate [#44](https://github.com/breki/silkboard/issues/44).
+Silkboard** uses normal [owner login](owner-login.md). The separate
+[publisher credential manager](publisher-tokens.md) then handles agent tokens.
 
 ## Security and durable state
 

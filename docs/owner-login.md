@@ -4,6 +4,8 @@ The backend for [#35](https://github.com/breki/silkboard/issues/35) provides
 single-owner password login, durable browser sessions and a protected owner
 API namespace. The [owner feed](owner-feed.md) provides the login form and
 protected project/session/history reads for #38.
+The [publisher credential manager](publisher-tokens.md) adds owner-only
+issuance, metadata and revocation using the same login and CSRF boundary.
 Agents retain separate publish-only credentials. This does not
 install production credentials or enable a production service.
 

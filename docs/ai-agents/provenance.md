@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Owner publisher credential management, 2026-10-18
+
+Issue #44 authorizes phone issuance, safe metadata and revocation under the
+existing owner login/CSRF boundary. The [manager guide](../publisher-tokens.md)
+records shared publisher transaction semantics, reauthentication at mutation
+commit, one-time disclosure and explicit private saving. Existing setup-page
+cache/referrer/frame/content protections now cover the configured owner
+application. MDN clipboard/Blob/pagehide APIs supply the browser interfaces.
+No new dependency, schema, production credential, updater authority or release
+policy is adopted. Production installation and live acceptance remain #39.
+
 ## One-time first-owner setup, 2026-10-18
 
 Issue #45 and the owner's prior one-time-link decision authorize phone owner

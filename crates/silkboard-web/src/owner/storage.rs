@@ -114,10 +114,18 @@ pub(super) fn authenticate(
     store: &ProgressStore,
     token: &str,
 ) -> Result<(), AuthError> {
+    let connection = store.0.lock().map_err(|_| AuthError::Unavailable)?;
+    authenticate_on(&connection, token)
+}
+
+pub(super) fn authenticate_on(
+    connection: &rusqlite::Connection,
+    token: &str,
+) -> Result<(), AuthError> {
     if token.len() != 64 || !token.bytes().all(|b| b.is_ascii_hexdigit()) {
         return Err(AuthError::Unauthorized);
     }
-    let authorized = store.0.lock().map_err(|_| AuthError::Unavailable)?.query_row(
+    let authorized = connection.query_row(
         "SELECT EXISTS(SELECT 1 FROM owner_sessions WHERE token_hash = ?1 AND expires_at > unixepoch())", [digest(token)], |r| r.get::<_, bool>(0),
     )?;
     if !authorized {
