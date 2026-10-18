@@ -1,8 +1,10 @@
 # Automatic upgrades and recovery
 
-Issue [#6](https://github.com/breki/silkboard/issues/6). The updater is installed
-and polling in production. The guest still runs the initial `v0.1.1`;
-automatic upgrade, rollback, retry, and updater reboot evidence are pending.
+The updater is installed and polling in production, now running `v0.2.2`.
+Live rollback/retry and newer-release acceptance are verified for
+[#17](https://github.com/breki/silkboard/issues/17); updater reboot recovery
+remains in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
+issue [#6](https://github.com/breki/silkboard/issues/6) is closed.
 
 ## Release admission
 
@@ -174,9 +176,27 @@ credential form was removed; Tailscale Serve exposes only the application
 through private port 443. Guest installation evidence is retained in
 `/var/log/silkboard-updater-install-4975637.log` and the service journal.
 
-Live automatic upgrade, rollback/retry, and updater reboot demonstrations
-remain required before issue #6 or milestone 1 is complete. Polling an already
-installed release does not demonstrate build or activation of a newer release.
+The production journal records scheduled activation of signed `v0.2.0` at
+15:05:24 UTC on 2026-10-17, commit
+`6a24145a6f5404e210f7597001d02e166b023889`. Read-only checks on 2026-10-18
+confirmed that exact release through both guest health endpoints and private
+HTTPS, an active timer, and no pending transaction or blocked tag. The installed
+updater checksum remains the one above.
+
+On 2026-10-18, the owner-approved first phase of the
+[controlled rollback drill](live-rollback-drill.md#observed-phase-1-2026-10-18)
+demonstrated two candidate-specific startup failures, healthy rollback to
+v0.2.0, persistent v0.2.1 blocking across a separate poll, and explicit retry
+with ordinary signed/exact-suite admission. The temporary fault was removed;
+units and the installed updater are unchanged. There is no pending transaction.
+The separately approved second phase activated exact signed v0.2.2 at
+`2f27e96dc8795971c92cd776bc896f53620743f3` at 04:48:58 UTC while v0.2.1
+remained blocked. Both guest endpoints and private HTTPS confirmed healthy
+identity. Original enabled/active polling was restored, and a separate
+scheduled 04:50 UTC poll passed with the old block and no pending transaction.
+See the [newer-release evidence](live-rollback-drill.md#observed-phase-2-2026-10-18).
+Issue #17's verification is complete; updater reboot recovery remains #18.
+Milestone 1 is not yet complete.
 
 ## Reuse assessment
 

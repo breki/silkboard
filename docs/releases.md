@@ -1,8 +1,9 @@
 # Release preparation and evidence
 
 Silkboard releases use trusted signed stable tags plus a passing full GitHub
-release suite for the exact tagged commit. The production updater is still
-pending; these checks alone do not deploy an application.
+release suite for the exact tagged commit. The installed production updater
+independently admits eligible revisions and activates them after building;
+these GitHub checks alone do not establish production health.
 
 ## Identity and trust
 

@@ -273,3 +273,19 @@ archives, configuration fingerprints, exact-head PR namespaces and verified
 workspace cleanup. Existing Cargo/cargo-llvm-cov cleaning and the already
 pinned cache action are reused; new Rust helpers own planning and verification.
 No new dependency, required release job or production configuration is added.
+
+## Live rollback verification planning, 2026-10-18
+
+Issue #17 requests production failure/retry evidence. The owner selected two
+valid patch releases for a candidate-specific startup fault and subsequent
+newer-release verification. The [drill](../live-rollback-drill.md) is a
+Silkboard operator procedure matched to installed updater `4975637`, not an
+installation of the newer toolkit. Read-only guest checks and its journal
+support the baseline and existing v0.2.0 activation evidence. The procedure
+does not itself authorize publication or disruption. After separate owner
+approval, phase 1 observed real activation failures, healthy rollback, durable
+blocking and explicit retry using ordinary admission. Separately approved
+phase 2 admitted and activated v0.2.2 with the old block retained, then restored
+and observed scheduled polling. The records identify both exact tag-triggered
+suites and guest invocation/state/health evidence. Reboot acceptance remains
+pending. No upstream code or deployment policy is changed.
