@@ -110,9 +110,9 @@ metadata and exhausted counters fail closed. Repair permissions/storage;
 do not delete active counters to clear errors. Lost state requires a fresh
 native identity or operator reconciliation; the client never reads history.
 
-Automatic Codex invocation belongs to [#37](https://github.com/breki/silkboard/issues/37).
-Its adapter must tolerate publishing failure and preserve validation hooks
-and development permissions. Claude is separate
+The [Codex adapter](codex-publishing.md) provides opt-in automatic invocation
+through native async hooks, tolerates publishing failure and preserves
+validation hooks and development permissions. Claude is separate
 [#43](https://github.com/breki/silkboard/issues/43). Production setup, credentials,
 rollout and phone verification remain [#39](https://github.com/breki/silkboard/issues/39).
 

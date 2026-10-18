@@ -1,5 +1,6 @@
 //! Installed, best-effort progress publishing without an outgoing queue.
 
+mod codex;
 mod model;
 mod state;
 mod transport;
@@ -60,7 +61,7 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         }
         [help] if help == "--help" => {
             return Ok(
-                "silkboard-publish publish --config PATH\nRead one JSON progress report from stdin. One bounded attempt; no queue or service.",
+                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nRead one JSON report or native Codex hook payload from stdin. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
             );
         }
         [version] if version == "--version" => {
@@ -70,30 +71,46 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
             ));
         }
         [command, flag, path] if command == "publish" && flag == "--config" => {
-            let config: model::Config = serde_json::from_slice(
-                &state::read_private(Path::new(path), 16384)?,
-            )
-            .map_err(|_| Error::Input)?;
-            config.validate()?;
+            let config = configuration(Path::new(path))?;
             let report: model::Report =
                 serde_json::from_slice(&model::bounded(input, 8192)?)
                     .map_err(|_| Error::Input)?;
-            report.validate()?;
-            let token_bytes = state::read_private(&config.token_file, 66)?;
-            let token = std::str::from_utf8(&token_bytes)
-                .map_err(|_| Error::PrivateFile)?;
-            let token = token.strip_suffix('\n').unwrap_or(token);
-            if token.len() != 64
-                || !token
-                    .bytes()
-                    .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
-            {
-                return Err(Error::PrivateFile);
-            }
-            let event = state::allocate(&config, report)?;
-            transport::send(&config, &event, token)?;
+            publish(&config, report)?;
+        }
+        [command, flag, path]
+            if command == "codex-hook" && flag == "--config" =>
+        {
+            // Native async hooks must never turn delivery failure into a
+            // continuation, context injection or permission decision.
+            let _ = codex::run(Path::new(path), input);
+            return Ok("{}");
         }
         _ => return Err(Error::Usage),
     }
     Ok("Progress acknowledged")
+}
+
+fn configuration(path: &Path) -> Result<model::Config, Error> {
+    let config: model::Config =
+        serde_json::from_slice(&state::read_private(path, 16384)?)
+            .map_err(|_| Error::Input)?;
+    config.validate()?;
+    Ok(config)
+}
+
+fn publish(config: &model::Config, report: model::Report) -> Result<(), Error> {
+    report.validate()?;
+    let token_bytes = state::read_private(&config.token_file, 66)?;
+    let token =
+        std::str::from_utf8(&token_bytes).map_err(|_| Error::PrivateFile)?;
+    let token = token.strip_suffix('\n').unwrap_or(token);
+    if token.len() != 64
+        || !token
+            .bytes()
+            .all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
+    {
+        return Err(Error::PrivateFile);
+    }
+    let event = state::allocate(config, report)?;
+    transport::send(config, &event, token)
 }

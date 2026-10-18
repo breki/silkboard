@@ -11,6 +11,7 @@ pub(super) struct Config {
     pub project: String,
     pub token_file: PathBuf,
     pub state_dir: PathBuf,
+    pub codex: Option<crate::codex::Settings>,
 }
 
 impl Config {
