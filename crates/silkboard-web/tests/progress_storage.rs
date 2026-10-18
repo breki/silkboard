@@ -115,7 +115,7 @@ fn migration_restart_identities_and_out_of_order_history() {
         db.connection()
             .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
             .unwrap(),
-        1
+        2
     );
     store.revoke_token("silkboard", "first").unwrap();
     drop(store);
@@ -213,7 +213,7 @@ fn newer_or_broken_schema_is_rejected_without_resetting_data() {
     store.issue_token("project", "label").unwrap();
     drop(store);
     db.connection()
-        .pragma_update(None, "user_version", 2)
+        .pragma_update(None, "user_version", 3)
         .unwrap();
     assert!(matches!(
         ProgressStore::open(&db.0),

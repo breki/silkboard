@@ -37,6 +37,8 @@ limited to public assets. Startup fails if `index.html` is missing.
 The server handles Ctrl+C and, on Unix, SIGTERM for graceful shutdown.
 `SILKBOARD_DATABASE` enables the publish-only API; see the ingestion guide
 for private storage and local credential provisioning. It is unset by default.
+`SILKBOARD_OWNER_ORIGIN` additionally enables the
+[owner authentication API](owner-login.md); browser UI is separate work.
 
 For frontend hot reload, keep the backend running and in another terminal:
 

@@ -1,11 +1,40 @@
 //! Run the status service on loopback by default.
 
-use std::{net::SocketAddr, path::PathBuf};
+use std::{io::IsTerminal, net::SocketAddr, path::PathBuf};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let database = std::env::var_os("SILKBOARD_DATABASE").map(PathBuf::from);
+    let origin = std::env::var_os("SILKBOARD_OWNER_ORIGIN")
+        .map(|value| {
+            value
+                .into_string()
+                .map_err(|_| "owner origin must be UTF-8")
+        })
+        .transpose()?;
+    if args.first().map(String::as_str) == Some("owner") {
+        if args.get(1).map(String::as_str) != Some("set-password")
+            || args.len() != 2
+        {
+            return Err(
+                "usage: owner set-password (password from a private pipe)"
+                    .into(),
+            );
+        }
+        if std::io::stdin().is_terminal() {
+            return Err("password must arrive through a private pipe".into());
+        }
+        let path =
+            database.ok_or("owner commands require SILKBOARD_DATABASE")?;
+        let store = silkboard_web::progress::ProgressStore::open(&path)?;
+        silkboard_web::owner::set_password_from_reader(
+            &store,
+            std::io::stdin().lock(),
+        )?;
+        eprintln!("Owner password set; all browser sessions revoked");
+        return Ok(());
+    }
     if args.first().map(String::as_str) == Some("publisher") {
         let path =
             database.ok_or("publisher commands require SILKBOARD_DATABASE")?;
@@ -37,8 +66,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
         }
         let store = silkboard_web::progress::ProgressStore::open(&path)?;
-        silkboard_web::create_progress_router(&frontend, store)
+        if let Some(origin) = origin {
+            silkboard_web::create_owner_router(&frontend, store, &origin)?
+        } else {
+            silkboard_web::create_progress_router(&frontend, store)
+        }
     } else {
+        if origin.is_some() {
+            return Err("owner origin requires SILKBOARD_DATABASE".into());
+        }
         silkboard_web::create_router(&frontend)
     };
     let listener = tokio::net::TcpListener::bind(address).await?;
