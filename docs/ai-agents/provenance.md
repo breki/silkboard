@@ -1,5 +1,16 @@
 # Canon provenance
 
+## One-time first-owner setup, 2026-10-18
+
+Issue #45 and the owner's prior one-time-link decision authorize phone owner
+registration before publisher access. Existing Argon2, SQLite transactions,
+origin checks and hashing limits supply the implementation foundation. MDN
+fragment/history APIs and OWASP high-entropy single-use token guidance inform
+the [setup guide](../owner-setup.md). Schema 3 retains existing owners as closed;
+the private preparation pipe keeps only verification hashes on the server.
+No new dependencies, upstream code, production configuration, user credentials,
+updater authority or release policy are adopted. Production rollout remains #39.
+
 ## Codex progress hooks, 2026-10-18
 
 Issue #37 authorizes automatic Codex observations using the installed publisher.

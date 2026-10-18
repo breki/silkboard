@@ -162,7 +162,9 @@ independent work, not prerequisites.
   provisioning-prepared one-time setup link before publisher API access is
   enabled; see [#45](https://github.com/breki/silkboard/issues/45). Owner web
   token issuance/revocation is separate [#44](https://github.com/breki/silkboard/issues/44).
-  These are pending requirements, not current production capabilities.
+  The [setup page](owner-setup.md) is implemented and locally verified;
+  production activation and token management remain pending, not current
+  production capabilities.
 - The initial rollout verifies real Codex publishing and owner phone access
   through the normal reviewed release process. Claude production integration
   remains separate work within this milestone.

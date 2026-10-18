@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add phone-friendly first-owner registration using expiring one-time setup
+  links, atomic permanent closure and publisher ingestion locked until owner
+  initialization completes.
+
 - Publish concise Codex turn and subagent observations through native async
   hooks, with bounded first-sentence summaries, stable native identities and
   opt-in private configuration; publishing failures never control a turn.

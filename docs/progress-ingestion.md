@@ -26,6 +26,13 @@ cargo run --locked -p silkboard-web -- publisher issue silkboard dev-1 \
 cargo run --locked -p silkboard-web
 ```
 
+Before publishing, initialize the owner through the
+[one-time HTTPS setup page](owner-setup.md) or the existing
+[private operator password pipe](owner-login.md#operator-setup-and-reset).
+The browser route also needs `SILKBOARD_OWNER_ORIGIN`; use a trusted HTTPS
+proxy for browser setup. Issuing a publisher credential alone leaves ingestion
+locked with 503. Existing initialized owners remain initialized.
+
 The existing frontend build prerequisites in [development](development.md)
 still apply. Without `SILKBOARD_DATABASE`, startup retains the status-only
 service. A configured database failure fails startup rather than silently
@@ -129,10 +136,11 @@ There is no GET/history route; a publisher token cannot read another event.
 ## Persistence and schema compatibility
 
 Schema 1 initializes projects, hashed credentials, sessions and events in one
-SQLite transaction. The current application migrates schema 1 to schema 2,
-adding owner authentication without deleting progress or publishers. Startup
-accepts schema 2 and refuses newer schemas; it never resets an incompatible
-database. Writes authenticate,
+SQLite transaction. The current application migrates schemas 1/2 to schema 3,
+adding owner authentication and [one-time setup](owner-setup.md) without deleting
+progress or publishers. Startup accepts schema 3 and refuses newer schemas;
+it never resets an incompatible database. Writes require an initialized owner,
+then authenticate,
 resolve identity and insert events in an immediate transaction, so concurrent
 retries or revocation cannot partially insert messages. Database lock waits
 are capped at two seconds. SQLite's default rollback journal and full

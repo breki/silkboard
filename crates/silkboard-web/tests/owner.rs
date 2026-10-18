@@ -514,7 +514,7 @@ async fn migration_preserves_publishers_and_browser_cookies_cannot_publish() {
         db.sql()
             .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
             .unwrap(),
-        2
+        3
     );
     assert_eq!(
         db.sql()

@@ -9,6 +9,11 @@ install production credentials or enable a production service.
 
 ## Operator setup and reset
 
+First-owner registration can use the [one-time setup page](owner-setup.md)
+from a phone. Its provisioning-prepared link is separate from login, publisher
+tokens and updater credentials. The private-pipe command below remains an
+operator setup/reset path and permanently closes first-owner registration.
+
 Use the [private database setup](progress-ingestion.md#local-setup-and-credentials).
 The same `SILKBOARD_DATABASE` stores progress and owner authentication. Build
 the binary, then set the sole owner's password from a private pipe in an
@@ -27,7 +32,7 @@ pipe. The password never belongs in a command argument, environment variable,
 URL, shell history, chat or agent tool input/output. Do not run this command
 through a session recorder that captures private input. A password manager
 may supply the private pipe instead. Direct terminal input is refused by the
-binary to avoid echoing the password. There is no public registration or
+binary to avoid echoing the password. There is no public signup or web
 password-reset endpoint.
 
 Choose a long unique passphrase; input must contain 12–1,024 UTF-8 bytes with
@@ -98,7 +103,8 @@ unknown routes. Feed/session reads are registered inside that
 protected router. Publisher bearer tokens are ignored there; supplying one
 as an owner cookie also fails. Conversely, an owner cookie cannot publish
 progress without a separate publisher bearer token. Health/status routes
-remain public for the updater, and ingestion authorization is unchanged.
+remain public for the updater. Ingestion now also requires an initialized
+owner, including when configured without owner browser routes.
 
 Cross-origin/opaque-origin logins fail. Authenticated reads reject mismatched
 Origin headers and cross-site fetch metadata; unsafe requests additionally
@@ -110,10 +116,12 @@ updater or agent execution permissions.
 
 ## Data compatibility and verification
 
-Schema 2 adds the singleton owner record and browser sessions in the same
+Schema 2 added the singleton owner record and browser sessions in the same
 transaction used to initialize/migrate the database. Existing schema-1
-progress and publishers are retained. Newer schemas are refused. Binaries
-supporting only schema 1 cannot open schema 2; restoring an older application
+progress and publishers are retained. The current schema 3 additionally stores
+the one-time setup hash/expiry and permanent closure state. Existing owners
+migrate closed; newer schemas are refused. Binaries supporting only older
+schemas cannot open schema 3; restoring an older application
 that uses this database needs a compatible backup or a reviewed migration
 procedure. Do not automatically downgrade or delete authentication data.
 Backup/restore and production upgrade verification remain #39 work.

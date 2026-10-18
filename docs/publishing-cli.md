@@ -44,8 +44,9 @@ Install the project token privately as a mode-0600 file in the configuration
 directory. The current [operator command](progress-ingestion.md#local-setup-and-credentials)
 issues it without printing the secret. Web token management is separate
 [#44](https://github.com/breki/silkboard/issues/44); first-owner setup is
-[#45](https://github.com/breki/silkboard/issues/45). Never paste tokens into
-chat, command arguments, URLs or reports.
+provided by the [one-time setup page](owner-setup.md). Ingestion remains locked
+until the owner is initialized, even with a valid publisher token. Never paste
+tokens into chat, command arguments, URLs or reports.
 
 Save `config.json` with mode 0600 in that directory, replacing the sample
 paths with absolute paths on this machine:

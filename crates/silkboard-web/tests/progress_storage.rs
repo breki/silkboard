@@ -56,6 +56,11 @@ fn event(id: &str, sequence: i64) -> ProgressEvent {
 fn migration_restart_identities_and_out_of_order_history() {
     let db = Database::new();
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     let token = store.issue_token("silkboard", "first").unwrap();
     let foreign = store.issue_token("other", "first").unwrap();
     let second = event("second", 2);
@@ -63,6 +68,11 @@ fn migration_restart_identities_and_out_of_order_history() {
     assert!(ack.received_at > 0);
     drop(store);
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     assert_eq!(
         store
             .publish("silkboard", &token, &second)
@@ -115,7 +125,7 @@ fn migration_restart_identities_and_out_of_order_history() {
         db.connection()
             .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
             .unwrap(),
-        2
+        3
     );
     store.revoke_token("silkboard", "first").unwrap();
     drop(store);
@@ -134,6 +144,11 @@ fn migration_restart_identities_and_out_of_order_history() {
 fn credentials_are_hashed_scoped_and_cannot_be_silently_replaced() {
     let db = Database::new();
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     for invalid in ["", "Wrong", "a/b", &"a".repeat(65)] {
         assert!(matches!(
             store.issue_token(invalid, "label"),
@@ -184,6 +199,11 @@ fn credentials_are_hashed_scoped_and_cannot_be_silently_replaced() {
 fn parent_metadata_is_immutable_and_failed_events_leave_no_partial_session() {
     let db = Database::new();
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     let token = store.issue_token("project", "label").unwrap();
     let mut child = event("child", 1);
     child.subagent_id = Some("child".into());
@@ -210,10 +230,15 @@ fn parent_metadata_is_immutable_and_failed_events_leave_no_partial_session() {
 fn newer_or_broken_schema_is_rejected_without_resetting_data() {
     let db = Database::new();
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     store.issue_token("project", "label").unwrap();
     drop(store);
     db.connection()
-        .pragma_update(None, "user_version", 3)
+        .pragma_update(None, "user_version", 4)
         .unwrap();
     assert!(matches!(
         ProgressStore::open(&db.0),
@@ -246,6 +271,11 @@ fn operator_writes_private_files_and_revokes_without_token_arguments() {
     assert!(publisher_command(&db.0, &issue).is_err());
     assert_eq!(fs::read_to_string(&token_file).unwrap(), token);
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     store
         .publish("project", token.trim(), &event("event", 1))
         .unwrap();
@@ -315,6 +345,11 @@ fn separate_connections_serialize_duplicate_events_and_storage_errors_fail_close
  {
     let db = Database::new();
     let first = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &first,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     let second = ProgressStore::open(&db.0).unwrap();
     let token = first.issue_token("project", "label").unwrap();
     std::thread::scope(|scope| {
@@ -375,6 +410,11 @@ fn binary_operator_and_startup_enforce_configuration() {
     let token = fs::read_to_string(&token_file).unwrap();
     assert!(!String::from_utf8_lossy(&output.stderr).contains(token.trim()));
     let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private storage test password".as_slice(),
+    )
+    .unwrap();
     store
         .publish("project", token.trim(), &event("cli", 1))
         .unwrap();

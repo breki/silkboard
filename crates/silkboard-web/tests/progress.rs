@@ -16,6 +16,16 @@ fn event() -> Value {
         "session_id":"native-1", "sequence":1, "message":"Running tests"})
 }
 
+fn initialized_store() -> ProgressStore {
+    let store = ProgressStore::open_memory().unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private ingestion test password".as_slice(),
+    )
+    .unwrap();
+    store
+}
+
 async fn publish(
     router: Router,
     token: &str,
@@ -38,7 +48,7 @@ async fn publish(
 
 #[tokio::test]
 async fn accepts_only_scoped_publishers_and_acknowledges_exact_retries() {
-    let store = ProgressStore::open_memory().unwrap();
+    let store = initialized_store();
     let token = store.issue_token("silkboard", "dev").unwrap();
     let foreign = store.issue_token("other", "dev").unwrap();
     let router = create_progress_router(Path::new("missing"), store.clone());
@@ -70,7 +80,7 @@ async fn accepts_only_scoped_publishers_and_acknowledges_exact_retries() {
 
 #[tokio::test]
 async fn validates_payloads_and_keeps_feed_unreadable() {
-    let store = ProgressStore::open_memory().unwrap();
+    let store = initialized_store();
     let token = store.issue_token("silkboard", "test").unwrap();
     let router = create_progress_router(Path::new("missing"), store);
     for (field, value) in [
@@ -156,7 +166,7 @@ async fn validates_payloads_and_keeps_feed_unreadable() {
 
 #[tokio::test]
 async fn concurrent_retries_are_atomic() {
-    let store = ProgressStore::open_memory().unwrap();
+    let store = initialized_store();
     let token = store.issue_token("silkboard", "test").unwrap();
     let router = create_progress_router(Path::new("missing"), store);
     let (first, second) = tokio::join!(

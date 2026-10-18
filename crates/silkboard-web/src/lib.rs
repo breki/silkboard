@@ -2,9 +2,12 @@
 
 use std::path::Path;
 
-use axum::{Json, Router, routing::get};
+use axum::{
+    Json, Router, http::HeaderValue, middleware, response::Response,
+    routing::get,
+};
 use serde::Serialize;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 
 pub mod owner;
 pub mod progress;
@@ -20,7 +23,20 @@ pub fn create_owner_router(
     origin: &str,
 ) -> Result<Router, owner::AuthError> {
     let auth = owner::OwnerAuth::new(store.clone(), origin)?;
-    Ok(create_progress_router(frontend_path, store).merge(owner::routes(auth)))
+    let setup = Router::new().route_service("/setup", ServeFile::new(frontend_path.join("index.html")))
+        .layer(middleware::map_response(|mut response: Response| async {
+            for (key, value) in [
+                ("cache-control", "no-store"),
+                ("referrer-policy", "no-referrer"),
+                ("x-content-type-options", "nosniff"),
+                ("x-frame-options", "DENY"),
+                ("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
+            ] { response.headers_mut().insert(key, HeaderValue::from_static(value)); }
+            response
+        }));
+    Ok(create_progress_router(frontend_path, store)
+        .merge(owner::routes(auth))
+        .merge(setup))
 }
 
 /// Construct the application with persistent, project-scoped ingestion.

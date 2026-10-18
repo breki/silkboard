@@ -100,8 +100,11 @@ impl ProgressStore {
         }
         match version {
             0 | 1 => tx.execute_batch(include_str!("owner/schema.sql"))?,
-            2 => {}
+            2 | 3 => {}
             _ => return Err(ProgressError::NewerSchema),
+        }
+        if version <= 2 {
+            tx.execute_batch(include_str!("owner/setup.sql"))?;
         }
         tx.commit()?;
         Ok(Self(Arc::new(Mutex::new(connection))))
@@ -175,6 +178,11 @@ impl ProgressStore {
         let mut conn = self.0.lock().map_err(|_| ProgressError::Unavailable)?;
         let tx =
             conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        if !tx.query_row("SELECT EXISTS(SELECT 1 FROM owner)", [], |r| {
+            r.get::<_, bool>(0)
+        })? {
+            return Err(ProgressError::Unavailable);
+        }
         let authorized = token.len() == 64 && tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM publishers WHERE project = ?1 AND token_hash = ?2 AND revoked = 0)",
             params![project, token_hash(token)], |r| r.get::<_, bool>(0),

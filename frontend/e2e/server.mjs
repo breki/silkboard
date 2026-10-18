@@ -5,6 +5,7 @@ import {
   rmSync,
   lstatSync,
   readdirSync,
+  mkdirSync,
 } from "node:fs";
 import { createServer } from "node:net";
 import { createServer as httpsServer } from "node:https";
@@ -24,11 +25,12 @@ if (
 )
   throw new Error("Expected a private browser-test directory");
 // Refuse an occupied backend port before starting or seeding any service.
-await new Promise((done, reject) => {
-  const probe = createServer();
-  probe.once("error", reject);
-  probe.listen(38125, "127.0.0.1", () => probe.close(done));
-});
+for (const port of [38125, 38126, 38127])
+  await new Promise((done, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(port, "127.0.0.1", () => probe.close(done));
+  });
 const repo = resolve("..");
 const env = {
   ...process.env,
@@ -54,6 +56,30 @@ execFileSync(
   binary,
   ["publisher", "issue", "silkboard", "browser", join(dir, "publisher.token")],
   { env },
+);
+const setupDir = join(dir, "setup");
+mkdirSync(setupDir, { mode: 0o700 });
+const setupEnv = {
+  ...env,
+  SILKBOARD_DATABASE: join(setupDir, "progress.sqlite"),
+  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38126",
+  SILKBOARD_LISTEN: "127.0.0.1:38127",
+};
+writeFileSync(
+  join(setupDir, "link"),
+  execFileSync(binary, ["owner", "prepare-setup"], { env: setupEnv }),
+  { mode: 0o600 },
+);
+execFileSync(
+  binary,
+  [
+    "publisher",
+    "issue",
+    "silkboard",
+    "setup-browser",
+    join(setupDir, "publisher.token"),
+  ],
+  { env: setupEnv },
 );
 execFileSync(
   "openssl",
@@ -82,41 +108,52 @@ writeFileSync(
   { mode: 0o600 },
 );
 const app = spawn(binary, [], { env, stdio: "inherit" });
-let proxy;
+const setupApp = spawn(binary, [], { env: setupEnv, stdio: "inherit" });
+const apps = [app, setupApp],
+  proxies = [];
 let stopping = false;
 function stop(code) {
   if (stopping) return;
   stopping = true;
-  proxy?.closeAllConnections();
-  proxy?.close();
-  if (app.exitCode === null && app.signalCode === null) {
-    app.once("exit", () => {
-      rmSync(dir, { recursive: true, force: true });
-      process.exit(code);
-    });
-    app.kill("SIGTERM");
-  } else {
+  for (const proxy of proxies) {
+    proxy.closeAllConnections();
+    proxy.close();
+  }
+  Promise.all(
+    apps.map(
+      (child) =>
+        new Promise((done) => {
+          if (child.exitCode !== null || child.signalCode !== null)
+            return done();
+          child.once("exit", done);
+          child.kill("SIGTERM");
+        }),
+    ),
+  ).then(() => {
     rmSync(dir, { recursive: true, force: true });
     process.exit(code);
-  }
+  });
 }
 process.on("SIGTERM", () => stop(0));
 process.on("SIGINT", () => stop(0));
-app.on("exit", () => {
-  if (!stopping) stop(1);
-});
+for (const child of apps)
+  child.on("exit", () => {
+    if (!stopping) stop(1);
+  });
 try {
-  let ready = false;
-  for (let attempt = 0; attempt < 100; attempt++) {
-    try {
-      ready = (await fetch("http://127.0.0.1:38125/health")).ok;
-    } catch {
-      /* Wait for this child only. */
+  for (const backendPort of [38125, 38127]) {
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        ready = (await fetch(`http://127.0.0.1:${backendPort}/health`)).ok;
+      } catch {
+        /* Wait for this child only. */
+      }
+      if (ready) break;
+      await new Promise((done) => setTimeout(done, 100));
     }
-    if (ready) break;
-    await new Promise((done) => setTimeout(done, 100));
+    if (!ready) throw new Error("Browser backend did not start");
   }
-  if (!ready) throw new Error("Browser backend did not start");
   const token = readFileSync(join(dir, "publisher.token"), "utf8").trim();
   for (const [tool, child, count] of [
     ["codex", false, 25],
@@ -156,38 +193,44 @@ try {
         throw new Error(`Fixture publish failed: ${response.status}`);
     }
   }
-  proxy = httpsServer(
-    {
-      key: readFileSync(join(dir, "key.pem")),
-      cert: readFileSync(join(dir, "cert.pem")),
-    },
-    (incoming, outgoing) => {
-      const upstream = request(
-        {
-          hostname: "127.0.0.1",
-          port: 38125,
-          path: incoming.url,
-          method: incoming.method,
-          headers: incoming.headers,
-        },
-        (response) => {
-          outgoing.writeHead(response.statusCode, response.headers);
-          response.pipe(outgoing);
-        },
-      );
-      upstream.on("error", () => {
-        outgoing.writeHead(502);
-        outgoing.end();
-      });
-      incoming.on("aborted", () => upstream.destroy());
-      incoming.pipe(upstream);
-    },
-  );
-  proxy.on("error", (error) => {
-    console.error(error.message);
-    stop(1);
-  });
-  proxy.listen(38124, "127.0.0.1");
+  for (const [httpsPort, backendPort] of [
+    [38126, 38127],
+    [38124, 38125],
+  ]) {
+    const proxy = httpsServer(
+      {
+        key: readFileSync(join(dir, "key.pem")),
+        cert: readFileSync(join(dir, "cert.pem")),
+      },
+      (incoming, outgoing) => {
+        const upstream = request(
+          {
+            hostname: "127.0.0.1",
+            port: backendPort,
+            path: incoming.url,
+            method: incoming.method,
+            headers: incoming.headers,
+          },
+          (response) => {
+            outgoing.writeHead(response.statusCode, response.headers);
+            response.pipe(outgoing);
+          },
+        );
+        upstream.on("error", () => {
+          outgoing.writeHead(502);
+          outgoing.end();
+        });
+        incoming.on("aborted", () => upstream.destroy());
+        incoming.pipe(upstream);
+      },
+    );
+    proxy.on("error", (error) => {
+      console.error(error.message);
+      stop(1);
+    });
+    proxies.push(proxy);
+    proxy.listen(httpsPort, "127.0.0.1");
+  }
 } catch (error) {
   console.error(error.message);
   stop(1);

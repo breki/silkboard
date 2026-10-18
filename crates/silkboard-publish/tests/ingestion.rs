@@ -5,6 +5,11 @@ mod support;
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn executable_survives_restarts_and_server_revocation() {
     let store = silkboard_web::progress::ProgressStore::open_memory().unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private ingestion test password".as_slice(),
+    )
+    .unwrap();
     let token = store.issue_token("silkboard", "client-test").unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let origin = format!("http://{}", listener.local_addr().unwrap());

@@ -1,6 +1,6 @@
 //! Browser session HTTP boundary and default protection for owner-only APIs.
 
-use super::{AuthError, OwnerAuth, storage};
+use super::{AuthError, OwnerAuth, setup, storage};
 use axum::{
     Json, Router,
     extract::{DefaultBodyLimit, Request, State},
@@ -20,6 +20,13 @@ struct Login {
     password: String,
 }
 
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Registration {
+    credential: String,
+    password: String,
+}
+
 pub(crate) fn routes(auth: OwnerAuth) -> Router {
     // Future feed/session reads MUST be registered inside this protected router.
     let protected = Router::new()
@@ -30,6 +37,7 @@ pub(crate) fn routes(auth: OwnerAuth) -> Router {
         .layer(middleware::from_fn_with_state(auth.clone(), guard));
     Router::new()
         .route("/api/auth/login", post(login))
+        .route("/api/auth/setup", get(setup_status).post(register))
         .nest("/api/owner", protected)
         .layer(DefaultBodyLimit::max(4096))
         .layer(middleware::map_response(|mut response: Response| async {
@@ -183,6 +191,7 @@ impl IntoResponse for AuthError {
             Self::Limited => StatusCode::TOO_MANY_REQUESTS,
             Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
             Self::NotFound => StatusCode::NOT_FOUND,
+            Self::SetupClosed => StatusCode::GONE,
         };
         let mut response =
             (status, Json(serde_json::json!({"error":self.to_string()})))
@@ -194,4 +203,41 @@ impl IntoResponse for AuthError {
         }
         response
     }
+}
+
+async fn setup_status(
+    State(auth): State<OwnerAuth>,
+) -> Result<Json<serde_json::Value>, AuthError> {
+    let state = auth.query(setup::status).await?;
+    Ok(Json(serde_json::json!({"state":state})))
+}
+
+async fn register(
+    State(auth): State<OwnerAuth>,
+    headers: HeaderMap,
+    input: Result<Json<Registration>, axum::extract::rejection::JsonRejection>,
+) -> Result<StatusCode, AuthError> {
+    same_origin(&auth, &headers)?;
+    if headers.get("x-silkboard-setup").is_none_or(|h| h != "1")
+        || headers
+            .get("sec-fetch-site")
+            .is_some_and(|h| h != "same-origin" && h != "none")
+    {
+        return Err(AuthError::Forbidden);
+    }
+    let Json(input) = input.map_err(|_| AuthError::Invalid)?;
+    auth.attempt()?;
+    let permit = auth
+        .0
+        .login_slots
+        .clone()
+        .try_acquire_owned()
+        .map_err(|_| AuthError::Limited)?;
+    tokio::task::spawn_blocking(move || {
+        let _permit = permit;
+        setup::register(&auth.0.store, &input.credential, &input.password)
+    })
+    .await
+    .map_err(|_| AuthError::Unavailable)??;
+    Ok(StatusCode::NO_CONTENT)
 }

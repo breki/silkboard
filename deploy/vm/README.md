@@ -1,5 +1,13 @@
 # Production VM bootstrap
 
+For milestone 2 owner registration, the provisioner must prepare/deliver the
+[one-time private setup link](../../docs/owner-setup.md#provisioning-and-private-delivery)
+after installing a reviewed compatible release and persistent storage. The
+owner can then register from a phone without SSH. Publishing remains locked
+until initialization succeeds. Production service/storage installation and
+real owner acceptance remain #39; these bootstrap instructions do not enable
+them implicitly or grant a new deployment authorization.
+
 Operator bootstrap procedure for issue #5. Automatic polling, eligibility,
 recovery, and retries have a separate [updater procedure](../../docs/automatic-upgrades.md)
 for issue #6. The [in-repository toolkit](../../docs/deployment-toolkit.md)
