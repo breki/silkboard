@@ -1,5 +1,8 @@
 # Local application development
 
+The separate [standalone publishing CLI](publishing-cli.md) builds in this
+workspace and can run on a compatible target without Rust or Cargo.
+
 The minimal application adapts rustbase's Axum backend and Svelte/Vite
 frontend. It serves a status page, `/health`, and `/api/status`, with optional
 [persistent progress ingestion](progress-ingestion.md). It has no execution

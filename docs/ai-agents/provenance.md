@@ -1,5 +1,23 @@
 # Canon provenance
 
+## Standalone publishing CLI, 2026-10-18
+
+The owner narrowed #36 to an installed Rust executable with bounded
+best-effort publishing, no daemon and no outgoing queue. Codex is first;
+Claude remains separate #43. The [client guide](../publishing-cli.md) records
+the implemented wire contract, private token/configuration files and minimal
+sequence counters. Server ingestion and Bombyx's installed-binary model supply
+existing local contracts; no Bombyx implementation is imported.
+[Ureq 3.4.2](https://docs.rs/ureq/3.4.2/ureq/) supplies synchronous HTTP/TLS.
+New versions were checked against registry dates/licenses before compilation.
+Ureq-proto 0.6.4 and zeroize 1.9.0 retain cooldown-eligible versions. The first
+full audit rejected Rustls 0.23.45 with four advisories; exact security fix
+0.23.46 uses the documented [narrow exception](../dependency-security-exceptions.md).
+ISC and CDLA-Permissive-2.0 are added for
+the TLS implementation/trust anchors, with attribution texts embedded in
+`--licenses`. Existing dependency versions remain intact. Schema, production
+installation, credential setup and release trust policy are unchanged.
+
 ## Owner progress feed, 2026-10-18
 
 Issue #38 authorizes the mobile owner feed. The existing ingestion identity,

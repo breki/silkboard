@@ -212,9 +212,16 @@ fn verify_versions(
             text(&document["version"], "created_at")?.to_owned()
         };
         let published = timestamp(&date)?;
+        // Exact urgent fix for RUSTSEC-2026-0346 through -0349. This
+        // exempts only cooldown, never future timestamps or other gates.
+        // See docs/dependency-security-exceptions.md; no configurable bypass.
+        let rustls_security_fix = !*npm
+            && name == "rustls"
+            && version == "0.23.46"
+            && published == timestamp("2026-10-14T09:54:15.075873Z")?;
         if now
             .checked_sub(published)
-            .is_none_or(|age| age < 14 * 86400)
+            .is_none_or(|age| age < 14 * 86400 && !rustls_security_fix)
         {
             return Err(format!(
                 "{name}@{version} published {date}: within 14-day cooldown"
@@ -623,6 +630,44 @@ mod tests {
             assert!(run(&meta, &npm(), age).unwrap_err().contains("cooldown"));
         }
         assert!(run(&meta, &npm(), 100 * 86400).is_ok());
+    }
+    #[test]
+    fn only_the_exact_rustls_security_fix_can_bypass_cooldown() {
+        let date = "2026-10-14T09:54:15.075873Z";
+        let published = timestamp(date).unwrap();
+        let document = json!({"version":{"created_at":date}});
+        let check = |name: &str, version: &str, now| {
+            verify_versions(
+                &document,
+                &[(false, name.into(), version.into())],
+                &NpmClaims::new(),
+                now,
+            )
+        };
+        assert!(check("rustls", "0.23.46", published + 4 * 86400).is_ok());
+        for (name, version) in [
+            ("rustls", "0.23.45"),
+            ("rustls", "0.23.47"),
+            ("other", "0.23.46"),
+        ] {
+            assert!(
+                check(name, version, published + 4 * 86400)
+                    .unwrap_err()
+                    .contains("cooldown")
+            );
+        }
+        assert!(check("rustls", "0.23.46", published - 1).is_err());
+        let changed_date =
+            json!({"version":{"created_at":"2026-10-15T09:54:15.075873Z"}});
+        assert!(
+            verify_versions(
+                &changed_date,
+                &[(false, "rustls".into(), "0.23.46".into())],
+                &NpmClaims::new(),
+                published + 4 * 86400
+            )
+            .is_err()
+        );
     }
     #[test]
     fn rejects_unapproved_sources_licenses_and_missing_lock_fields() {

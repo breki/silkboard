@@ -57,7 +57,8 @@ permits publishing as any reported session within its project; host/tool IDs
 are descriptive, not cryptographically attested. Tokens grant no dashboard
 read, repository, VM, updater or command-execution access. Keep them separate
 from GitHub/updater credentials. Do not paste tokens into chat or command
-arguments; the shared publishing client will consume the private file in #36.
+arguments; the [standalone publisher](publishing-cli.md) consumes the private
+file without exposing it in arguments or diagnostics.
 
 ## HTTP contract
 
