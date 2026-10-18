@@ -1,8 +1,10 @@
 # Automatic upgrades and recovery
 
-Issue [#6](https://github.com/breki/silkboard/issues/6). The updater is installed
-and polling in production. The guest still runs the initial `v0.1.1`;
-automatic upgrade, rollback, retry, and updater reboot evidence are pending.
+The updater is installed and polling in production. Scheduled polling activated
+`v0.2.0`; live rollback/retry verification is tracked in
+[#17](https://github.com/breki/silkboard/issues/17), and updater reboot recovery
+in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
+issue [#6](https://github.com/breki/silkboard/issues/6) is closed.
 
 ## Release admission
 
@@ -174,9 +176,17 @@ credential form was removed; Tailscale Serve exposes only the application
 through private port 443. Guest installation evidence is retained in
 `/var/log/silkboard-updater-install-4975637.log` and the service journal.
 
-Live automatic upgrade, rollback/retry, and updater reboot demonstrations
-remain required before issue #6 or milestone 1 is complete. Polling an already
-installed release does not demonstrate build or activation of a newer release.
+The production journal records scheduled activation of signed `v0.2.0` at
+15:05:24 UTC on 2026-10-17, commit
+`6a24145a6f5404e210f7597001d02e166b023889`. Read-only checks on 2026-10-18
+confirmed that exact release through both guest health endpoints and private
+HTTPS, an active timer, and no pending transaction or blocked tag. The installed
+updater checksum remains the one above.
+
+Live rollback/retry and updater reboot demonstrations remain required for
+milestone 1. The [controlled rollback drill](live-rollback-drill.md) records
+the owner-selected two-release plan and observed baseline; its disruptive
+steps and release publication are not yet authorized or executed.
 
 ## Reuse assessment
 
