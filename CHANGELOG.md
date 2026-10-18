@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.2 - 2026-10-18
+
+- Verification-only patch for the owner-approved newer-release upgrade drill
+  in issue #17; application behavior is unchanged.
+
 ## 0.2.1 - 2026-10-18
 
 - Cache isolated normal, coverage and ARM64 dependency builds in CI while

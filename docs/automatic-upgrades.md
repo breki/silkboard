@@ -1,9 +1,9 @@
 # Automatic upgrades and recovery
 
-The updater is installed and polling in production. Scheduled polling activated
-`v0.2.0`; live rollback/retry verification is tracked in
-[#17](https://github.com/breki/silkboard/issues/17), and updater reboot recovery
-in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
+The updater is installed and polling in production, now running `v0.2.2`.
+Live rollback/retry and newer-release acceptance are verified for
+[#17](https://github.com/breki/silkboard/issues/17); updater reboot recovery
+remains in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
 issue [#6](https://github.com/breki/silkboard/issues/6) is closed.
 
 ## Release admission
@@ -189,9 +189,14 @@ demonstrated two candidate-specific startup failures, healthy rollback to
 v0.2.0, persistent v0.2.1 blocking across a separate poll, and explicit retry
 with ordinary signed/exact-suite admission. The temporary fault was removed;
 units and the installed updater are unchanged. There is no pending transaction.
-The timer is paused for phase 2, and v0.2.1 remains blocked. Activation of a
-newer eligible v0.2.2 while that block remains, and updater reboot recovery,
-are still unverified. Issue #17 and milestone 1 remain incomplete.
+The separately approved second phase activated exact signed v0.2.2 at
+`2f27e96dc8795971c92cd776bc896f53620743f3` at 04:48:58 UTC while v0.2.1
+remained blocked. Both guest endpoints and private HTTPS confirmed healthy
+identity. Original enabled/active polling was restored, and a separate
+scheduled 04:50 UTC poll passed with the old block and no pending transaction.
+See the [newer-release evidence](live-rollback-drill.md#observed-phase-2-2026-10-18).
+Issue #17's verification is complete; updater reboot recovery remains #18.
+Milestone 1 is not yet complete.
 
 ## Reuse assessment
 

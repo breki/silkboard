@@ -1,8 +1,8 @@
 # Silkboard Roadmap
 
 Status: Milestone 1 in progress; the minimal application is implemented.
-Release gates and initial production deployment are verified; automatic
-upgrades and recovery remain pending.
+Release gates, production deployment, automatic upgrades and live rollback/retry
+are verified. Updater reboot recovery and the remaining evidence below are pending.
 Later milestones are open.
 
 This roadmap replaces the original milestone list in the architecture proposal.
@@ -85,7 +85,8 @@ the dedicated guest, initial release, private access, and guest reboot recovery.
 ### Agreed deployment decisions
 
 Selected with the owner on 2026-10-16. Initial provisioning is verified;
-the updater is installed and polling; live upgrade/recovery proof is pending.
+the updater is installed and polling; live upgrade and rollback/retry are verified.
+Updater reboot recovery remains pending.
 
 - Target malina with a dedicated QEMU/KVM guest managed by libvirt, running
   minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
@@ -123,13 +124,14 @@ the updater is installed and polling; live upgrade/recovery proof is pending.
 
 ### Decisions and evidence still needed
 
-- The installed public-key trust configuration and workflow identity admitted
-  the existing signed release, and scheduled polling succeeded. See
+- The installed trust and workflow identity admitted signed releases; scheduled
+  polling activated v0.2.0, and the controlled drill verified rollback, retry
+  and newer v0.2.2 activation while v0.2.1 remained blocked. See
   [updater evidence](automatic-upgrades.md#verification-status).
-- Demonstrate automatic upgrade activation, pending-check reconsideration,
-  rollback, manual retry, and updater reboot recovery on the production guest.
-  The initial deployment and polling are operational; the complete automatic
-  delivery pipeline is not verified yet.
+- Live pending-check reconsideration and updater reboot recovery still need
+  demonstration. Reboot/interrupted recovery is tracked in
+  [#18](https://github.com/breki/silkboard/issues/18). The complete automatic
+  delivery pipeline is not verified yet; local tests do not fill these gaps.
 
 ## Later milestones
 

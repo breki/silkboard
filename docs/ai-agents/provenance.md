@@ -284,5 +284,8 @@ installation of the newer toolkit. Read-only guest checks and its journal
 support the baseline and existing v0.2.0 activation evidence. The procedure
 does not itself authorize publication or disruption. After separate owner
 approval, phase 1 observed real activation failures, healthy rollback, durable
-blocking and explicit retry using ordinary admission. Newer-release and reboot
-acceptance remain pending. No upstream code or deployment policy is changed.
+blocking and explicit retry using ordinary admission. Separately approved
+phase 2 admitted and activated v0.2.2 with the old block retained, then restored
+and observed scheduled polling. The records identify both exact tag-triggered
+suites and guest invocation/state/health evidence. Reboot acceptance remains
+pending. No upstream code or deployment policy is changed.

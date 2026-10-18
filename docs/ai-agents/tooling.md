@@ -119,9 +119,9 @@ See [local development](../development.md) for application commands and
 The [VM bootstrap](../../deploy/vm/README.md) provides operator scripts for
 the verified initial production deployment, separate from xtask and the app.
 The standalone [updater](../automatic-upgrades.md) has local behavioral checks;
-it is installed with verified admission and scheduled polling. Live upgrade
-and recovery evidence remain pending. It is not
-an xtask deployment command. The [in-repository toolkit](../deployment-toolkit.md)
+it is installed with verified admission, scheduled upgrades and live
+rollback/retry/newer-release evidence. Updater reboot recovery remains pending.
+It is separate from xtask. The [in-repository toolkit](../deployment-toolkit.md)
 adds a reusable engine, policy evaluator and structured operator interface;
 its newer installed-code/state format has not been deployed to production.
 
@@ -227,7 +227,7 @@ restore that trusted entry directly.
 | Records | `cargo xtask records-check`, structured records tooling |
 | Changelog | `cargo xtask changelog add` |
 | Template maintenance | sync-candidates, feedback-add, backfeed helpers |
-| Production delivery | Verify live automatic upgrades and recovery |
+| Production delivery | Live pending-check reconsideration and updater reboot recovery |
 
 Version and changelog bookkeeping remain manual under the release workflow.
 GitHub release workflow registration and successful run evidence must be

@@ -1,9 +1,10 @@
 # Live rollback and retry drill
 
 This is the procedure for [issue #17](https://github.com/breki/silkboard/issues/17).
-The owner selected two valid patch releases and approved phase 1. Its observed
-rollback, blocking and retry results are recorded below. Publishing v0.2.2 and
-demonstrating newer-release activation remain pending separate approval.
+The owner selected two valid patch releases and separately approved both
+phases. The live drill demonstrated rollback, persistent blocking, manual
+retry and successful activation of a newer eligible release. Reboot recovery
+remains separate in [#18](https://github.com/breki/silkboard/issues/18).
 
 ## Observed phase 1, 2026-10-18
 
@@ -24,7 +25,7 @@ application code was published.
 | 03:31:17 | Fault removed and systemd reloaded; effective application/updater units matched their pre-drill copies, and the updater checksum was unchanged. |
 
 Both guest endpoints and private HTTPS confirmed healthy v0.2.0 at
-`6a24145a6f5404e210f7597001d02e166b023889` after cleanup. State is
+`6a24145a6f5404e210f7597001d02e166b023889` after phase 1 cleanup. State was
 `blocked: ["v0.2.1"]`, `pending: null`. The updater service's exit code 1 on
 each fault attempt is the expected failure result after successful rollback,
 not a passing deployment of v0.2.1. The intervening blocked poll exited 0.
@@ -36,11 +37,40 @@ under `/var/log/silkboard-drill-17-20261018`: per-invocation journals, service
 results, before/after state and health, retry-cleared state, unit comparisons,
 and the resolved fault condition. No credential values are included.
 
-The timer remains paused, as specified below, while the newer-release phase
-is prepared. v0.2.2 is not published. Acceptance that a newer eligible release
-can activate while the older failed tag remains blocked is still unrun.
-Reboot/interrupted recovery remains #18; this drill did not remove credentials
-or simulate network loss during recovery.
+The timer stayed paused while the newer-release phase was prepared. This
+drill did not remove credentials or simulate network loss during recovery.
+
+## Observed phase 2, 2026-10-18
+
+After separate publication approval, signed v0.2.2 at
+`2f27e96dc8795971c92cd776bc896f53620743f3` passed all three jobs in its exact
+tag-push [release suite, attempt 1](https://github.com/breki/silkboard/actions/runs/39097628716/attempts/1).
+The installed updater admitted that identity. No startup fault was installed.
+
+The controlled poll started at 04:43:38 UTC with v0.2.1 still blocked. Its
+durable pending record retained v0.2.0 as previous, selected exact v0.2.2 as
+candidate and preserved the old block. Signature verification preceded the
+unprivileged build, and admission was repeated before activation. At 04:48:58
+the updater reported successful activation of v0.2.2. Both guest endpoints
+and private HTTPS confirmed its exact version/tag/commit and healthy status.
+The poll exited 0, pending work cleared and only v0.2.1 remained blocked.
+
+Original application/updater units and the installed updater checksum matched
+the pre-drill copies. Polling resumed at 04:49:24 UTC with its original
+enabled/active state. The separate scheduled 04:50:00 poll passed, reporting
+no newer eligible release at
+04:50:02. Its next deadline was 05:00:00. Both healthy v0.2.2 identity and the
+old block were verified again after that scheduled poll.
+
+Upgrade invocation: `a7951d2d827c4d2e9345fc936f4d1cf3`. Scheduled follow-up:
+`91dcb575abae4e3a95c582a7c1e4fda1`. The same root-only evidence directory
+retains admission, pending/final state, per-invocation journals, service and
+health results, final unit/checksum comparisons and timer deadlines.
+
+This completes #17's live acceptance. No reboot or interrupted transaction
+was introduced; #18 remains unverified. The fixed-identity procedure below
+records this completed drill. A new drill needs fresh identities, baseline
+checks and approval; it must not be rerun blindly against the current release.
 
 ## Scope and observed baseline
 
