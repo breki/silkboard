@@ -1,5 +1,17 @@
 # Canon provenance
 
+## Codex progress hooks, 2026-10-18
+
+Issue #37 authorizes automatic Codex observations using the installed publisher.
+The owner selected a bounded first sentence of final replies. OpenAI's official
+hook/configuration/streaming documentation, installed Codex 0.162.1 schemas and
+an isolated native runtime supplied the event and async contracts documented in
+the [integration guide](../codex-publishing.md). A controlled local model provider
+drove real root/child/resume/concurrent callbacks into a disposable authenticated
+Silkboard backend. No upstream code, new dependency, user trust mutation,
+production credentials or deployment changes are imported. Existing validation
+handlers and execution authority remain intact; production dogfooding is #39.
+
 ## Standalone publishing CLI, 2026-10-18
 
 The owner narrowed #36 to an installed Rust executable with bounded

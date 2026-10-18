@@ -1,5 +1,5 @@
 {
-  "description": "Check changed Rust code and show a Kozmotic Git summary after each turn.",
+  "description": "Validate changed Rust, show Git status and optionally publish concise Codex progress.",
   "hooks": {
     "Stop": [
       {
@@ -13,6 +13,40 @@
             "type": "command",
             "command": "\"$HOME/.claude/bin/kozmotic\" codex-git-status",
             "timeout": 6
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/publish-progress.sh\"",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/publish-progress.sh\"",
+            "async": true,
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh \"$(git rev-parse --show-toplevel)/.codex/hooks/publish-progress.sh\"",
+            "async": true,
+            "timeout": 5
           }
         ]
       }

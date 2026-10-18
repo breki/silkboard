@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Publish concise Codex turn and subagent observations through native async
+  hooks, with bounded first-sentence summaries, stable native identities and
+  opt-in private configuration; publishing failures never control a turn.
+
 - Add an installable standalone Rust progress publisher with private token
   files, native-session counters and bounded best-effort delivery, without
   a background service or outgoing queue.
