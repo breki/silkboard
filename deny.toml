@@ -38,6 +38,8 @@ allow = [
     "Unicode-3.0",
     # A public-domain dedication with an MIT fallback.
     "Unlicense",
+    # foldhash, introduced by SQLite's hashlink dependency.
+    "Zlib",
 ]
 
 # No `private.ignore`. It reads as "skip our own unpublished crates"

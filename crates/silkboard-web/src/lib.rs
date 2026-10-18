@@ -1,4 +1,4 @@
-//! Silkboard's read-only status application.
+//! Silkboard's status application and optional publish-only progress ingestion.
 
 use std::path::Path;
 
@@ -6,9 +6,19 @@ use axum::{Json, Router, routing::get};
 use serde::Serialize;
 use tower_http::services::ServeDir;
 
+pub mod progress;
+
+/// Construct the application with persistent, project-scoped ingestion.
+pub fn create_progress_router(
+    frontend_path: &Path,
+    store: progress::ProgressStore,
+) -> Router {
+    create_router(frontend_path).merge(progress::routes(store))
+}
+
 /// Construct the status application's HTTP routes and static file service.
 ///
-/// Unknown routes return 404; the application exposes no mutation API.
+/// Without a configured progress store, no mutation API is exposed.
 pub fn create_router(frontend_path: &Path) -> Router {
     Router::new()
         .route("/health", get(|| async { Json(Health { status: "ok" }) }))
