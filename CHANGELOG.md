@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.2 - 2026-10-18
+
 - Verification-only patch for the owner-approved newer-release upgrade drill
   in issue #17; application behavior is unchanged.
 
