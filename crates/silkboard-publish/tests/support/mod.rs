@@ -1,0 +1,153 @@
+#![allow(dead_code)] // Each integration test imports only the fixture helpers it needs.
+use serde_json::{Value, json};
+use std::{
+    ffi::OsString,
+    fs,
+    io::{Read, Write},
+    net::TcpListener,
+    os::unix::fs::PermissionsExt,
+    path::{Path, PathBuf},
+    sync::atomic::{AtomicUsize, Ordering},
+    thread,
+    time::{Duration, Instant},
+};
+
+static NEXT: AtomicUsize = AtomicUsize::new(0);
+pub struct Fixture {
+    pub root: PathBuf,
+    pub config: Value,
+}
+impl Fixture {
+    pub fn new() -> Self {
+        let root = std::env::temp_dir().canonicalize().unwrap().join(format!(
+            "silkboard-publisher-test-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir(&root).unwrap();
+        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        let state = root.join("state");
+        fs::create_dir(&state).unwrap();
+        fs::set_permissions(&state, fs::Permissions::from_mode(0o700)).unwrap();
+        let token = root.join("token");
+        private(&token, "a".repeat(64).as_bytes());
+        let config = json!({"endpoint":"http://127.0.0.1:9","project":"silkboard","token_file":token,"state_dir":state});
+        Self { root, config }
+    }
+    pub fn args(&self) -> Vec<OsString> {
+        let path = self.root.join("config.json");
+        private(&path, &serde_json::to_vec(&self.config).unwrap());
+        vec!["publish".into(), "--config".into(), path.into()]
+    }
+    pub fn run(
+        &self,
+        report: &Value,
+    ) -> Result<&'static str, silkboard_publish::Error> {
+        silkboard_publish::run(
+            &self.args(),
+            serde_json::to_vec(report).unwrap().as_slice(),
+        )
+    }
+    pub fn state_files(&self, extension: &str) -> Vec<PathBuf> {
+        fs::read_dir(self.root.join("state"))
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .filter(|p| p.extension().is_some_and(|e| e == extension))
+            .collect()
+    }
+}
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.root).unwrap();
+    }
+}
+pub fn private(path: &Path, bytes: &[u8]) {
+    fs::write(path, bytes).unwrap();
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+}
+pub fn report() -> Value {
+    json!({"hostname":"dev","tool":"codex","session_id":"native-1","message":"Running behavioral tests"})
+}
+
+pub fn server(
+    count: usize,
+    mut respond: impl FnMut(Value) -> (u16, String) + Send + 'static,
+) -> (String, thread::JoinHandle<Vec<Value>>) {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let origin = format!("http://{}", listener.local_addr().unwrap());
+    let handle = thread::spawn(move || {
+        let mut events = Vec::new();
+        for _ in 0..count {
+            let start = Instant::now();
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((s, _)) => break s,
+                    Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                        assert!(
+                            start.elapsed() < Duration::from_secs(6),
+                            "Client never connected"
+                        );
+                        thread::sleep(Duration::from_millis(5));
+                    }
+                    Err(e) => panic!("accept: {e}"),
+                }
+            };
+            stream
+                .set_read_timeout(Some(Duration::from_secs(4)))
+                .unwrap();
+            let mut bytes = Vec::new();
+            let split = loop {
+                let mut chunk = [0; 1024];
+                let n = stream.read(&mut chunk).unwrap();
+                assert!(n > 0);
+                bytes.extend_from_slice(&chunk[..n]);
+                assert!(bytes.len() < 16384);
+                if let Some(i) = bytes.windows(4).position(|v| v == b"\r\n\r\n")
+                {
+                    break i + 4;
+                }
+            };
+            let headers = std::str::from_utf8(&bytes[..split])
+                .unwrap()
+                .to_ascii_lowercase();
+            assert!(headers.starts_with(
+                "post /api/projects/silkboard/progress http/1.1\r\n"
+            ));
+            assert!(headers.contains(&format!(
+                "authorization: bearer {}\r\n",
+                "a".repeat(64)
+            )));
+            assert!(headers.contains("content-type: application/json\r\n"));
+            let length = headers
+                .lines()
+                .find_map(|l| l.strip_prefix("content-length: "))
+                .unwrap()
+                .parse::<usize>()
+                .unwrap();
+            while bytes.len() < split + length {
+                let mut b = [0; 1024];
+                let n = stream.read(&mut b).unwrap();
+                assert!(n > 0);
+                bytes.extend_from_slice(&b[..n]);
+            }
+            let event: Value =
+                serde_json::from_slice(&bytes[split..split + length]).unwrap();
+            let (status, body) = respond(event.clone());
+            let wire = format!(
+                "HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                body.len()
+            );
+            let _ = stream.write_all(wire.as_bytes());
+            events.push(event);
+        }
+        events
+    });
+    (origin, handle)
+}
+pub fn ack(event: &Value) -> (u16, String) {
+    (
+        200,
+        json!({"event_id":event["event_id"],"received_at":123}).to_string(),
+    )
+}

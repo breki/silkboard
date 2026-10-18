@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add an installable standalone Rust progress publisher with private token
+  files, native-session counters and bounded best-effort delivery, without
+  a background service or outgoing queue.
+
 - Add the owner mobile progress feed with login/logout, distinct agent
   sessions, paginated history, visible-page refresh and safe text display.
 

@@ -140,19 +140,32 @@ owns delivery tracking. This work starts on the current development setup;
 milestone 1 reboot/pending-check evidence and the Bombyx VM migration are
 independent work, not prerequisites.
 
-- Silkboard's own Codex and Claude development agents automatically publish
-  basic short progress messages during ordinary work.
+- Silkboard's own development agents automatically publish basic short
+  progress messages during ordinary work. Deliver Codex integration first;
+  Claude Code is a separate [follow-up](https://github.com/breki/silkboard/issues/43)
+  in this same milestone, not a prerequisite for the initial Codex rollout.
 - Identity includes project, hostname, tool, native session ID and subagent
   ID when applicable. Optional readable names do not replace identity.
 - Agents publish only: they never read dashboard content or receive tasks,
   commands or execution permissions from Silkboard. GitHub remains the task
   tracker. This supersedes the architecture proposal's task-fetch direction.
-- Persist messages in SQLite; use project-scoped publisher credentials and
-  a shared local publishing client with durable, duplicate-safe retries.
+- Persist received messages in the server's SQLite database and use
+  project-scoped publisher credentials. The publishing client is a standalone
+  installed Rust executable; running it requires neither Rust nor Cargo.
+  Build-time Rust crates are allowed. Use bounded best-effort delivery with
+  no daemon, background service or durable outgoing queue this milestone;
+  lost messages during outages are acceptable. Keep native identity and
+  sequence allocation compatible with the ingestion contract.
 - Only the owner reads the feed, through a separate Silkboard login and
   a mobile-friendly project/session history page over private HTTPS.
-- Completion requires real Codex and Claude publishing to production and
-  owner phone verification through the normal reviewed release process.
+- Production first-owner registration must work from a phone using a
+  provisioning-prepared one-time setup link before publisher API access is
+  enabled; see [#45](https://github.com/breki/silkboard/issues/45). Owner web
+  token issuance/revocation is separate [#44](https://github.com/breki/silkboard/issues/44).
+  These are pending requirements, not current production capabilities.
+- The initial rollout verifies real Codex publishing and owner phone access
+  through the normal reviewed release process. Claude production integration
+  remains separate work within this milestone.
 
 The [ingestion guide](progress-ingestion.md) describes the optional backend
 foundation. It does not establish completion of this milestone.

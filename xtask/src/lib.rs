@@ -102,9 +102,12 @@ pub fn dispatch(
         }
         ["coverage"] => coverage(root, runner),
         ["dupes"] => {
-            for directory in
-                ["crates/silkboard-web", "crates/silkboard-updater", "xtask"]
-            {
+            for directory in [
+                "crates/silkboard-web",
+                "crates/silkboard-updater",
+                "crates/silkboard-publish",
+                "xtask",
+            ] {
                 report(&runner(
                     "code-dupes",
                     &[

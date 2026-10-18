@@ -40,6 +40,10 @@ allow = [
     "Unlicense",
     # foldhash, introduced by SQLite's hashlink dependency.
     "Zlib",
+    # ring/untrusted/rustls-webpki: permissive attribution and disclaimer.
+    "ISC",
+    # Bundled Mozilla trust anchors; distribute its text with the CLI.
+    "CDLA-Permissive-2.0",
 ]
 
 # No `private.ignore`. It reads as "skip our own unpublished crates"
