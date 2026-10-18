@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
   import ProjectFeed from "./ProjectFeed.svelte";
+  import PublisherTokens from "./PublisherTokens.svelte";
+  let managing = $state(false);
 
   type Phase =
     | "checking"
@@ -95,6 +97,12 @@
       <h2>Agent progress</h2>
       <button onclick={() => void logout()}>Sign out</button>
     </div>
+    <button onclick={() => (managing = !managing)}
+      >{managing
+        ? "Close credential manager"
+        : "Manage publisher credentials"}</button
+    >
+    {#if managing}<PublisherTokens onexpire={expired} />{/if}
     <ProjectFeed onexpire={expired} />
   {:else if phase === "signed-out"}
     <div class="panel login">

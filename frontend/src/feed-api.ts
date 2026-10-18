@@ -5,6 +5,10 @@ export interface Page<T> {
 export interface Project {
   id: string;
 }
+export interface Publisher {
+  label: string;
+  revoked: boolean;
+}
 export interface Message {
   event_id: string;
   sequence: string;
@@ -189,6 +193,70 @@ export async function projects(
     project,
     projectId,
   );
+}
+
+const publisherLabel = (value: unknown): value is string =>
+  typeof value === "string" && /^[!-~]{1,256}$/.test(value);
+export async function publisherCredentials(
+  project: string,
+  after: string | null,
+  signal: AbortSignal,
+): Promise<Page<Publisher>> {
+  return page(
+    await request(
+      `/api/owner/projects/${encodeURIComponent(project)}/publishers${after === null ? "" : `?after=${encodeURIComponent(after)}`}`,
+      {},
+      signal,
+    ),
+    (item): item is Publisher =>
+      object(item) &&
+      Object.keys(item).length === 2 &&
+      publisherLabel(item.label) &&
+      typeof item.revoked === "boolean",
+    publisherLabel,
+  );
+}
+async function credentialMutation(
+  project: string,
+  label: string,
+  revoke: boolean,
+  signal: AbortSignal,
+): Promise<unknown> {
+  const { csrf_token } = await ownerSession(signal);
+  return request(
+    `/api/owner/projects/${encodeURIComponent(project)}/publishers${revoke ? "/revoke" : ""}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Silkboard-CSRF": csrf_token,
+      },
+      body: JSON.stringify({ label }),
+    },
+    signal,
+  );
+}
+export async function issuePublisher(
+  project: string,
+  label: string,
+  signal: AbortSignal,
+): Promise<string> {
+  const value = await credentialMutation(project, label, false, signal);
+  if (
+    !object(value) ||
+    Object.keys(value).length !== 1 ||
+    typeof value.token !== "string" ||
+    !/^[0-9a-f]{64}$/.test(value.token)
+  )
+    throw new ApiError(0);
+  return value.token;
+}
+export async function revokePublisher(
+  project: string,
+  label: string,
+  signal: AbortSignal,
+): Promise<void> {
+  await credentialMutation(project, label, true, signal);
 }
 export async function sessions(
   project: string,

@@ -23,7 +23,13 @@ pub fn create_owner_router(
     origin: &str,
 ) -> Result<Router, owner::AuthError> {
     let auth = owner::OwnerAuth::new(store.clone(), origin)?;
-    let setup = Router::new().route_service("/setup", ServeFile::new(frontend_path.join("index.html")))
+    let setup = Router::new().route_service(
+        "/setup",
+        ServeFile::new(frontend_path.join("index.html")),
+    );
+    Ok(create_progress_router(frontend_path, store)
+        .merge(owner::routes(auth))
+        .merge(setup)
         .layer(middleware::map_response(|mut response: Response| async {
             for (key, value) in [
                 ("cache-control", "no-store"),
@@ -33,10 +39,7 @@ pub fn create_owner_router(
                 ("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
             ] { response.headers_mut().insert(key, HeaderValue::from_static(value)); }
             response
-        }));
-    Ok(create_progress_router(frontend_path, store)
-        .merge(owner::routes(auth))
-        .merge(setup))
+        })))
 }
 
 /// Construct the application with persistent, project-scoped ingestion.

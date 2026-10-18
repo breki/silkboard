@@ -72,7 +72,7 @@ pub(crate) fn project(value: &str) -> Result<(), ProgressError> {
     Ok(())
 }
 
-pub(super) fn identity(value: &str) -> Result<(), ProgressError> {
+pub(crate) fn identity(value: &str) -> Result<(), ProgressError> {
     if value.is_empty()
         || value.len() > 256
         || !value.bytes().all(|c| c.is_ascii_graphic())

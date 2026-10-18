@@ -42,8 +42,8 @@ install -d -m 0700 "$HOME/.local/state/silkboard-publish"
 
 Install the project token privately as a mode-0600 file in the configuration
 directory. The current [operator command](progress-ingestion.md#local-setup-and-credentials)
-issues it without printing the secret. Web token management is separate
-[#44](https://github.com/breki/silkboard/issues/44); first-owner setup is
+issues it without printing the secret. The owner can also issue/revoke through
+the [private web credential manager](publisher-tokens.md); first-owner setup is
 provided by the [one-time setup page](owner-setup.md). Ingestion remains locked
 until the owner is initialized, even with a valid publisher token. Never paste
 tokens into chat, command arguments, URLs or reports.

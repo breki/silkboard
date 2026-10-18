@@ -5,6 +5,7 @@ mod model;
 mod operator;
 
 pub(crate) use http::routes;
+pub(crate) use model::identity as validate_identity;
 pub(crate) use model::project as validate_project;
 pub use model::{Acknowledgement, ProgressEvent};
 pub use operator::publisher_command;
@@ -122,14 +123,24 @@ impl ProgressStore {
         project: &str,
         label: &str,
     ) -> Result<String, ProgressError> {
+        let mut conn = self.0.lock().map_err(|_| ProgressError::Unavailable)?;
+        let tx =
+            conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let token = Self::issue_in_transaction(&tx, project, label)?;
+        tx.commit()?;
+        Ok(token)
+    }
+
+    pub(crate) fn issue_in_transaction(
+        tx: &rusqlite::Transaction<'_>,
+        project: &str,
+        label: &str,
+    ) -> Result<String, ProgressError> {
         model::project(project)?;
         model::identity(label)?;
         let mut bytes = [0_u8; 32];
         getrandom::fill(&mut bytes).map_err(|_| ProgressError::Unavailable)?;
         let token = encode(&bytes);
-        let mut conn = self.0.lock().map_err(|_| ProgressError::Unavailable)?;
-        let tx =
-            conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         tx.execute(
             "INSERT OR IGNORE INTO projects (id) VALUES (?1)",
             [project],
@@ -141,7 +152,6 @@ impl ProgressStore {
         if inserted == 0 {
             return Err(ProgressError::Conflict);
         }
-        tx.commit()?;
         Ok(token)
     }
 
@@ -154,9 +164,22 @@ impl ProgressStore {
         project: &str,
         label: &str,
     ) -> Result<(), ProgressError> {
+        let mut conn = self.0.lock().map_err(|_| ProgressError::Unavailable)?;
+        let tx =
+            conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        Self::revoke_in_transaction(&tx, project, label)?;
+        tx.commit()?;
+        Ok(())
+    }
+
+    pub(crate) fn revoke_in_transaction(
+        tx: &rusqlite::Transaction<'_>,
+        project: &str,
+        label: &str,
+    ) -> Result<(), ProgressError> {
         model::project(project)?;
         model::identity(label)?;
-        self.0.lock().map_err(|_| ProgressError::Unavailable)?.execute(
+        tx.execute(
             "UPDATE publishers SET revoked = 1 WHERE project = ?1 AND label = ?2",
             (project, label),
         )?;
