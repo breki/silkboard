@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.1 - 2026-10-18
+
 - Cache isolated normal, coverage and ARM64 dependency builds in CI while
   retaining fresh workspace builds, tests, coverage evidence and release checks.
 
