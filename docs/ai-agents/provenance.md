@@ -10,7 +10,9 @@ transactions/migration APIs, getrandom entropy and SHA-256 token hashing.
 No upstream application code, guidance baseline, production configuration
 or updater policy changes. The dependency gate checked newly resolved versions;
 `cc` 1.6.0 and transitive `syn` 3.0.6 retain the 14-day cooldown. The permissive
-Zlib license is added for foldhash; ARM64 CI installs SQLite's C compiler.
+Zlib license is added for foldhash; ARM64 CI installs SQLite's C compiler and
+target libc development headers explicitly. PR CI exposed the missing headers
+when recommended packages were disabled; the explicit package list fixes it.
 
 Adapted on 2026-10-15. These are guidance-source baselines, not a record that
 Silkboard has imported the complete application template.

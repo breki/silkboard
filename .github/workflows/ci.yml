@@ -199,7 +199,7 @@ jobs:
           CARGO_TARGET_DIR: ${{ env.CI_ARM64_TARGET_DIR }}
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu
+          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
           cargo xtask clippy --target aarch64-unknown-linux-gnu
       # Explicit saves happen only after the full gate suite and ARM64 pass.
       # No workspace binaries, reports, raw profiles or verdicts are archived.

@@ -14,7 +14,8 @@ is pinned in `.mise.toml` and CI. Install frontend dependencies with
 and jq; signature tests require ssh-keygen. Registry checks require curl.
 CI cache helpers and their tests require coreutils `sha256sum` and `env`.
 Bundled SQLite requires a C compiler. On Debian/Ubuntu, ARM64 cross-target
-lint also needs `gcc-aarch64-linux-gnu`; CI installs this before that gate.
+lint also needs `gcc-aarch64-linux-gnu` and `libc6-dev-arm64-cross`; CI installs
+both explicitly before that gate, including when recommendations are disabled.
 
 Install the external gates before full validation:
 
