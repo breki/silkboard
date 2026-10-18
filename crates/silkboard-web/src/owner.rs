@@ -2,6 +2,7 @@
 
 mod feed;
 mod http;
+mod setup;
 mod storage;
 
 use crate::progress::ProgressStore;
@@ -14,6 +15,7 @@ use std::{
 use tokio::sync::Semaphore;
 
 pub(crate) use http::routes;
+pub use setup::prepare_setup;
 
 /// Owner authentication failures contain no credentials or database details.
 #[derive(Debug)]
@@ -30,6 +32,8 @@ pub enum AuthError {
     Unavailable,
     /// An authenticated read addressed a nonexistent project or session.
     NotFound,
+    /// First-owner registration has permanently closed.
+    SetupClosed,
 }
 
 impl std::fmt::Display for AuthError {
@@ -41,6 +45,7 @@ impl std::fmt::Display for AuthError {
             Self::Limited => "owner login temporarily limited",
             Self::Unavailable => "owner authentication unavailable",
             Self::NotFound => "progress resource not found",
+            Self::SetupClosed => "owner setup is already complete",
         })
     }
 }

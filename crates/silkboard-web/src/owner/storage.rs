@@ -12,7 +12,7 @@ use sha2::{Digest, Sha256};
 
 pub(super) const LIFETIME: i64 = 12 * 60 * 60;
 
-fn random<const N: usize>() -> Result<[u8; N], AuthError> {
+pub(super) fn random<const N: usize>() -> Result<[u8; N], AuthError> {
     let mut bytes = [0; N];
     getrandom::fill(&mut bytes).map_err(|_| AuthError::Unavailable)?;
     Ok(bytes)
@@ -40,19 +40,24 @@ pub(super) fn set_password(
     store: &ProgressStore,
     password: &str,
 ) -> Result<(), AuthError> {
-    password_valid(password)?;
-    let salt = SaltString::encode_b64(&random::<16>()?)
-        .map_err(|_| AuthError::Unavailable)?;
-    let hash = algorithm()
-        .hash_password(password.as_bytes(), &salt)
-        .map_err(|_| AuthError::Unavailable)?
-        .to_string();
+    let hash = password_hash(password)?;
     let mut conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     tx.execute("INSERT INTO owner (id, password_hash, generation) VALUES (1, ?1, 1) ON CONFLICT(id) DO UPDATE SET password_hash = excluded.password_hash, generation = generation + 1", [hash])?;
+    tx.execute("UPDATE owner_setup SET closed = 1, token_hash = NULL, expires_at = 0 WHERE id = 1", [])?;
     tx.execute("DELETE FROM owner_sessions", [])?;
     tx.commit()?;
     Ok(())
+}
+
+pub(super) fn password_hash(password: &str) -> Result<String, AuthError> {
+    password_valid(password)?;
+    let salt = SaltString::encode_b64(&random::<16>()?)
+        .map_err(|_| AuthError::Unavailable)?;
+    Ok(algorithm()
+        .hash_password(password.as_bytes(), &salt)
+        .map_err(|_| AuthError::Unavailable)?
+        .to_string())
 }
 
 pub(super) fn login(

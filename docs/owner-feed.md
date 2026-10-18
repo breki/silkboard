@@ -71,7 +71,9 @@ text; coverage gates apply to the new code.
 
 `cargo xtask browser-test` uses built assets, Chromium and a disposable HTTPS
 proxy to the real Rust backend. It requires OpenSSL and free dedicated
-loopback ports 38124/38125. A private temporary directory holds the local
+loopback ports 38124/38125 for the feed and 38126/38127 for the separate
+first-owner setup proxy/backend. All four ports must be free. A private
+temporary directory holds the local
 database, test password setup, publisher credential and self-signed certificate;
 the fixture removes its files on shutdown. Only this fixture trusts its
 certificate; production TLS/cookie policy is unchanged. Tests check real

@@ -99,6 +99,8 @@ fn event(
 #[tokio::test]
 async fn native_identity_history_and_names_remain_separate() {
     let store = ProgressStore::open_memory().unwrap();
+    set_password_from_reader(&store, b"private test owner password".as_slice())
+        .unwrap();
     let token = store.issue_token("silkboard", "agent").unwrap();
     for sequence in (1..=25).rev() {
         let mut value =
@@ -171,6 +173,8 @@ async fn native_identity_history_and_names_remain_separate() {
 #[tokio::test]
 async fn bounded_project_and_session_pages_do_not_lose_large_sequences() {
     let store = ProgressStore::open_memory().unwrap();
+    set_password_from_reader(&store, b"private test owner password".as_slice())
+        .unwrap();
     for index in 0..25 {
         store
             .issue_token(&format!("p-{index:02}"), "agent")

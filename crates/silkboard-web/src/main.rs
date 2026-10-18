@@ -14,25 +14,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .transpose()?;
     if args.first().map(String::as_str) == Some("owner") {
-        if args.get(1).map(String::as_str) != Some("set-password")
-            || args.len() != 2
-        {
+        if args.len() != 2 {
             return Err(
-                "usage: owner set-password (password from a private pipe)"
+                "usage: owner set-password | owner prepare-setup (private pipes)"
                     .into(),
             );
-        }
-        if std::io::stdin().is_terminal() {
-            return Err("password must arrive through a private pipe".into());
         }
         let path =
             database.ok_or("owner commands require SILKBOARD_DATABASE")?;
         let store = silkboard_web::progress::ProgressStore::open(&path)?;
-        silkboard_web::owner::set_password_from_reader(
-            &store,
-            std::io::stdin().lock(),
-        )?;
-        eprintln!("Owner password set; all browser sessions revoked");
+        match args[1].as_str() {
+            "set-password" => {
+                if std::io::stdin().is_terminal() {
+                    return Err(
+                        "password must arrive through a private pipe".into()
+                    );
+                }
+                silkboard_web::owner::set_password_from_reader(
+                    &store,
+                    std::io::stdin().lock(),
+                )?;
+                eprintln!("Owner password set; all browser sessions revoked");
+            }
+            "prepare-setup" => {
+                if std::io::stdout().is_terminal() {
+                    return Err(
+                        "setup link requires a private output pipe".into()
+                    );
+                }
+                let origin =
+                    origin.ok_or("setup requires SILKBOARD_OWNER_ORIGIN")?;
+                println!(
+                    "{}",
+                    silkboard_web::owner::prepare_setup(&store, &origin)?
+                );
+            }
+            _ => return Err("unknown owner command".into()),
+        }
         return Ok(());
     }
     if args.first().map(String::as_str) == Some("publisher") {

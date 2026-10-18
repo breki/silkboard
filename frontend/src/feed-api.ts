@@ -150,6 +150,32 @@ export async function signOut(signal?: AbortSignal): Promise<void> {
     signal,
   );
 }
+
+export async function setupState(signal: AbortSignal): Promise<string> {
+  const value = await request("/api/auth/setup", {}, signal);
+  if (
+    !object(value) ||
+    !["available", "waiting", "closed"].includes(value.state as string)
+  )
+    throw new ApiError(0);
+  return value.state as string;
+}
+
+export async function registerOwner(
+  credential: string,
+  password: string,
+  signal: AbortSignal,
+): Promise<void> {
+  await request(
+    "/api/auth/setup",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Silkboard-Setup": "1" },
+      body: JSON.stringify({ credential, password }),
+    },
+    signal,
+  );
+}
 export async function projects(
   after: string | null,
   signal: AbortSignal,

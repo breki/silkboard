@@ -114,6 +114,8 @@ excluded from coverage; integration tests exercise their observable behavior.
 `cargo xtask browser-test` runs Chromium on the built assets. Install Chromium
 using the tooling prerequisites, and build the frontend before a standalone
 browser run. The browser fixture requires OpenSSL and dedicated loopback
-ports 38124 (HTTPS proxy) and 38125 (Rust backend), refusing existing servers.
+ports 38124/38125 for the feed HTTPS proxy/backend and 38126/38127 for the
+separate first-owner setup pair, refusing existing servers. All four ports
+must be free.
 It uses private temporary storage and test credentials; see the
 [feed verification](owner-feed.md#verification).
