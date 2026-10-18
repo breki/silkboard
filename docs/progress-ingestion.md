@@ -5,7 +5,8 @@ The optional Rust/Axum ingestion service is the storage foundation for
 [#34](https://github.com/breki/silkboard/issues/34). It accepts short agent
 progress messages; there is no feed-reading API yet. Owner login, the feed,
 the publisher and native agent integration are separate issues in that
-milestone. This document describes local operation, not a production rollout.
+milestone. The [owner authentication API](owner-login.md) is available
+separately. This document describes local operation, not a production rollout.
 
 ## Local setup and credentials
 
@@ -127,8 +128,10 @@ There is no GET/history route; a publisher token cannot read another event.
 ## Persistence and schema compatibility
 
 Schema 1 initializes projects, hashed credentials, sessions and events in one
-SQLite transaction. Startup accepts schema 1 and refuses newer schema
-versions; it never resets an incompatible database. Writes authenticate,
+SQLite transaction. The current application migrates schema 1 to schema 2,
+adding owner authentication without deleting progress or publishers. Startup
+accepts schema 2 and refuses newer schemas; it never resets an incompatible
+database. Writes authenticate,
 resolve identity and insert events in an immediate transaction, so concurrent
 retries or revocation cannot partially insert messages. Database lock waits
 are capped at two seconds. SQLite's default rollback journal and full

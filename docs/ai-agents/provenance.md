@@ -1,5 +1,17 @@
 # Canon provenance
 
+## Owner authentication, 2026-10-18
+
+Issue #35 authorizes the single-owner authentication foundation for milestone
+2. The [authentication guide](../owner-login.md) records actual APIs and
+configuration, using RustCrypto Argon2id, random opaque hashed sessions and
+MDN's host-cookie/origin/CSRF guidance. systemd's ask-password interface
+provides the documented private operator pipe. The six new resolved Cargo
+versions were checked for cooldown and permissive licenses before compilation.
+Schema 2 retains existing ingestion data. No upstream application code,
+template baseline, production configuration, updater trust or execution
+authority changes. Frontend and production verification remain separate.
+
 ## Agent progress foundation, 2026-10-18
 
 The owner agreed milestone 2 as publish-only progress dogfooding and authorized

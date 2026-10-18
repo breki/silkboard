@@ -6,7 +6,22 @@ use axum::{Json, Router, routing::get};
 use serde::Serialize;
 use tower_http::services::ServeDir;
 
+pub mod owner;
 pub mod progress;
+mod secrets;
+
+/// Construct the progress application with the owner's authentication API.
+///
+/// # Errors
+/// Returns an error for an invalid or non-HTTPS public origin.
+pub fn create_owner_router(
+    frontend_path: &Path,
+    store: progress::ProgressStore,
+    origin: &str,
+) -> Result<Router, owner::AuthError> {
+    let auth = owner::OwnerAuth::new(store.clone(), origin)?;
+    Ok(create_progress_router(frontend_path, store).merge(owner::routes(auth)))
+}
 
 /// Construct the application with persistent, project-scoped ingestion.
 pub fn create_progress_router(

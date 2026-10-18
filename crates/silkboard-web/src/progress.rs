@@ -14,10 +14,10 @@ use std::{
     time::Duration,
 };
 
+use crate::secrets::{encode, token_hash};
 use rusqlite::{
     Connection, OpenFlags, OptionalExtension, TransactionBehavior, params,
 };
-use sha2::{Digest, Sha256};
 
 /// A storage failure. Display text never includes SQL, payloads or credentials.
 #[derive(Debug)]
@@ -58,7 +58,7 @@ impl From<rusqlite::Error> for ProgressError {
 
 /// Shared synchronous `SQLite` store. HTTP callers use a bounded blocking pool.
 #[derive(Clone)]
-pub struct ProgressStore(Arc<Mutex<Connection>>);
+pub struct ProgressStore(pub(crate) Arc<Mutex<Connection>>);
 
 impl ProgressStore {
     /// Open and migrate a database in an existing private directory.
@@ -94,9 +94,12 @@ impl ProgressStore {
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let version: i64 =
             tx.pragma_query_value(None, "user_version", |r| r.get(0))?;
+        if version == 0 {
+            tx.execute_batch(include_str!("progress/schema.sql"))?;
+        }
         match version {
-            0 => tx.execute_batch(include_str!("progress/schema.sql"))?,
-            1 => {}
+            0 | 1 => tx.execute_batch(include_str!("owner/schema.sql"))?,
+            2 => {}
             _ => return Err(ProgressError::NewerSchema),
         }
         tx.commit()?;
@@ -224,17 +227,4 @@ impl ProgressStore {
             received_at,
         })
     }
-}
-
-fn token_hash(token: &str) -> Vec<u8> {
-    Sha256::digest(token.as_bytes()).to_vec()
-}
-
-fn encode(bytes: &[u8]) -> String {
-    use std::fmt::Write;
-    bytes.iter().fold(String::new(), |mut output, byte| {
-        write!(output, "{byte:02x}")
-            .expect("formatting into a String cannot fail");
-        output
-    })
 }

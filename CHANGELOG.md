@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add optional single-owner password authentication with durable expiring
+  browser sessions, logout, operator password reset and protected owner routes.
+
 - Add optional SQLite-backed, project-scoped agent progress ingestion with
   persistent session identity, retry-safe acknowledgements and local publisher
   credential issuance/revocation. Existing deployments remain status-only
