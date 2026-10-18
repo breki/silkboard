@@ -1,9 +1,11 @@
 # Rust build-cache investigation
 
-Issue [#24](https://github.com/breki/silkboard/issues/24) authorizes research
-and measurement, not adoption. The experiment supports a follow-up using
-three dependency-build caches. No Rust build cache has been added to normal
-CI or release workflows.
+Issue [#24](https://github.com/breki/silkboard/issues/24) authorized research
+and measurement, not adoption. This report preserves that experiment and its
+recommendation. The owner subsequently authorized implementation in issue #31;
+[PR #32](https://github.com/breki/silkboard/pull/32) adopted the three caches
+and records full-CI measurements. See the
+[current cache procedure](ci-rust-build-cache.md) for operational behavior.
 
 ## Experiment and evidence
 
@@ -24,7 +26,7 @@ The [original experiment workflow](https://github.com/breki/silkboard/blob/a6a56
 and [source-edit variant](https://github.com/breki/silkboard/blob/8c083cb8db24866c28a3529719fef1512036183c/.github/workflows/cache-study.yml)
 record commands and keys. Both use `CARGO_INCREMENTAL=0` and distinct
 directories for normal, instrumented coverage and ARM64 builds. The existing
-CI does not set that incremental override. Cargo source fetching was outside
+CI at the experiment's base did not set that override. Cargo fetching was outside
 the measured compilation steps; Rust registry sources were not cached by
 this experiment. Existing gate-tool restore time is part of total job time.
 
@@ -108,7 +110,11 @@ It checked for remaining workspace binaries/profile files and failed if found.
 Only the cleaned dependency directories were archived. Fresh workspace code,
 test binaries and coverage evidence were regenerated on both restored runs.
 
-## Proposed follow-up, not adopted policy
+## Original follow-up recommendation
+
+The following proposal was the research outcome. It was subsequently
+implemented in PR #32; its full-CI results and verification limits are separate
+from this experiment's measurements.
 
 Use the existing pinned `actions/cache/restore` and `actions/cache/save`
 actions for three dependency-only directories. Keep `CARGO_INCREMENTAL=0`
@@ -155,10 +161,11 @@ duplicate source-revision archives once a dependency configuration is seeded.
 The roughly 173 MiB payload and seven-second warm restore support proceeding
 to an owner-authorized implementation and full-pipeline verification.
 
-## Cleanup and current state
+## Experiment cleanup
 
 The temporary remote branch and worktree were removed after preserving the
 run data. The three experiment cache entries were deleted; readback showed
 none remaining and all nine unrelated caches retained. No experiment workflow
-or temporary Rust comment is part of this research change. CI, release job
-identity, dependency versions and production configuration remain unchanged.
+or temporary Rust comment is part of this research change. The research itself
+changed no CI, release job identity, dependency or production configuration;
+cache adoption was delivered separately in PR #32.

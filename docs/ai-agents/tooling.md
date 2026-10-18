@@ -12,6 +12,7 @@ CI pins Rust 1.93.1 with rustfmt, Clippy, and llvm-tools-preview. Node 24.14.1
 is pinned in `.mise.toml` and CI. Install frontend dependencies with
 `npm ci --prefix frontend`. The hook tests additionally require Bash, Git,
 and jq; signature tests require ssh-keygen. Registry checks require curl.
+CI cache helpers and their tests require coreutils `sha256sum` and `env`.
 
 Install the external gates before full validation:
 
@@ -51,6 +52,8 @@ Long runs print stage progress; redirect output to a local log when needed.
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
+| CI dependency-cache keys | `cargo xtask ci-cache-plan` |
+| Verified CI dependency-cache cleanup | `cargo xtask ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY` |
 
 `cargo xtask --help` documents supported arguments. `validate` is also
 read-only without `--check`. Only standalone `fmt` and `frontend-fmt` rewrite
@@ -197,14 +200,16 @@ on GitHub's isolation and the reviewed workflow that creates the entry.
 Both CI and the release frontend build use setup-node's npm download cache,
 keyed by `frontend/package-lock.json`; `node_modules` is not restored.
 `npm ci` still installs from the lockfile and checks package integrity.
-Rust registry/project build outputs and Chromium are not cached by this
-change. Dependency-age/registry checks and advisory audits still contact
+Rust registry downloads and Chromium are not cached. Separate
+[Rust dependency-build caches](../ci-rust-build-cache.md) retain normal,
+instrumented coverage and ARM64 dependencies, with trusted/exact-head PR
+namespaces and verified workspace/profile cleanup before publication.
+Dependency-age/registry checks and advisory audits still contact
 their live sources on every validation; cached tools do not cache pass
 results. ARM64 lint and signed exact-revision release checks remain required.
 
-The [Rust build-cache investigation](../ci-rust-cache-study.md) measured
-separate dependency-build caches on a temporary branch. Its recommendation
-is not an adopted policy; current CI/release build-cache behavior is unchanged.
+The [Rust build-cache investigation](../ci-rust-cache-study.md) preserves the
+temporary-branch measurements behind the subsequently adopted caches above.
 
 An unavailable or evicted cache can take the normal cold path. A restored
 tool-version mismatch fails the job; remove the affected GitHub cache entry

@@ -260,5 +260,16 @@ warm and source-edit dependency-build reuse on GitHub runners. The
 [research record](../ci-rust-cache-study.md) preserves run identities,
 measurements, cleanup, and a proposed follow-up. Cargo's build-cache reference,
 the pinned cargo-llvm-cov clean implementation and GitHub's cache reference
-supply the documented artifact and isolation semantics. No upstream code,
-new dependency, CI/release policy or production change is adopted.
+supply the documented artifact and isolation semantics. The research itself
+adopted no upstream code, dependency, CI/release policy or production change.
+
+## Rust dependency-build caching, 2026-10-18
+
+After the #24 research, the owner explicitly chose to create a follow-up issue
+and implement the proposed caches in a separate PR. Issue #31 supersedes the
+investigation-only boundary for that implementation. The
+[cache procedure](../ci-rust-build-cache.md) describes three dependency-only
+archives, configuration fingerprints, exact-head PR namespaces and verified
+workspace cleanup. Existing Cargo/cargo-llvm-cov cleaning and the already
+pinned cache action are reused; new Rust helpers own planning and verification.
+No new dependency, required release job or production configuration is added.

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Cache isolated normal, coverage and ARM64 dependency builds in CI while
+  retaining fresh workspace builds, tests, coverage evidence and release checks.
+
 - Run live dependency-registry checks with bounded concurrency and explicit
   crates.io pacing, preserving dependency policy and fatal registry errors.
 
