@@ -52,6 +52,52 @@ deliver it privately again. No server copy of the raw credential is retained.
 After registration or an operator password setup/reset, preparation refuses
 to reopen first-owner setup. There is no public signup or web password reset.
 
+### Temporary phone handoff
+
+For the initial rollout, the owner selected a temporary private HTTPS handoff
+restricted to their Tailscale account. This delivers the existing setup
+credential; it does not replace registration. Preparing the helper does not
+authorize enabling production storage or starting it.
+
+The [reusable provisioning helper](../deploy/owner-handoff/README.md) uses a
+root-private Unix socket behind a separate Tailscale Serve HTTPS listener,
+defaulting to port 8443. It accepts only the exact
+owner login from Serve's identity header and refuses missing identities, other
+accounts and Funnel requests. It also requires Serve's authoritative source IP
+and denies the guest's own addresses, loopback and forwarding chains. The
+initial production guest's Tailscale account matched the owner, so the login
+check alone would incorrectly admit local application processes through Serve. Each start
+discovers the current guest addresses; drift before preparation causes refusal.
+Other local users must not reach the backend socket, since direct callers
+could forge those headers. Serve strips incoming identity headers and supplies its authenticated identity; tagged devices do
+not receive a user identity. See the
+[installed-version proxy implementation](https://github.com/tailscale/tailscale/blob/v1.104.1/ipn/ipnlocal/serve.go).
+
+GET displays a button without preparing a link. An exact-origin POST with a
+fresh in-memory form nonce runs the installed setup command as the application
+user. Its bounded stdout travels through a private pipe into helper memory;
+only an exact application-origin setup link is accepted. The authenticated
+browser receives an HTTPS redirect to that link. Nothing prints or writes the
+raw credential. Responses prohibit caching and framing; no request or response
+logging is enabled. The secret-free form uses a same-origin referrer policy so
+browser navigation preserves its Origin check; the redirect uses no-referrer.
+The form policy permits only the handoff and exact application origin, since
+the redirect crosses from port 8443 to 443.
+The existing setup page removes the fragment and requires an owner password.
+
+The helper closes after one delivery or twenty minutes. Foreground Serve ties
+the extra listener to the helper service's lifetime, including interruption,
+without resetting or replacing the application's port 443 configuration. See
+[Serve lifecycle documentation](https://tailscale.com/docs/reference/examples/serve).
+If delivery or registration is interrupted, the operator prepares a replacement
+handoff, invalidating any previous pending setup link when the button is pressed.
+A delivered link is not evidence of completed registration. Installation,
+real identity checks, phone registration and temporary listener removal still
+require live verification under the rollout authorization. The initial one-off
+production handoff and phone registration/login were verified on 2026-10-19;
+the configurable helper is retained for future provisioning and remains
+uninstalled on that registered instance.
+
 ## Phone flow and secret handling
 
 Open the private link in an HTTPS browser. Its secret is in the `#setup=...`

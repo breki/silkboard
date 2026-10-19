@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add reusable private owner-setup handoff tooling for new servers, with
+  configurable identity/application settings, retained installation and an
+  automatically closing HTTPS listener.
+
 ## 0.3.0 - 2026-10-19
 
 - Prepare production agent-progress dogfooding with opt-in private service

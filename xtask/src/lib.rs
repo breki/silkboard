@@ -16,7 +16,7 @@ pub type Runner<'a> =
 pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
 [--target TARGET]|doc|test [FILTER]|validate [--check]|coverage|dupes|deny|\
 audit|dep-age-check|frontend|frontend-check|frontend-fmt [--check]|\
-frontend-test|frontend-coverage|frontend-dupes|browser-test|\
+frontend-test|frontend-coverage|frontend-dupes|browser-test|handoff-test|\
 release-check TAG|canon-check|ci-mode EVENT BASE HEAD|ci-cache-plan|\
 ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY>";
 
@@ -134,6 +134,7 @@ pub fn dispatch(
         ["frontend-test"] => npm(root, runner, &["test"]),
         ["frontend-coverage"] => npm(root, runner, &["run", "coverage"]),
         ["frontend-dupes"] => npm(root, runner, &["run", "dupes"]),
+        ["handoff-test"] => npm(root, runner, &["run", "test:handoff"]),
         ["browser-test"] => npm(root, runner, &["run", "test:browser"]),
         _ => Err(USAGE.into()),
     }
@@ -209,6 +210,7 @@ fn validate(root: &Path, runner: &mut Runner<'_>) -> Result<(), String> {
         "frontend-coverage",
         "frontend-dupes",
         "browser-test",
+        "handoff-test",
         "coverage",
         "audit",
     ] {
@@ -307,6 +309,7 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "frontend-coverage"
                     | "frontend-dupes"
                     | "browser-test"
+                    | "handoff-test"
                     | "release-check"
                     | "canon-check"
                     | "ci-mode"

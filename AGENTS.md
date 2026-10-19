@@ -58,7 +58,9 @@ services as evidence of a working VM deployment.
 The Cargo workspace contains the status/progress application, standalone
 publisher, updater, repository tooling, full validation and hook tests.
 Owner setup/feed/token management and Codex reporting are locally verified;
-production activation, persistent data and live acceptance remain #39. Follow
+production v0.3.0 has private state and verified owner phone registration/login.
+Publisher installation, real reports/feed acceptance and live recovery remain #39.
+Follow
 the [rollout procedure](docs/dogfood-rollout.md), and keep production claims
 separate from local snapshot/process tests. CI/release workflows are configured.
 The minimal application runs in its dedicated production VM with private

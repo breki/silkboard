@@ -107,6 +107,11 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
             .any(|(p, a, _)| p == "cargo"
                 && a == &["audit", "--deny", "warnings"])
     );
+    assert!(
+        calls
+            .iter()
+            .any(|(p, a, _)| p == "npm" && a == &["run", "test:handoff"])
+    );
     for failure in 0..calls.len() {
         let count = AtomicUsize::new(0);
         let result = dispatch(
@@ -154,6 +159,7 @@ fn all_standalone_tasks_propagate_failure_and_accept_only_supported_arguments()
         "frontend-coverage",
         "frontend-dupes",
         "browser-test",
+        "handoff-test",
         "check",
         "fmt",
         "clippy",

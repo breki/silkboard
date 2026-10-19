@@ -2,8 +2,8 @@
 
 Issue [#44](https://github.com/breki/silkboard/issues/44) adds credential
 management to the signed-in owner page. After [first-owner setup](owner-setup.md),
-sign in and choose **Manage publisher credentials**. This is a local/reviewed
-implementation; production installation and credential delivery remain
+sign in and choose **Manage publisher credentials**. Production v0.3.0 has verified
+owner registration/login. Installation credential issuance/delivery remains
 [#39](https://github.com/breki/silkboard/issues/39), through the usual release
 and deployment procedure.
 

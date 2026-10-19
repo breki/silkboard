@@ -4,10 +4,13 @@ Goal: prepare and validate the initial Codex-only production rollout without
 expanding the milestone. GitHub stays the task tracker; agents publish short
 progress and never fetch tasks or dashboard content.
 
-Authorized now: implementation, isolated verification, independent reviews,
+Initial preparation authorization: implementation, isolated verification, independent reviews,
 signed commit and draft PR. Merge, release publication, production service or
 credential changes and disruptive recovery tests need their normal explicit
-approval after a concrete procedure is ready. Production remains v0.2.2.
+approval after a concrete procedure is ready. That initial baseline was v0.2.2.
+Subsequent explicit approvals delivered v0.3.0 and private state/phone owner setup;
+see [live progress](../dogfood-rollout.md#verified-rollout-so-far). Real publishing,
+feed/data acceptance and backup choices remain unfinished.
 
 Plan:
 1. Align README, architecture and agent guidance with implemented publish-only

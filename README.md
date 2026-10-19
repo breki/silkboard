@@ -23,7 +23,8 @@ and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 
 ## Status
 
-Production runs the minimal status application, `v0.2.2`, with private HTTPS.
+Production runs `v0.3.0` with private HTTPS, persistent private storage and
+verified first-owner registration/login from the owner's phone.
 Automatic upgrades and live rollback/retry are verified; updater reboot
 recovery and live pending-check reconsideration remain separate work.
 [Production evidence](docs/production-vm.md) records the original installation.
@@ -31,8 +32,8 @@ recovery and live pending-check reconsideration remain separate work.
 The progress API, owner feed/setup, token manager, standalone publisher and
 Codex integration are implemented and locally verified. The
 [dogfood rollout](docs/dogfood-rollout.md) prepares persistent private storage,
-backup/restore and live acceptance. These features are **not enabled in
-production yet**. Real automatic Codex publishing and owner phone acceptance
+backup/restore and live acceptance. Publisher installation and real automatic
+Codex reports, phone feed acceptance with real messages, and live data recovery
 remain [#39](https://github.com/breki/silkboard/issues/39). Claude integration is
 separate [#43](https://github.com/breki/silkboard/issues/43).
 

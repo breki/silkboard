@@ -1,10 +1,39 @@
 # Initial Codex production dogfood rollout (#39)
 
-Status: preparation in progress; **no production changes or release publication
-performed**. Production baseline checked read-only on 2026-10-18: v0.2.2 at
-`2f27e96dc8795971c92cd776bc896f53620743f3`, healthy, app/timer active,
-no database/origin/StateDirectory configured, updater pending null and old
-v0.2.1 block retained. Do not turn this plan into a claim of live success.
+Status on 2026-10-19: reviewed preparation merged; signed v0.3.0 published and
+healthy in production at `46c28d66200b0b13115abfd45744cf58e4d83730`.
+Private persistent storage is enabled and the owner confirmed phone registration
+and login. Publisher installation, real Codex/feed acceptance and live data
+recovery remain pending. The procedure below retains the phased boundaries.
+
+## Verified rollout so far
+
+- Exact v0.3.0 release suite [39189107503](https://github.com/breki/silkboard/actions/runs/39189107503)
+  passed; the installed updater admitted and activated that exact revision.
+  Polling was restored and an ordinary scheduled poll succeeded. The previous
+  v0.2.2 release and v0.2.1 block were retained; no pending transaction remained.
+- Explicitly approved state activation installed only the reviewed application
+  drop-in and restarted the app. Directory 0700/database 0600, healthy exact
+  identity, unauthenticated owner-read refusal and static private-path refusal
+  were verified. Service mount-namespace/UID checks denied updater paths and
+  release writes; privileged updater files and units remained unchanged.
+- The owner selected a Tailscale-identity-restricted temporary phone handoff.
+  Live checks admitted the owner, rejected guest-local/spoofed requests, and
+  verified that stopping removed only the extra listener. A child UID-switch
+  failure was reproduced with a disposable database; explicit ambient CAP_SETUID
+  fixed it without relaxing the sandbox. The child ran as the app user with
+  zero effective/permitted/ambient capabilities and NoNewPrivileges preserved.
+- The owner confirmed successful phone registration and login. The setup API
+  reported closed. The consumed temporary handoff was removed; port 443,
+  healthy v0.3.0 and the existing updater/timer were verified afterwards.
+  The [reusable helper](../deploy/owner-handoff/README.md) preserves the tool
+  for future provisioning; that generalized version is not installed here.
+
+No publisher token/client/hooks were installed by this activation. No recurring
+backup policy, independent snapshot, data-bearing tagged upgrade or restore
+rehearsal is claimed. Phone login is owner-reported; feed acceptance with real
+reports remains outstanding. Private operator records retain invocation/state
+and checksum evidence without credentials or application contents.
 
 ## Prepared scope and authorization
 
