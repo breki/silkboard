@@ -1,45 +1,34 @@
 # Production agent progress dogfooding (#39)
 
-Goal: prepare and validate the initial Codex-only production rollout without
-expanding the milestone. GitHub stays the task tracker; agents publish short
-progress and never fetch tasks or dashboard content.
+Goal: finish the initial Codex-only production rollout. GitHub stays the task
+tracker; agents publish short observations and never fetch dashboard content.
 
-Initial preparation authorization: implementation, isolated verification, independent reviews,
-signed commit and draft PR. Merge, release publication, production service or
-credential changes and disruptive recovery tests need their normal explicit
-approval after a concrete procedure is ready. That initial baseline was v0.2.2.
-Subsequent explicit approvals delivered v0.3.0 and private state/phone owner setup;
-see [live progress](../dogfood-rollout.md#verified-rollout-so-far). Real publishing,
-feed/data acceptance and backup choices remain unfinished.
+Owner-approved rollout delivered signed v0.3.0, private state and phone owner
+setup/login. Frosti now has the standalone publisher and a privately installed
+project-scoped credential. The owner enabled and reviewed native reporting.
+Real automatic reports from two independent Codex sessions appear in the
+owner's feed/history. Live authorization denials and application restart
+persistence passed on 2026-10-19; see the
+[durable evidence](../dogfood-rollout.md#evidence-ledger).
 
-Plan:
-1. Align README, architecture and agent guidance with implemented publish-only
-   observation; distinguish local foundations from live acceptance.
-2. Add opt-in systemd persistent state configuration outside release trees,
-   preserving application/updater separation.
-3. Add private consistent SQLite backup and new-destination restore commands,
-   with validation, no overwrite and revocation of restored credentials/sessions.
-   Preserve owner password/history; issue fresh publisher tokens after restore.
-4. Exercise restart, release-directory replacement and backup/restore locally.
-5. Write exact phased release/rollout/recovery procedure with no secrets in chat
-   or logs, explicit owner phone steps and live evidence still pending.
-6. Full quality gates, ARM64, sequential independent reviews, draft PR. Keep
-   issue open until actual production acceptance has been recorded.
+Owner scope decision, 2026-10-19: defer independent backups, isolated restore
+and application recovery acceptance to
+[#52](https://github.com/breki/silkboard/issues/52). These no longer block #39;
+no recovery or ongoing backup protection is claimed. Backup destination, keys,
+schedule and retention remain undecided. Schema-changing/destructive operations
+still require their safeguards and separate approval.
 
-No schema/dependency/version change is intended. Release version, private setup
-link delivery and production changes remain decisions after preparation. Backup
-schedule/retention/off-machine destination are not silently selected.
+Remaining #39 acceptance:
+1. Review and merge the exact live evidence through normal documentation checks.
+2. Obtain the release-version decision, prepare the next compatible signed
+   release, then obtain exact publication/upgrade authorization.
+3. Verify all real existing reports and native identities survive a normal
+   tagged automatic upgrade. Retain updater trust/state and schema 3.
+4. Verify post-upgrade automatic publishing and owner phone feed/history access,
+   including latest messages, distinct sessions and mobile layout.
+5. Record exact release-suite/admission/activation and ordinary polling evidence.
+   Do not close #39 until the remaining acceptance is actually complete.
 
-Preparation implemented: opt-in state drop-in, private atomic snapshots and
-new-path restore with credential invalidation, aligned canon and phased rollout.
-Seven snapshot/recovery tests and one real process persistence test pass. Initial
-Rust coverage 96.89% overall; local Clippy/canon/diff and isolated unit verification
-pass. Read-only pinned production preflight confirms the unchanged baseline.
-Full final validation/ARM64 and sequential reviews are required before delivery;
-their final results belong in the PR, separately from live acceptance.
-Live release/configuration, private delivery/backup decisions and all owner/real
-Codex production acceptance remain unfinished; retain this working document.
-
-The first security review found stale destination journals could undo restored
-revocations. A new refusal regression failed first, then passed after companion
-checks before copying and publication. The complete recovery suite passes.
+No schema or dependency change is proposed. The pending reusable owner-handoff
+tooling is repository preparation; releasing it does not install it on this
+already initialized server or replace the privileged updater.

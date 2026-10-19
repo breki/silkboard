@@ -1,5 +1,23 @@
 # Canon provenance
 
+## Live Codex dogfooding and recovery deferral, 2026-10-19
+
+The owner approved private SSH publisher issuance/installation and Codex
+reporting enablement, completed native hook review and supplied a real feed/
+history screenshot. The owner then confirmed two independent sessions.
+Read-only production metadata verified real automatic observations, while live
+HTTPS checks verified unauthorized/publisher-only owner reads and wrong-project/
+revoked publishing return 401. An approved application restart retained all
+seven baseline reports and both sessions, with schema/owner/publisher metadata
+and protected updater configuration unchanged. No fixture was counted as live
+reporting, and no credential/message contents are included in these records.
+
+The owner explicitly deferred independent backups, isolated restore and
+application recovery acceptance from #39 to #52. The
+[rollout](../dogfood-rollout.md#evidence-ledger) preserves the outstanding
+compatible tagged upgrade and post-upgrade phone acceptance. No new dependency,
+schema, backup policy, signing trust or updater installation is introduced.
+
 ## Reusable owner handoff, 2026-10-19
 
 After the owner confirmed production registration and phone login, they asked

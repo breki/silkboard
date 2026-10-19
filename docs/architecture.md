@@ -17,8 +17,11 @@ registration/login from a phone in a dedicated
 Debian ARM64 VM on malina. Signed exact-revision upgrades and rollback/retry
 are verified; reboot and pending-check evidence remain in the roadmap.
 The progress, authentication and client features below are implemented and
-locally verified. Publisher installation, real Codex reports, phone acceptance
-with real messages and live data recovery remain [#39](https://github.com/breki/silkboard/issues/39).
+locally verified. Frosti now publishes real Codex reports from two independent
+sessions; the owner confirmed feed/history. Live access denials and application
+restart persistence passed. A tagged upgrade with existing data remains
+[#39](https://github.com/breki/silkboard/issues/39); independent backups and
+application recovery are deferred to [#52](https://github.com/breki/silkboard/issues/52).
 
 ## Components and connections
 
@@ -160,10 +163,12 @@ Local process/snapshot tests do not establish production survival or restore.
 
 ## Verification still required
 
-Initial live acceptance must record exact application/integration versions,
-persistent state after restart/upgrade, an isolated restore, automatic reports
-from real independent Codex sessions, owner phone history and unauthorized
-read rejection. Preserve updater credentials/privileges and unrelated services.
-Issue #39 remains open until that evidence exists. Scope after milestone 2,
+The [rollout evidence](dogfood-rollout.md#evidence-ledger) records exact
+application/integration versions, real independent Codex reports, owner-visible
+history, live read denial and application restart persistence. A tagged upgrade
+with existing data and post-upgrade owner/feed acceptance remain #39.
+The owner deferred independent backups, isolated restore and application
+recovery acceptance to #52; those no longer block #39. Preserve updater
+credentials/privileges and unrelated services. Scope after milestone 2,
 Claude integration and the independent milestone-1 recovery gaps remain as
 recorded in the roadmap; this document grants no new deployment authority.

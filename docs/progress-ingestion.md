@@ -151,7 +151,9 @@ synchronization are retained; no WAL mode or relaxed durability is enabled.
 Retain the database directory outside replaced release directories. A prior
 status-only binary ignores this data; future schema changes need explicit
 migration/rollback compatibility. This issue tests reopen/restart persistence,
-not production upgrade or backup/restore procedures; those are part of #39.
+not production upgrade or backup/restore procedures. Live application restart
+persistence is verified; tagged-upgrade persistence remains #39, while the
+owner deferred independent backups and restore/recovery to #52.
 
 Run `cargo test -p silkboard-web` for HTTP authorization, bounded input,
 idempotency, session identity, persistence, schema and operator-file checks.

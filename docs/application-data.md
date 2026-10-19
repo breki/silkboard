@@ -2,8 +2,10 @@
 
 This is implemented preparation for [#39](https://github.com/breki/silkboard/issues/39),
 with private production state and owner registration enabled on v0.3.0.
-Independent backups and live data recovery remain pending. Follow the
-[phased rollout](dogfood-rollout.md) for the remaining acceptance work.
+Independent backups, isolated restore and live application recovery are deferred
+to [#52](https://github.com/breki/silkboard/issues/52) by the owner on 2026-10-19.
+They no longer block #39; no independent recovery protection is claimed.
+Follow the [phased rollout](dogfood-rollout.md) for remaining persistence checks.
 
 ## Service storage
 
@@ -133,7 +135,8 @@ WAL snapshots, competing exporters, invalid schemas/files/paths, retained histor
 and invalidated restored credentials/setup. Process tests exercise restarts and
 replacement of release directories using one compiled application revision;
 they do not prove a tagged production upgrade, systemd confinement or live
-restore. Those observations remain in the #39 rollout evidence checklist.
+restore. Restart persistence is now verified live. Tagged-upgrade persistence
+remains #39; independent backups and isolated restore/recovery remain #52.
 
 Reference contracts: [SQLite VACUUM INTO](https://sqlite.org/lang_vacuum.html#vacuum_with_an_into_clause)
 and [systemd execution/state directories](https://www.freedesktop.org/software/systemd/man/latest/systemd.exec.html).
