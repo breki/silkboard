@@ -173,6 +173,14 @@ independent work, not prerequisites.
 The [ingestion guide](progress-ingestion.md) describes the optional backend
 foundation. It does not establish completion of this milestone.
 
+The [initial rollout procedure](dogfood-rollout.md) and
+[private data guide](application-data.md) prepare #39: opt-in persistent service
+state, consistent snapshots and isolated recovery. Local process tests cover
+restart/release-directory replacement; live data survival across a tagged
+upgrade, real Codex observations and owner phone acceptance remain pending.
+Backup schedule/retention/destination and release/publication authorization
+must be settled before dependent production work.
+
 ## Later milestones
 
 To be defined with the owner. Task coordination and persistent handoff

@@ -60,9 +60,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("Publisher credential operation completed");
         return Ok(());
     }
+    if args.first().map(String::as_str) == Some("database") {
+        let path =
+            database.ok_or("database commands require SILKBOARD_DATABASE")?;
+        silkboard_web::progress::database_command(&path, &args[1..])?;
+        eprintln!(
+            "Database operation completed; restore invalidates publisher tokens, browser sessions and pending setup links"
+        );
+        return Ok(());
+    }
     if !args.is_empty() {
         return Err("unknown arguments".into());
     }
+    serve(database, origin).await
+}
+
+async fn serve(
+    database: Option<PathBuf>,
+    origin: Option<String>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let address: SocketAddr = std::env::var("SILKBOARD_LISTEN")
         .unwrap_or_else(|_| "127.0.0.1:3000".into())
         .parse()?;

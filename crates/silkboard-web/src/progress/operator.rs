@@ -7,7 +7,7 @@ use std::{
     path::Path,
 };
 
-fn private_options() -> OpenOptions {
+pub(super) fn private_options() -> OpenOptions {
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
     #[cfg(unix)]

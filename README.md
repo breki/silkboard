@@ -1,50 +1,51 @@
 # Silkboard
 
-A private project dashboard for AI-assisted development, with persistent session
-handoffs and task coordination across [Bombyx](https://github.com/breki/bombyx) VMs.
+A private dashboard for short progress reports from AI-assisted development.
+Silkboard's own Codex agents are the first intended production publishers.
+[GitHub](https://github.com/breki/silkboard/issues) remains the task tracker;
+agents never fetch tasks, dashboard content or execution instructions from
+Silkboard. Bombyx-managed development VMs can use the same installed publisher.
 
-Silkboard helps you return to a project after days or weeks and see what was
-completed, what is in progress, what is blocked, and exactly where to resume.
-You can add tasks remotely; project agents fetch them and publish progress.
+## Architecture
 
-## Planned architecture
+- Rust/Axum and Svelte/Vite, based on [rustbase](https://github.com/breki/rustbase).
+- A dedicated Raspberry Pi VM with private Tailscale HTTPS and SQLite storage.
+- A standalone Rust publishing executable; target machines need no Rust or
+  Cargo, daemon or durable outgoing queue. Delivery is bounded and best-effort.
+- Separate owner login for a mobile project/session feed, and project-scoped
+  publish-only tokens. First-owner setup and token management work through
+  private HTTPS pages.
+- No dashboard access to development repositories, files, VM control or agent
+  execution. A separate privileged updater verifies Silkboard releases.
 
-- A dedicated dashboard VM on a Raspberry Pi, accessible through Tailscale
-  HTTPS.
-- A web interface and project-scoped API backed by SQLite.
-- A sync client inside each participating Bombyx development VM.
-- No dashboard access to development repositories, files, or VM control.
-  A separate updater can fetch Silkboard releases from GitHub.
-- Local execution permissions that remain independent of dashboard task content.
+See [architecture](docs/architecture.md) for current components and authority,
+and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 
 ## Status
 
-The minimal Rust/Axum and Svelte/Vite status application runs in its dedicated
-production VM with private HTTPS. See [deployment evidence](docs/production-vm.md).
-Automatic upgrades, rollback and retry are verified; updater reboot recovery
-and the sync client remain pending.
-See [local development](docs/development.md) for build, run, and check commands.
+Production runs the minimal status application, `v0.2.2`, with private HTTPS.
+Automatic upgrades and live rollback/retry are verified; updater reboot
+recovery and live pending-check reconsideration remain separate work.
+[Production evidence](docs/production-vm.md) records the original installation.
 
-Read [the architecture](docs/architecture.md) for requirements, security boundaries,
-API design, and Bombyx lifecycle integration.
+The progress API, owner feed/setup, token manager, standalone publisher and
+Codex integration are implemented and locally verified. The
+[dogfood rollout](docs/dogfood-rollout.md) prepares persistent private storage,
+backup/restore and live acceptance. These features are **not enabled in
+production yet**. Real automatic Codex publishing and owner phone acceptance
+remain [#39](https://github.com/breki/silkboard/issues/39). Claude integration is
+separate [#43](https://github.com/breki/silkboard/issues/43).
 
-## Roadmap
+## Development and delivery
 
-1. Complete deployment pipeline with a minimal status page: based on
-   [rustbase](https://github.com/breki/rustbase), running inside a Raspberry Pi
-   VM, and automatically upgraded from verified, tagged GitHub revisions.
+See [local development](docs/development.md) for build/run commands,
+[publishing CLI](docs/publishing-cli.md) for private client configuration,
+and [Codex reporting](docs/codex-publishing.md) for native hook integration.
+The [application data guide](docs/application-data.md) covers private snapshots
+and recovery. A repository merge does not install service configuration or
+credentials on production.
 
-See [the roadmap](docs/roadmap.md) for completion criteria, existing deployment
-patterns, and open decisions. The status application is deployed privately;
-automatic upgrades and rollback/retry are verified, while updater reboot
-recovery remains pending. Later milestones remain to be defined.
-
-## Agent guidance
-
-Start with [AGENTS.md](AGENTS.md). Codex and Claude Code share the same
-[workflow canon](docs/ai-agents/catalog.md); their wrappers contain only
-routing instructions. The Cargo workspace provides the application, repository
-checks, and hook tests. The frontend has local build and checks; full release
-gates are configured. See [tooling status](docs/ai-agents/tooling.md) for
-available commands and [release preparation](docs/releases.md) for evidence
-requirements.
+Start agent work with [AGENTS.md](AGENTS.md). Codex and Claude Code share the
+[workflow canon](docs/ai-agents/catalog.md). The Cargo workspace contains the
+application, publisher, updater and repository checks. See
+[tooling status](docs/ai-agents/tooling.md) and [release preparation](docs/releases.md).
