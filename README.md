@@ -32,9 +32,12 @@ recovery and live pending-check reconsideration remain separate work.
 The progress API, owner feed/setup, token manager, standalone publisher and
 Codex integration are implemented and locally verified. The
 [dogfood rollout](docs/dogfood-rollout.md) prepares persistent private storage,
-backup/restore and live acceptance. Publisher installation and real automatic
-Codex reports, phone feed acceptance with real messages, and live data recovery
-remain [#39](https://github.com/breki/silkboard/issues/39). Claude integration is
+backup/restore and live acceptance. Frosti now automatically publishes real
+Codex reports from two independent sessions, visible in the owner's feed/history.
+Live read denials and application restart persistence are verified; a tagged
+upgrade with existing data remains [#39](https://github.com/breki/silkboard/issues/39).
+Backups and recovery are deferred to [#52](https://github.com/breki/silkboard/issues/52).
+Claude integration is
 separate [#43](https://github.com/breki/silkboard/issues/43).
 
 ## Development and delivery

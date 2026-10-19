@@ -2,9 +2,13 @@
 
 Status on 2026-10-19: reviewed preparation merged; signed v0.3.0 published and
 healthy in production at `46c28d66200b0b13115abfd45744cf58e4d83730`.
-Private persistent storage is enabled and the owner confirmed phone registration
-and login. Publisher installation, real Codex/feed acceptance and live data
-recovery remain pending. The procedure below retains the phased boundaries.
+Private state, owner phone setup/login, real Codex reports from Frosti,
+independent session/feed/history acceptance, live access denials and application
+restart persistence are verified. A tagged upgrade with existing data and
+post-upgrade phone acceptance remain #39. The owner deferred independent backups,
+isolated restore and application recovery acceptance to
+[#52](https://github.com/breki/silkboard/issues/52); those no longer block #39.
+The procedure retains its authorization boundaries.
 
 ## Verified rollout so far
 
@@ -28,12 +32,37 @@ recovery remain pending. The procedure below retains the phased boundaries.
   healthy v0.3.0 and the existing updater/timer were verified afterwards.
   The [reusable helper](../deploy/owner-handoff/README.md) preserves the tool
   for future provisioning; that generalized version is not installed here.
+- Subsequent owner approval installed the Frosti publisher built from signed
+  v0.3.0, package 0.1.0, SHA256
+  `1604e65265cee264d6c1aba26cd3dfa8983ca509de852a29c73ffbd69a5ae726`.
+  A project-scoped token was issued via approved SSH and transferred directly
+  to its private client file; the guest raw transfer copy was removed. Config/
+  token are mode 0600, configuration/state directories mode 0700. No credential
+  value is included in chat, source or evidence. Native Codex 0.162.1 reporting
+  was enabled after the owner's explicit approval and native hook review.
+- Real automatic reports arrived from two independent root native sessions on
+  Frosti. The owner supplied a feed screenshot with a real reply excerpt and
+  expanded history, then confirmed seeing both sessions. At the later restart
+  baseline production held seven reports across those two sessions. No fabricated
+  payload was used for reporting acceptance. Publishing remains best-effort;
+  native root/child/resume fixtures are separate evidence.
+- Private HTTPS checks returned 401 for project/session/history/publisher metadata
+  reads without credentials and with the publish-only token. Wrong-project
+  publishing and a dedicated, already revoked test credential also returned 401.
+  The test label remains revoked; its raw token and temporary directory were
+  removed. No denial-check message was accepted.
+- A brief application restart at 07:09 UTC changed the service PID from 29514
+  to 31929 and returned healthy exact v0.3.0. All seven prior event metadata
+  records and both native session records were retained exactly. Owner presence,
+  browser-session count, publisher/revocation metadata and schema 3 were unchanged.
+  Setup stayed closed; release path, state drop-in and updater binary checksum
+  were unchanged, and polling stayed enabled/active. This verifies stored
+  metadata retention, not fresh owner password authentication. The private
+  guest record is `/var/log/silkboard-dogfood-restart.4TiSpF/evidence.json`.
 
-No publisher token/client/hooks were installed by this activation. No recurring
-backup policy, independent snapshot, data-bearing tagged upgrade or restore
-rehearsal is claimed. Phone login is owner-reported; feed acceptance with real
-reports remains outstanding. Private operator records retain invocation/state
-and checksum evidence without credentials or application contents.
+No recurring backup policy, independent snapshot, data-bearing tagged upgrade
+or restore rehearsal is claimed. Private operator records retain safe checksums,
+counts and invocation/state evidence, without credentials or message contents.
 
 ## Prepared scope and authorization
 
@@ -93,7 +122,7 @@ release is installed:
    `/etc/systemd/system/silkboard.service.d/20-progress.conf`. Use
    `systemd-analyze verify silkboard.service`, `systemctl daemon-reload`, then
    restart only the application. Check healthy exact identity, effective
-   environment/StateDirectory, mode0700 directory and mode0600 database.
+   environment/StateDirectory, mode 0700 directory and mode 0600 database.
 3. Verify the service cannot read `/etc/silkboard/updater-token`, fetch/build/
    updater state or write release binaries. Exercise the actual unit sandbox,
    not just a shell with the same UID. Verify database, journals and exports
@@ -125,7 +154,7 @@ and prepare a new label/link as appropriate. Do not bypass first-owner setup.
    source commit and checksum. The current publisher package is0.1.0; record
    the actual release revision rather than assuming it matches server version.
    No target Rust/Cargo dependency, daemon or durable queue is introduced.
-2. Privately install the token, mode0600 configuration and mode0700 counter
+2. Privately install the token, mode 0600 configuration and mode 0700 counter
    directory according to [publishing](publishing-cli.md). Use the fixed
    production HTTPS endpoint/project, actual workspace and stable hostname.
    Configuration and credentials stay outside the repository.
@@ -139,37 +168,45 @@ and prepare a new label/link as appropriate. Do not bypass first-owner setup.
    separate latest messages/history. Fixtures and manually fabricated hook JSON
    are not production integration evidence. Delivery remains best-effort.
 5. Ask the owner to confirm phone login, distinct latest messages, history and
-   no horizontal overflow. Verify no-cookie and publisher-only reads401,
-   wrong-project publishing401 and a deliberately revoked test credential401,
+   no horizontal overflow. Verify no-cookie and publisher-only reads 401,
+   wrong-project publishing 401 and a deliberately revoked test credential401,
    without printing any credential or recording sensitive browser bodies.
 
-## 4. Persistence, independent snapshot and recovery rehearsal
+## 4. Persistence across restart and tagged upgrade (#39)
 
-Agree the encrypted off-machine backup destination, snapshot naming and
-operational backup frequency/retention before considering ongoing protection
-established. The initial approved evidence includes:
+1. Record existing event/session metadata and owner/publisher presence; restart
+   only the application and confirm the same stored observations survive.
+   This passed on 2026-10-19 with seven real reports and two native sessions.
+   Do not read credential hashes or treat record counts as fresh authentication.
+2. Prepare a compatible reviewed release to demonstrate a real tagged automatic
+   upgrade with existing data. The initial status-only v0.2.2 to v0.3.0 upgrade
+   predates state creation and cannot prove this. Use legitimate pending changes
+   and reviewed evidence; obtain the owner's version and exact publication
+   decisions through the release workflow. No schema change is proposed.
+3. Capture a fresh baseline of existing event/session metadata before activation.
+   Verify the exact release suite, admission and automatic activation, then that
+   every baseline observation/native identity remains intact. Verify new real
+   automatic reports arrive and the owner can still use phone login/feed/history
+   with independent latest messages and no horizontal overflow. Do not require
+   message counts to stay fixed while ordinary sessions continue publishing.
+4. Verify the original polling timer state, an ordinary scheduled poll, healthy
+   exact identity and no pending transaction. Keep v0.2.1 blocked and do not reset
+   updater history. Preserve the private state drop-in and updater binary.
 
-1. Record nonsecret canary identity/counts and owner/publisher validity; restart
-   the application and confirm the same observations/authentication survive.
-2. Take a fresh [consistent snapshot](application-data.md), pull it privately
-   off the VM into the agreed protected storage, and record only its checksum,
-   schema and counts. The app's own export directory is not independent backup.
-3. Restore that copy to an isolated new private directory with no production
-   listeners/hooks. Verify history/password retention, revoked publisher tokens,
-   cleared browser sessions/setup links and no change to the source/live DB.
-   Remove the rehearsal copy through approved cleanup after saving safe evidence.
-4. Prepare and approve a second compatible patch release if needed to demonstrate
-   a real tagged automatic upgrade with **existing data**. The initial upgrade
-   from status-only v0.2.2 predates state creation and cannot prove this. Avoid
-   fabricated feature changes solely for a version bump; release evidence/docs
-   can supply legitimate follow-up bookkeeping. Verify exact release suite and
-   automatic activation, then unchanged canaries, owner login and publisher
-   identity/counters. No schema change is proposed in this initial rollout.
-5. Restore the original timer enabled/active state, observe an ordinary scheduled
-   poll, and verify healthy exact release/state and only expected drop-in changes.
-   Keep v0.2.1 blocked and no pending transaction; do not reset updater history.
+## 5. Independent backups and recovery (#52, deferred)
 
-## Recovery before completion
+The owner deferred independent backups, isolated restore and application
+recovery acceptance from #39 to [#52](https://github.com/breki/silkboard/issues/52)
+on 2026-10-19. These no longer block #39; no ongoing protection is established.
+Destination, encryption/key custody, frequency and retention remain undecided.
+Follow the [data guide](application-data.md) when those choices are approved:
+create a fresh consistent snapshot, protect an independent encrypted off-VM
+copy, restore into a new isolated private location and verify retained data/
+owner state and intentionally invalidated credentials without changing production.
+The application export directory alone is not an independent backup. Future
+schema-changing or destructive operations still require their approved safeguards.
+
+## Failure handling (recovery execution remains separately approved)
 
 If enabling state fails, preserve the new data privately, stop the app, remove
 only this rollout's data drop-in and reload/restart the known status-only
@@ -185,20 +222,22 @@ recovery using new directories, the compatible release and fresh credentials
 as described in the data guide. Never copy a main DB file over old sidecars or
 assume an application symlink rollback reverses a schema migration.
 
-## Evidence ledger (pending live execution)
+## Evidence ledger
 
-| Requirement | Evidence required | Current state |
+| Requirement | Observed evidence | Current state |
 | --- | --- | --- |
-| Reviewed release | Signed tag, exact commit, three successful release jobs, updater admission | Pending |
-| Service confinement | Effective unit, private paths, live denied-access checks | Pending |
-| Owner setup | Owner phone registration/login; no secret in records | Pending |
-| Real reporting | Installed client/Codex versions, independent native identities, automatic observations | Pending |
-| Phone feed and read denial | Owner confirmation/history and unauthorized/publisher401 | Pending |
-| Restart and data upgrade | Retained nonsecret canaries before/after actual restart/tagged upgrade | Pending |
-| Independent recovery | Protected snapshot checksum and isolated restore results | Pending |
-| Normal polling restored | Exact healthy identity, original timer state, scheduled poll, no pending work | Pending |
+| Reviewed release | Signed v0.3.0, exact commit 46c28d6, three successful release jobs in run 39189107503 and installed updater activation | Verified |
+| Service confinement | Effective unit/private paths and live namespace/UID denied-access checks from state activation | Verified |
+| Owner setup | Owner confirmed phone registration/login; setup permanently closed | Verified |
+| Real reporting | Released publisher package 0.1.0, Codex 0.162.1, two independent native root sessions and real automatic observations | Verified |
+| Phone feed/history | Owner screenshot of real report/history and confirmation of two sessions | Verified; post-upgrade phone/layout acceptance pending |
+| Read/scope/revocation denials | No-cookie and publisher-only owner reads 401, wrong-project and revoked publishing 401 over private HTTPS | Verified |
+| Application restart | All seven baseline reports/two session records retained; schema 3 and owner/publisher metadata unchanged | Verified |
+| Data-bearing tagged upgrade | Baseline retention, compatible signed release/suite, normal automatic activation and post-upgrade reports/owner access | Pending #39 |
+| Independent recovery | Encrypted off-VM copy, agreed key/policy and isolated restore | Deferred to #52 by owner |
+| Normal polling | v0.3.0 ordinary scheduled poll verified; timer remained enabled/active after restart | Verified for v0.3.0; recheck after next upgrade |
 
-Local tests and reviews must be recorded separately from this ledger. Once live
-acceptance is actually complete, update these source documents, link observed
-release runs, record remaining limits and only then close #39 through an
-authorized reviewed evidence change. Do not claim completion after preparation.
+Local tests and reviews remain separate from live evidence. After the remaining
+#39 acceptance is actually complete, record the exact release/upgrade and owner
+results, remaining limits and only then close #39 through an authorized reviewed
+evidence change. Deferring recovery is not evidence that it passed.

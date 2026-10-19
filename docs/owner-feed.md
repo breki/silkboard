@@ -3,8 +3,11 @@
 The [#38](https://github.com/breki/silkboard/issues/38) feed shows published
 agent progress using the existing [owner login](owner-login.md) and
 [ingestion database](progress-ingestion.md). Release and health information
-remains public. Production storage, secure phone credential entry, backups
-and rollout remain [#39](https://github.com/breki/silkboard/issues/39) work.
+remains public. Production v0.3.0 has private storage and verified owner phone
+setup/login. The owner confirmed real reports from two distinct Codex sessions
+and expanded history. Live unauthenticated and publisher-only owner reads
+return 401. Remaining rollout evidence is
+[#39](https://github.com/breki/silkboard/issues/39); backups/recovery are #52.
 
 ## Using the page
 

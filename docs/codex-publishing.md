@@ -118,10 +118,12 @@ The final native fixture used root ID
 `01a14f7c-db27-7011-a5da-d7bffbceb928`; these are disposable test identities.
 This verifies the installed native runtime with controlled model responses and
 authenticated local publishing. It is not a hosted-model or production dogfood
-run. Production credentials, installation, release/deployment and phone feed
-verification remain [#39](https://github.com/breki/silkboard/issues/39), with
-[owner setup #45](https://github.com/breki/silkboard/issues/45) and
-[web token management #44](https://github.com/breki/silkboard/issues/44) separate.
+run. Separately, on 2026-10-19, the Frosti installation built from signed
+v0.3.0 automatically sent real observations from two independent native Codex
+sessions to production. The owner confirmed distinct sessions and supplied a
+feed/history screenshot. The [rollout evidence](dogfood-rollout.md#evidence-ledger)
+separates this live acceptance from the controlled native fixtures and the
+remaining data-bearing upgrade check in #39.
 
 Native semantics were checked against OpenAI's
 [hook documentation](https://learn.chatgpt.com/docs/hooks),

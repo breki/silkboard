@@ -114,8 +114,11 @@ native identity or operator reconciliation; the client never reads history.
 The [Codex adapter](codex-publishing.md) provides opt-in automatic invocation
 through native async hooks, tolerates publishing failure and preserves
 validation hooks and development permissions. Claude is separate
-[#43](https://github.com/breki/silkboard/issues/43). Production setup, credentials,
-rollout and phone verification remain [#39](https://github.com/breki/silkboard/issues/39).
+[#43](https://github.com/breki/silkboard/issues/43). The Frosti publisher from
+signed v0.3.0 (package 0.1.0) is installed with a private project credential;
+real automatic reports from two Codex sessions and owner-visible feed/history
+are verified. Remaining rollout evidence is tracked in
+[#39](https://github.com/breki/silkboard/issues/39).
 
 `cargo test -p silkboard-publish` checks real HTTP/ingestion, process restarts,
 concurrency, revocation, malformed responses and private files.

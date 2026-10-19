@@ -165,7 +165,9 @@ independent work, not prerequisites.
   The [setup page](owner-setup.md) is implemented and locally verified;
   the [token manager](publisher-tokens.md) provides owner-only credentials.
   Production v0.3.0 now has private state and verified owner phone setup/login.
-  Publisher installation and real report/feed acceptance remain #39.
+  Frosti now publishes real reports from two independent Codex sessions, and
+  the owner confirmed the feed/history. Live access denials and application
+  restart persistence are verified; data-bearing tagged upgrade remains #39.
 - The initial rollout verifies real Codex publishing and owner phone access
   through the normal reviewed release process. Claude production integration
   remains separate work within this milestone.
@@ -175,12 +177,15 @@ foundation. It does not establish completion of this milestone.
 
 The [initial rollout procedure](dogfood-rollout.md) and
 [private data guide](application-data.md) prepare #39: opt-in persistent service
-state, consistent snapshots and isolated recovery. Local process tests cover
-restart/release-directory replacement; live data survival across a tagged
-upgrade, real Codex observations and phone feed acceptance with real messages
-remain pending.
-Backup schedule/retention/destination and release/publication authorization
-must be settled before dependent production work.
+state, consistent snapshots and isolated recovery. On 2026-10-19 the owner
+confirmed real independent Codex sessions and feed/history; live read/scope/
+revocation denials and application restart persistence passed. Data survival
+across a tagged upgrade remains #39. The owner deferred independent backups,
+isolated restore and application recovery acceptance to
+[#52](https://github.com/breki/silkboard/issues/52); these no longer block #39.
+Backup destination, key custody, schedule and retention remain undecided.
+Release/publication authorization and safeguards for schema-changing or
+otherwise destructive operations remain required.
 
 ## Later milestones
 
