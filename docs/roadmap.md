@@ -164,8 +164,8 @@ independent work, not prerequisites.
   token issuance/revocation is separate [#44](https://github.com/breki/silkboard/issues/44).
   The [setup page](owner-setup.md) is implemented and locally verified;
   the [token manager](publisher-tokens.md) provides owner-only credentials.
-  Their production activation remains pending, not a current production
-  capability.
+  Production v0.3.0 now has private state and verified owner phone setup/login.
+  Publisher installation and real report/feed acceptance remain #39.
 - The initial rollout verifies real Codex publishing and owner phone access
   through the normal reviewed release process. Claude production integration
   remains separate work within this milestone.
@@ -177,7 +177,8 @@ The [initial rollout procedure](dogfood-rollout.md) and
 [private data guide](application-data.md) prepare #39: opt-in persistent service
 state, consistent snapshots and isolated recovery. Local process tests cover
 restart/release-directory replacement; live data survival across a tagged
-upgrade, real Codex observations and owner phone acceptance remain pending.
+upgrade, real Codex observations and phone feed acceptance with real messages
+remain pending.
 Backup schedule/retention/destination and release/publication authorization
 must be settled before dependent production work.
 

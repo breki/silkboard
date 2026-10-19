@@ -1,8 +1,9 @@
 # Private application data and recovery
 
 This is implemented preparation for [#39](https://github.com/breki/silkboard/issues/39),
-not evidence of production activation. Production remains status-only v0.2.2.
-Follow the [phased rollout](dogfood-rollout.md) before installing anything.
+with private production state and owner registration enabled on v0.3.0.
+Independent backups and live data recovery remain pending. Follow the
+[phased rollout](dogfood-rollout.md) for the remaining acceptance work.
 
 ## Service storage
 

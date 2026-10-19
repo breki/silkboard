@@ -1,5 +1,33 @@
 # Canon provenance
 
+## Reusable owner handoff, 2026-10-19
+
+After the owner confirmed production registration and phone login, they asked
+to preserve the handoff for future servers. The [bootstrap helper](../../deploy/owner-handoff/README.md)
+retains the verified Node transport with explicit operator configuration,
+dynamic self-address checks and an installed-but-disabled service. The live
+child-switch failure was reproduced in a disposable database under the same
+sandbox; retaining CAP_SETUID across child execution fixed it, and the
+application child had zero effective/permitted/ambient capabilities. No new
+dependency, application release, publisher credential, backup policy or live
+service change is introduced by this repository generalization. Local fixtures
+and existing live evidence remain distinct; production first-owner setup is
+closed and the original temporary deployment was removed.
+
+## Private owner phone handoff preparation, 2026-10-19
+
+The owner selected preparation of a temporary HTTPS channel restricted to
+their Tailscale identity for #39's one-time setup link. Read-only guest checks
+confirmed Tailscale 1.104.1 and the existing port 443 proxy. Tailscale's
+installed-version proxy source and Serve lifecycle documentation supply the
+identity-header sanitization, Unix-socket forwarding and foreground-session
+contracts linked from the [setup guide](../owner-setup.md). The local
+operational helper reuses the existing setup command and installed Node runtime;
+no upstream code, dependency, application release, live credential or production
+configuration is introduced by preparation. Isolated browser fixtures cannot
+establish real phone identity or production registration. Installation remains
+a separate concrete rollout decision.
+
 ## Initial dogfood rollout preparation, 2026-10-18
 
 Issue #39 requires aligning the original architecture proposal with the agreed

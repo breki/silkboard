@@ -55,6 +55,7 @@ Long runs print stage progress; redirect output to a local log when needed.
 | Frontend coverage | `cargo xtask frontend-coverage` |
 | Frontend duplication | `cargo xtask frontend-dupes` |
 | Isolated Chromium tests | `cargo xtask browser-test` |
+| Private owner handoff | `cargo xtask handoff-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |

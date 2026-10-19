@@ -1,6 +1,6 @@
 # Silkboard architecture
 
-Updated 2026-10-18 for the agreed publish-only agent progress milestone.
+Updated 2026-10-19 for the agreed publish-only agent progress milestone.
 The [roadmap](roadmap.md) controls delivery scope. This replaces the original
 proposal's task fetching, claims, handoff uploads and durable sync queue;
 those capabilities are not part of the agreed milestone or implemented API.
@@ -12,12 +12,13 @@ session, so the owner can read independent activity and history on a phone.
 GitHub remains authoritative for tasks, priorities and acceptance criteria.
 A progress message is an observation, not evidence that work passed validation.
 
-Production currently runs the minimal `v0.2.2` status page in a dedicated
+Production runs `v0.3.0` with private persistent state and verified owner
+registration/login from a phone in a dedicated
 Debian ARM64 VM on malina. Signed exact-revision upgrades and rollback/retry
 are verified; reboot and pending-check evidence remain in the roadmap.
 The progress, authentication and client features below are implemented and
-locally verified, but their production activation and real Codex/phone
-acceptance remain [#39](https://github.com/breki/silkboard/issues/39).
+locally verified. Publisher installation, real Codex reports, phone acceptance
+with real messages and live data recovery remain [#39](https://github.com/breki/silkboard/issues/39).
 
 ## Components and connections
 

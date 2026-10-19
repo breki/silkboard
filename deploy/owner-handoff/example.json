@@ -1,0 +1,10 @@
+{
+  "origin": "https://dashboard.example.ts.net",
+  "ownerLogin": "owner@example.com",
+  "database": "/var/lib/silkboard/progress/progress.sqlite",
+  "applicationBinary": "/opt/silkboard/current/silkboard-web",
+  "applicationUser": "silkboard",
+  "applicationService": "silkboard.service",
+  "applicationUrl": "http://127.0.0.1:3000",
+  "handoffPort": 8443
+}
