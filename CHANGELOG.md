@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.3.0 - 2026-10-19
+
 - Prepare production agent-progress dogfooding with opt-in private service
   storage, consistent SQLite snapshots and safe isolated restore. Align current
   architecture and agent guidance with publish-only observation.
