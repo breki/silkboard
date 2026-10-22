@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { test } from "node:test";
+import { createHash } from "node:crypto";
 import { configure } from "../configure.mjs";
 import { refresh } from "../refresh.mjs";
 const root = path.resolve(import.meta.dirname, "../..");
@@ -260,10 +261,42 @@ esac`,
   );
   script(cargoBin, "code-dupes", "echo 'code-dupes 0.2.1'");
   for (const command of ["tailscale", "gh"]) script(fake, command, "exit 70");
+  const architecture = execFileSync("uname", ["-m"], {
+    encoding: "utf8",
+  }).trim();
+  const packageName = "kozmotic-v2.3.0-" + architecture + "-unknown-linux-gnu";
+  const release = path.join(f.home, "release-fixture");
+  fs.mkdirSync(path.join(release, packageName), { recursive: true });
+  script(path.join(release, packageName), "kozmotic", "echo 'kozmotic 2.3.0'");
+  const archive = path.join(release, "package.tar.gz");
+  execFileSync("tar", ["-czf", archive, "-C", release, packageName]);
+  const digest = (file) =>
+    createHash("sha256").update(fs.readFileSync(file)).digest("hex");
+  const archiveDigest = digest(archive);
+  const binaryDigest = digest(path.join(release, packageName, "kozmotic"));
+  // Replace network and published hashes with a locally generated release.
+  // Actual checksum verification still runs, including corrupted-download refusal.
+  script(
+    fake,
+    "sha256sum",
+    `read -r published file
+case "$file" in
+*/package.tar.gz) expected=${archiveDigest};;
+*/kozmotic) expected=${binaryDigest};;
+*) exit 70;;
+esac
+printf '%s  %s\\n' "$expected" "$file" | /usr/bin/sha256sum --check --status`,
+  );
   script(
     fake,
     "curl",
-    '[[ "$*" == *https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg* || "$*" == *https://cli.github.com/packages/githubcli-archive-keyring.gpg* ]] || exit 70; printf public-key-fixture > "${!#}"',
+    `case "$*" in
+*https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg*|*https://cli.github.com/packages/githubcli-archive-keyring.gpg*) printf public-key-fixture > "\${!#}";;
+*https://github.com/breki/kozmotic/releases/download/v2.3.0/kozmotic-v2.3.0-*)
+if [[ \${CREATE_DESTINATION_DIRECTORY:-0} == 1 ]]; then mkdir "$HOME/.claude/bin/kozmotic"; fi
+cp "$HOME/release-fixture/package.tar.gz" "\${!#}"; printf "downloaded\\n" >> "$HOME/kozmotic-downloads";;
+*) exit 70;;
+esac`,
   );
   script(fake, "sudo", `printf '%s\\n' "$*" >> "$HOME/system-installer.calls"`);
   script(agents, "codex", "echo 'codex-cli 0.162.1'");
@@ -311,6 +344,40 @@ esac`,
     fs.existsSync(path.join(f.home, ".local/bin/silkboard-publish")),
     true,
   );
+  assert.equal(
+    fs.existsSync(path.join(f.home, ".claude/bin/kozmotic")),
+    true,
+    "a fresh VM must install the executable required by its Git-status hook",
+  );
+  const kozmotic = path.join(f.home, ".claude/bin/kozmotic");
+  assert.equal(digest(kozmotic), binaryDigest);
+  assert.equal(
+    fs.readFileSync(path.join(f.home, "kozmotic-downloads"), "utf8").trim(),
+    "downloaded",
+  );
+  const installHookTool = (extraEnv = {}) =>
+    spawnSync("bash", [path.join(f.repo, ".bombyx/install-kozmotic.sh")], {
+      env: { ...env, ...extraEnv },
+      encoding: "utf8",
+    });
+  fs.writeFileSync(kozmotic, "unrelated executable");
+  assert.notEqual(installHookTool().status, 0);
+  assert.equal(fs.readFileSync(kozmotic, "utf8"), "unrelated executable");
+  fs.unlinkSync(kozmotic);
+  fs.symlinkSync(path.join(release, packageName, "kozmotic"), kozmotic);
+  assert.notEqual(installHookTool().status, 0);
+  assert.equal(fs.lstatSync(kozmotic).isSymbolicLink(), true);
+  fs.unlinkSync(kozmotic);
+  assert.notEqual(
+    installHookTool({ CREATE_DESTINATION_DIRECTORY: "1" }).status,
+    0,
+  );
+  assert.equal(fs.statSync(kozmotic).isDirectory(), true);
+  assert.deepEqual(fs.readdirSync(kozmotic), []);
+  fs.rmdirSync(kozmotic);
+  fs.appendFileSync(archive, "corrupt download");
+  assert.notEqual(installHookTool().status, 0);
+  assert.equal(fs.existsSync(kozmotic), false);
   const login = spawnSync("code-dupes", ["--version"], {
     env: {
       HOME: f.home,
