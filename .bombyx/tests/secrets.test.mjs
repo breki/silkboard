@@ -259,6 +259,12 @@ build) mkdir -p target/release; printf '#!/bin/sh\\nexit 0\\n' > target/release/
 esac`,
   );
   script(cargoBin, "code-dupes", "echo 'code-dupes 0.2.1'");
+  for (const command of ["tailscale", "gh"]) script(fake, command, "exit 70");
+  script(
+    fake,
+    "curl",
+    '[[ "$*" == *https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg* || "$*" == *https://cli.github.com/packages/githubcli-archive-keyring.gpg* ]] || exit 70; printf public-key-fixture > "${!#}"',
+  );
   script(fake, "sudo", `printf '%s\\n' "$*" >> "$HOME/system-installer.calls"`);
   script(agents, "codex", "echo 'codex-cli 0.162.1'");
   script(agents, "claude", "echo '2.1.293 (Claude Code)'");
@@ -292,6 +298,14 @@ esac`,
     }).trim(),
     "ssh -i retained-deploy-key",
   );
+  const calls = fs.readFileSync(
+    path.join(f.home, "system-installer.calls"),
+    "utf8",
+  );
+  assert.match(calls, /apt-get install[^\n]*\bgh\b/);
+  assert.match(calls, /apt-get install[^\n]*\btailscale\b/);
+  assert.match(calls, /systemctl enable --now tailscaled/);
+  assert.doesNotMatch(calls, /tailscale up|gh auth/);
   assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
   assert.equal(
     fs.existsSync(path.join(f.home, ".local/bin/silkboard-publish")),

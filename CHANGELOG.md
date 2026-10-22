@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Install Tailscale and GitHub CLI during native development VM provisioning;
+  keep device registration and account authentication explicit operator steps.
+
 - Remove private deployment addresses from tracked examples and defaults;
   require the Bombyx publisher endpoint in external operator configuration.
 
