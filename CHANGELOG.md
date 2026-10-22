@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Fix new frontend-tool advisories with Vite 8.1.6 and matching Vitest 4.1.12
+  packages; preserve registry integrity checks and exact cooldown exceptions.
+
+- Fix publisher TLS certificate distrust handling with rustls-webpki 0.103.16
+  and webpki-roots 1.0.10, retaining exact security-fix cooldown exceptions.
+
+- Prepare native Bombyx development provisioning with Codex/Claude, private
+  publisher secret refresh and a separate VM release signer; production trust
+  installation remains a separate operator action.
+
 - Add reusable private owner-setup handoff tooling for new servers, with
   configurable identity/application settings, retained installation and an
   automatically closing HTTPS listener.

@@ -1,5 +1,26 @@
 # Canon provenance
 
+## Native Bombyx handoff and separate VM signer, 2026-10-22
+
+The operator supplied the Bombyx vault handoff and selected the VM author
+identity Silkboard VM <silkboard-vm@agents.invalid>. Public GitHub deploy-key
+readback matched its key and write-enabled metadata; no vault/private key was
+read. Bombyx's local tutorial/configuration and refresh implementation supplied
+the native Ubuntu24.04 agent-user, clone, deploy-key and bare-env hook contracts.
+The [VM guide](../bombyx-development.md) records those boundaries and the two-key
+repository trust change, while production trust installation remains the
+operator's task. Disposable signature fixtures and exact-set tests preserve
+unlisted-key refusal and separation from candidate-controlled trust.
+
+Node/rustup checksums come from their official release archives. Codex0.162.1
+retains the repository's previously verified native hook version; Claude2.1.293
+was selected using its registry publication date (2026-10-07). Official Codex
+and Claude install/authentication docs supply user-owned CLI installation and
+operator login steps. Bootstrap Node code uses the already pinned runtime,
+without adding application dependencies or changing agent permission/trust
+settings. No VM creation, live authentication, production trust installation,
+privileged updater replacement or backup policy is claimed by preparation.
+
 ## Live Codex dogfooding and recovery deferral, 2026-10-19
 
 The owner approved private SSH publisher issuance/installation and Codex
@@ -437,3 +458,15 @@ phase 2 admitted and activated v0.2.2 with the old block retained, then restored
 and observed scheduled polling. The records identify both exact tag-triggered
 suites and guest invocation/state/health evidence. Reboot acceptance remains
 pending. No upstream code or deployment policy is changed.
+
+## Validation-blocking security repairs, 2026-10-22
+
+The complete VM-preparation validator passed behavior/coverage gates but failed
+its mandatory live audit on new RustSec TLS and npm Vite/Vitest advisories.
+The [exact security exception record](../dependency-security-exceptions.md)
+links the primary advisories and observed registry dates. Two compatible Rust
+transitive patches and the minimum Vite/Vitest fixes (including matching Vitest
+components) preserve normal registry/license/integrity checks and fail-first
+exception regressions. No generic cooldown bypass or ignored advisory is added.
+These scoped repairs are required for CI/release eligibility; they do not
+install production code or expand publisher/VM authority.

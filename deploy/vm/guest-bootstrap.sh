@@ -11,8 +11,7 @@ source /etc/os-release
 [[ $ID == debian && $VERSION_ID == 13 ]] || fail 'Debian 13 required'
 cloud-init status --wait
 for user in silkadmin silkbuild silkboard; do id "$user" >/dev/null; done
-[[ $(ssh-keygen -lf "$1" | awk '{print $2}') == SHA256:D+XaRkaUyW9uBQ8dMDp+XmZV6QH255p9g58auXRQwf8 ]] ||
-    fail 'unexpected release trust key'
+bash "$(dirname -- "$0")/verify-release-signers.sh" "$1"
 install -d -m 0755 /etc/silkboard /opt/silkboard/releases
 install -m 0644 "$1" /etc/silkboard/release-signers
 install -m 0644 "$2" /etc/systemd/system/silkboard.service

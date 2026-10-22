@@ -72,7 +72,7 @@ a timed-out guest process may still run, so inspect before retrying.
 
 ```sh
 deploy/vm/guest-agent.sh exec /usr/bin/cloud-init status --wait
-for file in guest-bootstrap.sh guest-build.sh guest-stage.sh guest-activate-initial.sh silkboard.service; do
+for file in verify-release-signers.sh guest-bootstrap.sh guest-build.sh guest-stage.sh guest-activate-initial.sh silkboard.service; do
   deploy/vm/guest-agent.sh put "deploy/vm/$file" "$file"
 done
 deploy/vm/guest-agent.sh put .github/release-signers release-signers
@@ -83,7 +83,7 @@ deploy/vm/guest-agent.sh exec /usr/bin/install -m 0755 \
   /tmp/silkboard-bootstrap/guest-build.sh /usr/local/libexec/silkboard-build
 ```
 
-Bootstrap checks the approved release signer fingerprint, installs a separate
+Bootstrap checks the exact approved owner/VM release signer fingerprints, installs a separate
 root-owned trust file, Node 24.14.1 and Rust 1.93.1, and Tailscale from its
 signed Debian repository. Node and rustup downloads have pinned SHA-256 values;
 Rust is installed under the build account, not root. See official

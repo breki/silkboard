@@ -106,7 +106,9 @@ Updater reboot recovery remains pending.
 - Trust the owner's existing Git SSH signing key for release tags: ED25519
   fingerprint `SHA256:D+XaRkaUyW9uBQ8dMDp+XmZV6QH255p9g58auXRQwf8`.
   Selected on 2026-10-17; private signing material stays outside CI and the
-  dashboard.
+  dashboard. The owner-approved 2026-10-22 Bombyx handoff adds a separate VM
+  signer to repository admission; production installation remains an operator
+  action. See [key separation/revocation](releases.md#vm-signer-and-revocation).
 - Require the release-suite workflow at
   `breki/silkboard/.github/workflows/release.yml`, triggered by the release
   tag, to pass all required gates for that tag's exact commit. Selected on

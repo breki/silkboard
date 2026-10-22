@@ -56,6 +56,7 @@ Long runs print stage progress; redirect output to a local log when needed.
 | Frontend duplication | `cargo xtask frontend-dupes` |
 | Isolated Chromium tests | `cargo xtask browser-test` |
 | Private owner handoff | `cargo xtask handoff-test` |
+| Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
@@ -241,3 +242,8 @@ GitHub release workflow registration and successful run evidence must be
 read back after publication; no numeric workflow ID is invented locally.
 A release must not be declared eligible unless both trusted tag verification
 and the complete release suite succeed for its exact revision.
+
+The Bombyx gate runs native bootstrap helper behavior/privacy tests with
+90% line/function and 85% branch coverage. The two thin fixed-error CLI entry
+points are excluded from module coverage and exercised through subprocesses;
+provisioning shell/platform execution remains a separate live guest check.

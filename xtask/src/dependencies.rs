@@ -212,16 +212,48 @@ fn verify_versions(
             text(&document["version"], "created_at")?.to_owned()
         };
         let published = timestamp(&date)?;
-        // Exact urgent fix for RUSTSEC-2026-0346 through -0349. This
-        // exempts only cooldown, never future timestamps or other gates.
-        // See docs/dependency-security-exceptions.md; no configurable bypass.
-        let rustls_security_fix = !*npm
-            && name == "rustls"
-            && version == "0.23.46"
-            && published == timestamp("2026-10-14T09:54:15.075873Z")?;
+        // Exact urgent fixes only; no configurable bypass. See the security
+        // exception record for advisories and observed registry timestamps.
+        let security_fix_date = match (*npm, name.as_str(), version.as_str()) {
+            (false, "rustls", "0.23.46") => Some("2026-10-14T09:54:15.075873Z"),
+            (false, "rustls-webpki", "0.103.16") => {
+                Some("2026-10-20T08:58:28.008618Z")
+            }
+            (false, "webpki-roots", "1.0.10") => {
+                Some("2026-10-19T20:11:32.333071Z")
+            }
+            (true, "@vitest/coverage-v8", "4.1.12") => {
+                Some("2026-10-15T14:39:54.281Z")
+            }
+            (true, "@vitest/expect", "4.1.12") => {
+                Some("2026-10-15T14:40:54.660Z")
+            }
+            (true, "@vitest/mocker", "4.1.12") => {
+                Some("2026-10-15T14:40:12.730Z")
+            }
+            (true, "@vitest/pretty-format", "4.1.12") => {
+                Some("2026-10-15T14:42:05.550Z")
+            }
+            (true, "@vitest/runner", "4.1.12") => {
+                Some("2026-10-15T14:40:03.289Z")
+            }
+            (true, "@vitest/snapshot", "4.1.12") => {
+                Some("2026-10-15T14:40:35.044Z")
+            }
+            (true, "@vitest/spy", "4.1.12") => Some("2026-10-15T14:41:54.167Z"),
+            (true, "@vitest/utils", "4.1.12") => {
+                Some("2026-10-15T14:41:14.210Z")
+            }
+            (true, "vitest", "4.1.12") => Some("2026-10-15T14:51:24.991Z"),
+            _ => None,
+        };
+        let security_fix = security_fix_date
+            .map(timestamp)
+            .transpose()?
+            .is_some_and(|trusted| trusted == published);
         if now
             .checked_sub(published)
-            .is_none_or(|age| age < 14 * 86400 && !rustls_security_fix)
+            .is_none_or(|age| age < 14 * 86400 && !security_fix)
         {
             return Err(format!(
                 "{name}@{version} published {date}: within 14-day cooldown"
@@ -665,6 +697,118 @@ mod tests {
                 &[(false, "rustls".into(), "0.23.46".into())],
                 &NpmClaims::new(),
                 published + 4 * 86400
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn only_exact_tls_distrust_fixes_can_use_short_cooldown() {
+        for (name, version, date) in [
+            ("rustls-webpki", "0.103.16", "2026-10-20T08:58:28.008618Z"),
+            ("webpki-roots", "1.0.10", "2026-10-19T20:11:32.333071Z"),
+        ] {
+            let published = timestamp(date).unwrap();
+            let check = |name: &str, version: &str, date: &str, now| {
+                verify_versions(
+                    &json!({"version":{"created_at":date}}),
+                    &[(false, name.into(), version.into())],
+                    &NpmClaims::new(),
+                    now,
+                )
+            };
+            assert!(check(name, version, date, published + 2 * 86400).is_ok());
+            assert!(check(name, version, date, published - 1).is_err());
+            assert!(
+                check("other", version, date, published + 2 * 86400).is_err()
+            );
+            assert!(check(name, "9.9.9", date, published + 2 * 86400).is_err());
+            assert!(
+                check(
+                    name,
+                    version,
+                    "2026-10-21T00:00:00Z",
+                    published + 2 * 86400
+                )
+                .is_err()
+            );
+            assert!(
+                verify_versions(
+                    &json!({"version":{"created_at":date}}),
+                    &[(true, name.into(), version.into())],
+                    &NpmClaims::new(),
+                    published + 2 * 86400,
+                )
+                .is_err()
+            );
+        }
+    }
+    fn npm_security_document(name: &str, date: &str) -> (Value, NpmClaims) {
+        let version = "4.1.12";
+        let url = format!("https://registry.npmjs.org/{name}/-/fixture.tgz");
+        let integrity = "sha512-fixture";
+        let doc = json!({"time":{version:date},"versions":{version:{"name":name,"version":version,"license":"MIT","dist":{"tarball":url,"integrity":integrity}}}});
+        let claims = NpmClaims::from([(
+            (name.into(), version.into()),
+            ("MIT".into(), url, integrity.into()),
+        )]);
+        (doc, claims)
+    }
+    #[test]
+    fn exact_vitest_security_fixes_preserve_registry_checks() {
+        for (name, date) in [
+            ("@vitest/coverage-v8", "2026-10-15T14:39:54.281Z"),
+            ("@vitest/expect", "2026-10-15T14:40:54.660Z"),
+            ("@vitest/mocker", "2026-10-15T14:40:12.730Z"),
+            ("@vitest/pretty-format", "2026-10-15T14:42:05.550Z"),
+            ("@vitest/runner", "2026-10-15T14:40:03.289Z"),
+            ("@vitest/snapshot", "2026-10-15T14:40:35.044Z"),
+            ("@vitest/spy", "2026-10-15T14:41:54.167Z"),
+            ("@vitest/utils", "2026-10-15T14:41:14.210Z"),
+            ("vitest", "2026-10-15T14:51:24.991Z"),
+        ] {
+            let (doc, claims) = npm_security_document(name, date);
+            let published = timestamp(date).unwrap();
+            let request = [(true, name.into(), "4.1.12".into())];
+            assert!(
+                verify_versions(&doc, &request, &claims, published + 2 * 86400)
+                    .is_ok()
+            );
+            assert!(
+                verify_versions(&doc, &request, &claims, published - 1)
+                    .is_err()
+            );
+            let (changed_date, _) =
+                npm_security_document(name, "2026-10-16T00:00:00Z");
+            assert!(
+                verify_versions(
+                    &changed_date,
+                    &request,
+                    &claims,
+                    published + 2 * 86400
+                )
+                .is_err()
+            );
+            let mut changed_integrity = doc;
+            changed_integrity["versions"]["4.1.12"]["dist"]["integrity"] =
+                json!("sha512-other");
+            assert!(
+                verify_versions(
+                    &changed_integrity,
+                    &request,
+                    &claims,
+                    published + 2 * 86400
+                )
+                .is_err()
+            );
+        }
+        let (doc, claims) =
+            npm_security_document("unlisted", "2026-10-15T14:51:24.991Z");
+        assert!(
+            verify_versions(
+                &doc,
+                &[(true, "unlisted".into(), "4.1.12".into())],
+                &claims,
+                timestamp("2026-10-17T00:00:00Z").unwrap()
             )
             .is_err()
         );

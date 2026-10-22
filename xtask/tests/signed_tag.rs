@@ -46,7 +46,7 @@ fn verifies_real_ssh_signature_and_rejects_another_signer() {
     fs::create_dir_all(directory.join("repo/.github")).unwrap();
     let _fixture = Fixture(directory.clone());
     let root = directory.join("repo");
-    for name in ["trusted", "other"] {
+    for name in ["trusted", "second", "other"] {
         command(
             &directory,
             "ssh-keygen",
@@ -66,8 +66,9 @@ fn verifies_real_ssh_signature_and_rejects_another_signer() {
     fs::write(
         root.join(".github/release-signers"),
         format!(
-            "silkboard-release {}",
-            fs::read_to_string(directory.join("trusted.pub")).unwrap()
+            "silkboard-release {}silkboard-vm {}",
+            fs::read_to_string(directory.join("trusted.pub")).unwrap(),
+            fs::read_to_string(directory.join("second.pub")).unwrap()
         ),
     )
     .unwrap();
@@ -99,6 +100,9 @@ fn verifies_real_ssh_signature_and_rejects_another_signer() {
     // Tags exist only in this disposable repository, never in Silkboard.
     command(&root, "git", &["tag", "-s", "-m", "Fixture", "v0.1.0"]).unwrap();
     assert!(admit().is_ok());
+    // The independent second signer has the same tag-admission authority.
+    sign_tag(&root, &directory.join("second"), "v0.1.0");
+    assert!(admit().is_ok());
     // An existing trusted non-release signature does not authorize a new name.
     command(&root, "git", &["tag", "-s", "-m", "Trial", "trial"]).unwrap();
     let trial =
@@ -113,19 +117,23 @@ fn verifies_real_ssh_signature_and_rejects_another_signer() {
         admit().is_err(),
         "a copied signed tag must not authorize a release"
     );
+    sign_tag(&root, &directory.join("other"), "v0.1.0");
+    assert!(admit().is_err());
+}
+
+fn sign_tag(root: &Path, key: &Path, tag: &str) {
     command(
-        &root,
+        root,
         "git",
         &[
             "-c",
-            &format!("user.signingkey={}", directory.join("other").display()),
+            &format!("user.signingkey={}", key.display()),
             "tag",
             "-fs",
             "-m",
-            "Untrusted fixture",
-            "v0.1.0",
+            "Disposable signature fixture",
+            tag,
         ],
     )
     .unwrap();
-    assert!(admit().is_err());
 }

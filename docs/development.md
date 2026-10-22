@@ -119,3 +119,5 @@ separate first-owner setup pair, refusing existing servers. All four ports
 must be free.
 It uses private temporary storage and test credentials; see the
 [feed verification](owner-feed.md#verification).
+
+For native Ubuntu guest setup, see [Bombyx development](bombyx-development.md).
