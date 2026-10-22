@@ -30,6 +30,12 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
 - Claude Code 2.1.293, published 2026-10-07 and older than fourteen days when
   selected on 2026-10-22. Installing Claude does not enable Claude reporting;
   that integration remains #43.
+- GitHub CLI (`gh`) from GitHub's signed package repository, avoiding Ubuntu's
+  older community package with deprecated API behavior.
+- Tailscale from its signed stable Ubuntu 24.04 repository, with `tailscaled`
+  enabled. Provisioning does not log in, advertise routes, enable Tailscale SSH
+  or change the VM host's firewall. Repeated provisioning retains its guest
+  device identity and authentication state.
 - Locked frontend dependencies/Chromium and a release-built standalone publisher.
 
 Node/rustup archives use fixed official SHA256 values for x86_64 and ARM64.
@@ -101,7 +107,8 @@ server's credential policy. Revoke retired credentials using the owner UI.
 Provisioning installs programs, not authenticated accounts. Inside the guest:
 
 1. Confirm `rustc --version`, `node --version`, `codex --version`,
-   `claude --version` and `silkboard-publish --version`.
+   `claude --version`, `gh --version`, `tailscale version` and
+   `silkboard-publish --version`.
 2. Use `codex login --device-auth` and follow its private browser instructions.
    Start Claude and complete its own `/login` flow. Do not paste credentials,
    one-time codes or login links into repository records or chat.
@@ -113,7 +120,12 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
    copy the workstation's binary. Follow the [Git-status setup guide](ai-agents/git-status-hook.md#enable)
    before trusting that handler on the guest. Its missing prerequisite is not
    a successful hook check and does not replace the separate release gates.
-4. Check `curl --fail "$SILKBOARD_PUBLISH_ENDPOINT/api/status"` during
+4. Register this guest as its own private tailnet device: run
+   `sudo tailscale up --hostname=silkboard-dev` in the guest and approve the
+   login on your phone. Confirm `tailscale status` reports it connected before
+   checking the endpoint. No auth key, login URL or tailnet address belongs in
+   the repository. Tailscale account approval remains an operator action.
+   Check `curl --fail "$SILKBOARD_PUBLISH_ENDPOINT/api/status"` during
    provisioning, or use the endpoint from your private publisher config after
    entering the guest (Bombyx provisioner environment variables do not persist
    in interactive shells). The private
@@ -124,6 +136,11 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
    actual authenticated work in each AI tool and verify ordinary Codex reports
    appear with the guest hostname/native identity in the owner's phone feed.
 
+GitHub CLI installation does not provide GitHub API access. The existing
+repository deploy key remains the Git SSH credential; it is not a `gh` token.
+Use a separately approved credential for private GitHub API operations. No
+workstation `gh` authentication/configuration is copied by provisioning.
+
 The scripts and isolated tests do not establish a live Ubuntu VM, endpoint
 reachability, authenticated agent use or a working release signed by the actual
 VM key. Those operator-dependent observations remain pending. Production updater
@@ -132,4 +149,6 @@ credentials and dashboard execution authority are unchanged.
 Sources: [Bombyx tutorial](https://github.com/breki/bombyx/blob/main/docs/tutorial.md),
 [Bombyx configuration sample](https://github.com/breki/bombyx/blob/main/config.toml.sample),
 [Codex authentication](https://learn.chatgpt.com/docs/auth),
-[Claude installation](https://code.claude.com/docs/en/setup).
+[Claude installation](https://code.claude.com/docs/en/setup),
+[Tailscale Ubuntu packages](https://pkgs.tailscale.com/stable/#ubuntu-2404),
+[GitHub CLI installation](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).

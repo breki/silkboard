@@ -479,3 +479,14 @@ Bombyx requires an operator-supplied HTTPS origin and the application service
 template leaves owner origin configuration to an external drop-in. Live
 production and workstation configuration remain operator-owned. This change
 does not rewrite historical commits or alter running production configuration.
+
+## Development VM connectivity tools — 2026-10-22
+
+The owner approved a separate Tailscale connection for the Fusion development
+VM and required its installation through provisioning, alongside GitHub CLI.
+Live guest inspection found private endpoint DNS unresolved before Tailscale
+installation. The provisioner follows Tailscale's stable Ubuntu 24.04 package
+repository instructions and GitHub's own signed package repository for its CLI;
+the maintainers report deprecated API failures in Ubuntu's older package.
+Installation starts the daemon but performs no account/device login, host
+firewall change, route advertisement or workstation credential migration.

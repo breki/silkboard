@@ -31,6 +31,19 @@ tools=$HOME/.local/share/silkboard-tools
 mkdir -p "$tools" "$HOME/.local/bin"
 work=$(mktemp -d)
 trap 'rm -rf -- "$work"' EXIT
+# Scoped vendor repositories; registration stays an explicit operator action.
+curl -fSsL --retry 3 https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg -o "$work/tailscale.gpg"
+printf '%s\n' 'deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/ubuntu noble main' > "$work/tailscale.list"
+curl -fSsL --retry 3 https://cli.github.com/packages/githubcli-archive-keyring.gpg -o "$work/githubcli.gpg"
+printf '%s\n' 'deb [signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main' > "$work/github-cli.list"
+sudo -n install -d -m 0755 /usr/share/keyrings /etc/apt/sources.list.d
+sudo -n install -o root -g root -m 0644 "$work/tailscale.gpg" /usr/share/keyrings/tailscale-archive-keyring.gpg
+sudo -n install -o root -g root -m 0644 "$work/tailscale.list" /etc/apt/sources.list.d/tailscale.list
+sudo -n install -o root -g root -m 0644 "$work/githubcli.gpg" /usr/share/keyrings/githubcli-archive-keyring.gpg
+sudo -n install -o root -g root -m 0644 "$work/github-cli.list" /etc/apt/sources.list.d/github-cli.list
+sudo -n apt-get update
+sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tailscale gh
+sudo -n systemctl enable --now tailscaled
 runtime=$tools/node-v24.14.1
 if [[ ! -x $runtime/bin/node ]] || [[ $("$runtime/bin/node" --version) != v24.14.1 ]]; then
     [[ ! -e $runtime && ! -L $runtime ]] || fail 'unexpected Node runtime; inspect before replacing it'
@@ -90,4 +103,4 @@ mv -T "$publisher_temp" "$HOME/.local/bin/silkboard-publish"
 "$runtime/bin/node" "$root/.bombyx/configure-cli.mjs" "$root"
 bash "$root/.bombyx/refresh-secrets.sh"
 echo 'Silkboard VM tools, Git signing and private publisher configuration installed.'
-echo 'Agent authentication, native hook trust, endpoint reachability and full validation still require verification.'
+echo 'Tailscale phone approval, GitHub/agent authentication, native hook trust, endpoint reachability and full validation still require verification.'

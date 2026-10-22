@@ -24,12 +24,21 @@ Implementation plan:
 5. Run appropriate full checks and sequential independent reviews; prepare a
    signed commit and PR separately. Do not merge unreviewed changes.
 
-Live guest provisioning, endpoint reachability, agent authentication and
-production trust rotation remain unverified until their operator steps run.
-The previously authorized v0.4.0 release remains separately in the primary
-worktree; do not include its unfinished version bump in this change.
+The owner has now created the Ubuntu 24.04 guest on Fusion using 2 CPUs,
+4 GiB RAM and a 64 GiB sparse disk. Tool startup, local Git signing settings
+and private publisher file permissions were checked at merged revision
+940461a. Codex reports an authenticated login; Claude login is still pending.
+This is not evidence of authenticated work in both tools. The initial private
+endpoint DNS check failed because the guest had no Tailscale connection.
+Production trust installation remains an operator step.
 
 Validation discovered new publisher TLS advisories RUSTSEC-2026-0381/-0382.
 The minimum two transitive patch fixes and exact date-bound security cooldown
 exceptions are included so the required audit can pass. This does not change
 production trust installation or grant new publisher/agent permissions.
+
+The owner approved a separate Tailscale connection for this VM and requested
+Tailscale plus GitHub CLI installation through provisioning. Follow-up checks
+cover reruns and installation without automatic account/device authentication.
+The guest full validator and the follow-up change's full validator must each
+be recorded independently; a workstation pass does not prove the VM works.
