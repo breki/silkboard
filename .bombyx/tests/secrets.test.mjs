@@ -9,6 +9,7 @@ import { refresh } from "../refresh.mjs";
 const root = path.resolve(import.meta.dirname, "../..");
 const node = process.execPath;
 const token = "a".repeat(64);
+const endpoint = "https://dashboard.example.test";
 function fixture(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "silkboard-bombyx-"));
   t.after(() => fs.rmSync(home, { recursive: true, force: true }));
@@ -32,10 +33,11 @@ function fixture(t) {
     PATH: process.env.PATH,
     BOMBYX_ENV_FILE: envFile,
     BOMBYX_PROJECT: "silkboard",
+    SILKBOARD_PUBLISH_ENDPOINT: endpoint,
   };
   const run = (file, args = []) => {
     try {
-      if (file === "configure.mjs") configure(home, args[0]);
+      if (file === "configure.mjs") configure(home, args[0], endpoint);
       else refresh(home, envFile);
       return { status: 0, stdout: "", stderr: "" };
     } catch (_) {
@@ -56,6 +58,7 @@ test("configure is rerunnable, signs only the clone, and refresh rotates private
     assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
   const config = JSON.parse(fs.readFileSync(f.configPath));
   assert.equal(config.codex.workspace, f.repo);
+  assert.equal(config.endpoint, endpoint);
   assert.equal(
     execFileSync("git", ["-C", f.repo, "config", "--local", "user.email"], {
       encoding: "utf8",
@@ -122,7 +125,7 @@ test("configuration preserves existing choices and rejects unsafe key/config pat
   const original = fs.readFileSync(f.configPath, "utf8");
   fs.writeFileSync(
     f.configPath,
-    original.replace("silkboard.tailf38f2f.ts.net", "elsewhere.invalid"),
+    original.replace("dashboard.example.test", "elsewhere.invalid"),
   );
   assert.notEqual(f.run("configure.mjs", [f.repo]).status, 0);
   assert.equal(
@@ -310,4 +313,35 @@ test("quoted values stop at the closing quote as specified by Bombyx", (t) => {
   f.put(`SILKBOARD_PUBLISH_TOKEN="${token}"ignored-suffix\n`);
   assert.equal(f.run("refresh.mjs").status, 0);
   assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+});
+
+test("endpoint is explicitly supplied and invalid origins cannot change existing configuration", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const original = fs.readFileSync(f.configPath, "utf8");
+  for (const value of [
+    undefined,
+    42,
+    {},
+    "",
+    "not a URL",
+    "https://:pass@dashboard.example.test",
+    "http://remote.example.test",
+    "https://user:pass@dashboard.example.test",
+    "https://dashboard.example.test/path",
+    "https://DASHBOARD.example.test",
+    "https://dashboard.example.test:0",
+    "https://dashboard.example.test?query",
+    "https://dashboard.example.test#fragment",
+  ]) {
+    assert.throws(() => configure(f.home, f.repo, value));
+    assert.equal(fs.readFileSync(f.configPath, "utf8"), original);
+  }
+  const out = spawnSync(
+    node,
+    [path.join(root, ".bombyx/configure-cli.mjs"), f.repo],
+    { env: { HOME: f.home, PATH: process.env.PATH }, encoding: "utf8" },
+  );
+  assert.notEqual(out.status, 0);
+  assert.equal(out.stdout, "");
 });

@@ -53,7 +53,7 @@ only their SHA-256 hashes are stored, separately from publisher hashes.
 ## Server configuration
 
 Set `SILKBOARD_OWNER_ORIGIN` to the exact serialized HTTPS origin used by the
-browser, for example `https://silkboard.tailf38f2f.ts.net`. Use a lowercase
+browser, for example `https://silkboard.example.test`. Use a lowercase
 host, no trailing slash/path/query, no credentials and no default `:443` port.
 A nondefault numeric HTTPS port is supported. Both database and origin are
 required to enable owner HTTP routes. Invalid configuration fails startup;

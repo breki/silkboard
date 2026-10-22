@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Remove private deployment addresses from tracked examples and defaults;
+  require the Bombyx publisher endpoint in external operator configuration.
+
 ## 0.4.0 - 2026-10-22
 
 - Fix new frontend-tool advisories with Vite 8.1.6 and matching Vitest 4.1.12

@@ -3,7 +3,18 @@ import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { directory, file, replace, paths } from "./private-files.mjs";
-export function configure(home, checkout) {
+export function configure(home, checkout, endpoint) {
+  if (typeof endpoint !== "string" || !endpoint)
+    throw Error("endpoint required");
+  const origin = new URL(endpoint);
+  if (
+    origin.protocol !== "https:" ||
+    origin.username ||
+    origin.password ||
+    origin.port === "0" ||
+    origin.origin !== endpoint
+  )
+    throw Error("HTTPS origin required");
   const root = fs.realpathSync(checkout);
   if (root !== path.resolve(home, "silkboard")) throw Error("checkout");
   const settings = JSON.parse(
@@ -35,7 +46,7 @@ export function configure(home, checkout) {
   const state = path.join(stateParent, "silkboard-publish");
   directory(state);
   const config = {
-    endpoint: settings.endpoint,
+    endpoint,
     project: settings.project,
     token_file: p.token,
     state_dir: state,
