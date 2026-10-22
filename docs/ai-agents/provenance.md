@@ -1,5 +1,21 @@
 # Canon provenance
 
+## Development VM Git-status prerequisite, 2026-10-22
+
+The owner's real Codex turn exposed a missing `~/.claude/bin/kozmotic` in the
+development VM. The repository's existing Stop hook requires Kozmotic 2.3.0.
+The [official release](https://github.com/breki/kozmotic/releases/tag/v2.3.0)
+supplies both Linux packages; its SHA256SUMS and GitHub asset digests agree.
+Provisioning pins archive and extracted-binary hashes, installs atomically
+without overwriting an existing command, and leaves hook trust unchanged.
+
+Kozmotic 2.3.0 was published 2026-10-15, seven days before selection. This is a
+narrow compatibility exception to the fourteen-day cooldown: it supplies the
+command already required by the checked-in hook and repairs the demonstrated
+fresh-VM failure. No application dependency or agent credential changes.
+Fixture tests establish install/rerun/refusal behavior; an actual subsequent
+Codex turn remains necessary to verify hook presentation.
+
 ## Native Bombyx handoff and separate VM signer, 2026-10-22
 
 The operator supplied the Bombyx vault handoff and selected the VM author

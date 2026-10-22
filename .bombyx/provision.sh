@@ -91,6 +91,7 @@ link_tool() {
 for tool in node npm npx; do link_tool "$runtime/bin/$tool" "$tool"; done
 for tool in cargo rustc rustup rustfmt cargo-clippy cargo-llvm-cov cargo-deny cargo-audit code-dupes; do link_tool "$HOME/.cargo/bin/$tool" "$tool"; done
 for tool in codex claude; do link_tool "$agents/bin/$tool" "$tool"; done
+bash "$root/.bombyx/install-kozmotic.sh"
 npm ci --prefix frontend
 (cd frontend && npm exec -- playwright install --with-deps chromium)
 CARGO_TARGET_DIR="$root/target" cargo build --locked --release -p silkboard-publish

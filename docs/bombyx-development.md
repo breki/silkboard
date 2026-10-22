@@ -27,6 +27,9 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
 - Rust 1.93.1, rustfmt, Clippy, llvm-tools-preview and ARM64 target support.
 - Node 24.14.1 and gate tools pinned by the existing CI/tooling guide.
 - Codex 0.162.1, retaining the version used to verify native hook reporting.
+- Kozmotic 2.3.0 at `~/.claude/bin/kozmotic`, required by the repository's
+  Git-status hook. Fixed release archive and binary checksums cover x86_64 and
+  ARM64; reruns retain the exact installed binary and refuse conflicting files.
 - Claude Code 2.1.293, published 2026-10-07 and older than fourteen days when
   selected on 2026-10-22. Installing Claude does not enable Claude reporting;
   that integration remains #43.
@@ -115,11 +118,10 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
 3. Review the repository's Codex handlers in native `/hooks` before enabling
    reporting. Preserve validation/Git-status hooks and normal agent permission
    settings; provisioning does not enable bypass flags or edit trust records.
-   The informational Git-status handler additionally needs Kozmotic 2.3.0 or
-   later at `~/.claude/bin/kozmotic`; this provisioner does not install it or
-   copy the workstation's binary. Follow the [Git-status setup guide](ai-agents/git-status-hook.md#enable)
-   before trusting that handler on the guest. Its missing prerequisite is not
-   a successful hook check and does not replace the separate release gates.
+   Provisioning installs the informational Git-status handler's Kozmotic
+   prerequisite; it does not copy the workstation's binary. Follow the
+   [Git-status setup guide](ai-agents/git-status-hook.md#enable) to verify the
+   next actual turn. This informational hook does not replace release gates.
 4. Register this guest as its own private tailnet device: run
    `sudo tailscale up --hostname=silkboard-dev` in the guest and approve the
    login on your phone. Confirm `tailscale status` reports it connected before

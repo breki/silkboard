@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Install the pinned Kozmotic prerequisite during development VM provisioning
+  so the configured Codex Git-status hook can run on a fresh VM.
+
 - Install Tailscale and GitHub CLI during native development VM provisioning;
   keep device registration and account authentication explicit operator steps.
 
