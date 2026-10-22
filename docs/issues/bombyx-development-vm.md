@@ -5,7 +5,8 @@ secret refresh and the separate VM release signer, following the operator's
 2026-10-22 handoff. No container layer or migration of the personal owner key.
 
 Decisions: VM commits use Silkboard VM <silkboard-vm@agents.invalid>. Reuse
-project silkboard and https://silkboard.tailf38f2f.ts.net. The operator supplied
+project silkboard and the endpoint in external operator configuration.
+The operator supplied
 and registered the separate write-enabled deploy key (fingerprint
 SHA256:s/bOUAzymE3qEqSllzx4fLR+TNtaWMhpvLR1FrbSc9I). Keep the owner signer.
 The operator handles production trust installation, VM sizing/config and VM

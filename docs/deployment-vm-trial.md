@@ -54,7 +54,7 @@ or trial systemd/cron configuration remained. Other VM disk backing chains
 were checked before deleting storage; production uses its own base image.
 
 The owner removed the offline Tailscale device `silkboard-trial`
-(`100.106.4.73`, device ID `nWqLuqD5KG11CNTRL`). A subsequent host tailnet
+from the tailnet. A subsequent host tailnet
 readback confirmed its absence and preserved malina and production Silkboard.
 Deleting the guest disk also removed its local Serve configuration. No
 separate trial configuration was found on the host; malina's existing Serve

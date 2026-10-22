@@ -13,7 +13,19 @@ The optional [systemd drop-in](../deploy/vm/silkboard-progress.conf) sets:
 
 - `StateDirectory=silkboard/progress` and mode 0700, owned by `silkboard`.
 - `SILKBOARD_DATABASE=/var/lib/silkboard/progress/progress.sqlite`.
-- The exact owner origin `https://silkboard.tailf38f2f.ts.net`.
+
+The template does not supply an owner origin. Set `SILKBOARD_OWNER_ORIGIN`
+to your deployment's exact HTTPS origin in an operator-owned service drop-in,
+for example `/etc/systemd/system/silkboard.service.d/21-owner-origin.conf`.
+The following uses a reserved example; replace it with your real origin:
+
+```ini
+[Service]
+Environment=SILKBOARD_OWNER_ORIGIN=https://silkboard.example.test
+```
+
+Keep the deployment address outside Git. Without this setting the owner
+login/feed are not enabled; there is no deployment-specific fallback.
 
 Systemd creates the state directory before application startup and permits
 writing there under the existing `ProtectSystem=strict` sandbox. Database

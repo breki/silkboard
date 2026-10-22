@@ -119,7 +119,11 @@ release is installed:
    instructions in a protected operator record. Refuse to overwrite an existing
    `20-progress.conf`; inspect any existing state before proceeding.
 2. Install the reviewed drop-in root-owned mode 0644 at
-   `/etc/systemd/system/silkboard.service.d/20-progress.conf`. Use
+   `/etc/systemd/system/silkboard.service.d/20-progress.conf`. Before restarting,
+   also configure the exact deployment HTTPS origin in an operator-owned
+   `21-owner-origin.conf` as described in
+   [service storage](application-data.md#service-storage); the tracked template
+   supplies no origin. Use
    `systemd-analyze verify silkboard.service`, `systemctl daemon-reload`, then
    restart only the application. Check healthy exact identity, effective
    environment/StateDirectory, mode 0700 directory and mode 0600 database.

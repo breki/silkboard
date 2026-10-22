@@ -27,13 +27,14 @@ Never put the link in the repository, chat, shell arguments or a server file.
 For a provisioner using an already approved SSH route, capture that stream in
 a new private file on the **provisioner's machine**, outside the checkout.
 Use the installed database/origin values; this example assumes the #39 storage
-layout has been installed and does not install it:
+layout has been installed and does not install it. Replace the reserved
+example origin with your deployment's actual HTTPS origin:
 
 ```sh
 umask 077
 set -o noclobber
 ssh -T APPROVED_SSH_TARGET \
-  'sudo -n -u silkboard env SILKBOARD_DATABASE=/var/lib/silkboard/progress/progress.sqlite SILKBOARD_OWNER_ORIGIN=https://silkboard.tailf38f2f.ts.net /opt/silkboard/current/silkboard-web owner prepare-setup' \
+  'sudo -n -u silkboard env SILKBOARD_DATABASE=/var/lib/silkboard/progress/progress.sqlite SILKBOARD_OWNER_ORIGIN=https://silkboard.example.test /opt/silkboard/current/silkboard-web owner prepare-setup' \
   > "$HOME/.config/silkboard-owner-setup.link"
 ```
 

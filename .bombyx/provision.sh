@@ -11,6 +11,7 @@ root=$(git rev-parse --show-toplevel)
 source /etc/os-release
 [[ $ID == ubuntu && $VERSION_ID == 24.04 ]] || fail 'Ubuntu 24.04 required'
 [[ -f $HOME/.ssh/bombyx-deploy-key && ! -L $HOME/.ssh/bombyx-deploy-key ]] || fail 'Bombyx deploy key missing'
+[[ -n ${SILKBOARD_PUBLISH_ENDPOINT:-} ]] || fail 'set SILKBOARD_PUBLISH_ENDPOINT in the external Bombyx project env'
 sudo -n apt-get update
 sudo -n env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     build-essential pkg-config libssl-dev ca-certificates curl git openssh-client \

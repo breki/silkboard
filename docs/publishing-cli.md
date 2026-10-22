@@ -49,11 +49,12 @@ until the owner is initialized, even with a valid publisher token. Never paste
 tokens into chat, command arguments, URLs or reports.
 
 Save `config.json` with mode 0600 in that directory, replacing the sample
-paths with absolute paths on this machine:
+paths with absolute paths on this machine and the reserved example endpoint
+with your deployment's real HTTPS origin:
 
 ```json
 {
-  "endpoint": "https://silkboard.tailf38f2f.ts.net",
+  "endpoint": "https://silkboard.example.test",
   "project": "silkboard",
   "token_file": "/home/USER/.config/silkboard-publish/publisher.token",
   "state_dir": "/home/USER/.local/state/silkboard-publish"

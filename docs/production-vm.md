@@ -55,7 +55,8 @@ activation refused to replace the healthy current release.
 Private OpenSSH access as `silkadmin` passed with the guest's ED25519 host
 key obtained through the trusted guest-agent channel and strict host-key
 checking. The owner authenticated Tailscale; its state is `Running` at
-`silkboard.tailf38f2f.ts.net`. Tailscale Serve proxies only tailnet HTTPS to
+an operator-selected private DNS name, retained outside this repository.
+Tailscale Serve proxies only tailnet HTTPS to
 loopback. Certificate-validated `/health` and `/api/status` passed. Chromium
 rendered the mobile page with exact identity, no overflow, and no JavaScript
 errors. Initial certificate issuance caused one HTTPS timeout; subsequent

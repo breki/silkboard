@@ -56,8 +56,19 @@ installing production trust. A GitHub Verified badge is not the trust decision.
 
 ## Private publisher and refresh
 
-The approved endpoint/project are in `.bombyx/settings.json`:
-`https://silkboard.tailf38f2f.ts.net` and `silkboard`. Provisioning creates:
+The project and commit author are in `.bombyx/settings.json`. Supply the real
+endpoint through your external Bombyx registry; there is no endpoint default:
+
+```toml
+[projects.silkboard.env]
+SILKBOARD_PUBLISH_ENDPOINT = "https://silkboard.example.test"
+```
+
+Replace this reserved example origin with your own lowercase HTTPS origin,
+without a trailing slash, path, query, credentials or fragment. Missing or
+invalid input fails configuration; it never selects another deployment. Keep
+your real address outside Git. Existing differing publisher configuration is
+refused rather than silently redirected. Provisioning creates:
 
 - `~/.local/bin/silkboard-publish` and user-visible tool links.
 - `~/.config/silkboard-publish/config.json`, mode 0600, with the actual checkout,
@@ -102,8 +113,11 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
    copy the workstation's binary. Follow the [Git-status setup guide](ai-agents/git-status-hook.md#enable)
    before trusting that handler on the guest. Its missing prerequisite is not
    a successful hook check and does not replace the separate release gates.
-4. Check `curl --fail https://silkboard.tailf38f2f.ts.net/api/status`. The private
-   endpoint needs an approved guest route/DNS/Tailscale arrangement. Frosti's
+4. Check `curl --fail "$SILKBOARD_PUBLISH_ENDPOINT/api/status"` during
+   provisioning, or use the endpoint from your private publisher config after
+   entering the guest (Bombyx provisioner environment variables do not persist
+   in interactive shells). The private
+   endpoint needs an approved guest route/DNS/Tailscale arrangement. The VM host's
    guest-to-host filtering must not be assumed to provide access. Choose/fix
    connectivity explicitly rather than weakening the publisher's HTTPS policy.
 5. Run `cargo xtask validate --check` and ARM64 Clippy from the guest. Complete

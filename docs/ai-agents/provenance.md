@@ -470,3 +470,12 @@ components) preserve normal registry/license/integrity checks and fail-first
 exception regressions. No generic cooldown bypass or ignored advisory is added.
 These scoped repairs are required for CI/release eligibility; they do not
 install production code or expand publisher/VM authority.
+
+## Private deployment configuration — 2026-10-22
+
+Owner requested removal of the private Silkboard Tailscale address from the
+repository and defaults. Tracked deployment examples use reserved domains;
+Bombyx requires an operator-supplied HTTPS origin and the application service
+template leaves owner origin configuration to an external drop-in. Live
+production and workstation configuration remain operator-owned. This change
+does not rewrite historical commits or alter running production configuration.
