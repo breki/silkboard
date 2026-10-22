@@ -20,6 +20,12 @@ embedded name matches its ref and whose direct target is the exact commit.
 Git verifies against the independently installed
 `/etc/silkboard/release-signers`, not a trust file supplied by the candidate.
 
+The repository now proposes the approved separate VM signer alongside the owner
+signer; production remains owner-only until the operator installs that change.
+Both fingerprints and VM-only revocation are documented in
+[release trust](releases.md#vm-signer-and-revocation). Removing GitHub deploy-key
+write access alone does not remove installed signature authority.
+
 GitHub evidence must identify repository `breki/silkboard` (ID `1417054470`),
 active workflow `387356305` at `.github/workflows/release.yml`, a tag-push
 event for the exact tag and commit, and successful completion. The latest

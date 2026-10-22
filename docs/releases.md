@@ -9,8 +9,11 @@ these GitHub checks alone do not establish production health.
 
 The owner selected the SSH signing key with ED25519 fingerprint
 `SHA256:D+XaRkaUyW9uBQ8dMDp+XmZV6QH255p9g58auXRQwf8` on 2026-10-17.
-[The allowed signers file](../.github/release-signers) contains only its
-public key. CI and the dashboard receive no private signing material.
+[The allowed signers file](../.github/release-signers) retains that public key
+and adds the separately approved development-VM key, fingerprint
+`SHA256:s/bOUAzymE3qEqSllzx4fLR+TNtaWMhpvLR1FrbSc9I`. CI and the dashboard
+receive no private signing material. Production currently retains its separately
+installed owner-only trust until the operator explicitly updates it.
 `git verify-tag` with this file verifies an SSH-signed annotated tag;
 lightweight, unsigned, wrong-key, malformed-version, wrong-commit, and
 renamed signed tags are rejected by `cargo xtask release-check TAG`.
@@ -28,6 +31,33 @@ registered the active release workflow as ID `387356305`, read back on
 2026-10-17 after PR #8 merged. Bind evidence to repository, registered workflow
 ID and path, push event, release tag, exact peeled commit, and completed success.
 Do not accept matching display names or checks on a different revision.
+
+## VM signer and revocation
+
+The write-enabled deploy key titled `bombyx silkboard VM` is distinct from the
+owner's GitHub login/signing key. It signs VM commits and release tags; the
+owner's private key must never be copied into the VM. An invented commit email
+changes attribution, not this cryptographic authority. Guest agents can read
+their own deploy key, so treat that VM as an authorized release signer.
+
+The repository file is used for local/CI admission. The updater still trusts
+only its independently installed `/etc/silkboard/release-signers`; a candidate
+cannot grant itself production authority. The operator must separately review
+and install the two-key public file before relying on a VM-signed release.
+The new-guest bootstrap validates exactly the two approved fingerprints and
+rejects missing, duplicate, extra or malformed records. Both listed fixture
+signers are exercised in disposable tag tests; an unlisted signer is refused.
+No test uses the real private signing keys or creates tags in this repository.
+
+To revoke only the VM key, preserve the owner's line and remove the VM line
+from both repository admission and the independently installed production trust
+file, using the operator's approved administration route. Update the bootstrap's
+expected set and its tests to match the new owner-only policy; its current
+two-key validator intentionally rejects that different set until reviewed.
+Delete/replace the VM deploy key in GitHub as well: stopping repository writes
+alone does not revoke signature trust. Do not rewrite old signed tags, erase
+updater blocks or replace the privileged updater as part of key revocation.
+A VM-signed release becomes ineligible once its signer is no longer trusted.
 
 ## Verified initial release
 

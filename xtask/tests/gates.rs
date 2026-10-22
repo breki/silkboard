@@ -112,6 +112,11 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
             .iter()
             .any(|(p, a, _)| p == "npm" && a == &["run", "test:handoff"])
     );
+    assert!(
+        calls
+            .iter()
+            .any(|(p, a, _)| p == "npm" && a == &["run", "test:bombyx"])
+    );
     for failure in 0..calls.len() {
         let count = AtomicUsize::new(0);
         let result = dispatch(
@@ -160,6 +165,7 @@ fn all_standalone_tasks_propagate_failure_and_accept_only_supported_arguments()
         "frontend-dupes",
         "browser-test",
         "handoff-test",
+        "bombyx-test",
         "check",
         "fmt",
         "clippy",
