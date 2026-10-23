@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Refresh development VM GitHub CLI authentication from the vault-supplied
+  token, independently of publisher credentials, with bounded private handling
+  and local logout when the token is removed.
+
 - Install the pinned Kozmotic prerequisite during development VM provisioning
   so the configured Codex Git-status hook can run on a fresh VM.
 

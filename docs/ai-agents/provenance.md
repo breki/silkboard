@@ -1,5 +1,28 @@
 # Canon provenance
 
+## Independent development VM GitHub credential refresh, 2026-10-23
+
+The operator supplied the Bombyx GitHub-token handoff: guest-side `GH_TOKEN`
+refresh, a separately managed fine-grained token/vault mapping, independent
+publisher failure handling, stdin-only login and removal through local logout.
+The existing selected-key parser now serves both secrets; its quoting and
+unsafe-file behavior remain covered by fixtures. No vault or external Bombyx
+configuration is edited by this change.
+
+GitHub CLI 2.103.0's official [login](https://github.com/cli/cli/blob/v2.103.0/pkg/cmd/auth/login/login.go),
+[logout](https://github.com/cli/cli/blob/v2.103.0/pkg/cmd/auth/logout/logout.go)
+and [config lookup](https://github.com/cli/cli/blob/v2.103.0/pkg/cmd/config/get/get.go)
+implementations supply stdin token handling, no Git credential setup on the
+token path, offline username lookup and the empty-store logout result. A
+disposable empty HOME/config check on the actual Fusion guest confirmed that
+result without touching its real credential store. The shared twenty-second
+deadline and minimal child environment are exercised by isolated fake-CLI
+tests. Real token login/private API verification remains an operator rollout
+step after merge and secret refresh. Bombyx's local `shell_run` and
+`refresh_secrets_then_hook` implementations confirm that refresh leaves the
+guest checkout unchanged, so the guide requires a clean, idle fast-forward
+before running the newly merged hook. No new dependency or signing authority.
+
 ## Development VM Git-status prerequisite, 2026-10-22
 
 The owner's real Codex turn exposed a missing `~/.claude/bin/kozmotic` in the

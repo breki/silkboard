@@ -138,10 +138,60 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
    actual authenticated work in each AI tool and verify ordinary Codex reports
    appear with the guest hostname/native identity in the owner's phone feed.
 
-GitHub CLI installation does not provide GitHub API access. The existing
-repository deploy key remains the Git SSH credential; it is not a `gh` token.
-Use a separately approved credential for private GitHub API operations. No
-workstation `gh` authentication/configuration is copied by provisioning.
+## GitHub CLI credential refresh
+
+Installing `gh` alone does not provide GitHub API access. The operator creates
+a fine-grained token limited to `breki/silkboard`, with Contents, Pull requests
+and Issues read/write and Actions read. Store it in the external vault entry
+`GitHub/silkboard gh token` and map `vault.entries.GH_TOKEN` to that entry in
+the external Bombyx project configuration. Token creation, vault changes and
+that external mapping are operator steps; no credential belongs in this repo.
+
+Bombyx writes `GH_TOKEN` beside the publisher secret in its private env file.
+The same refresh hook reads each selected key as data, never sources the file,
+and refreshes both credentials independently. A bad publisher token still
+removes its old token file and does not block GitHub login; a GitHub failure
+does not skip or delete a valid publisher token. Each failed operation reports
+a fixed message without input or subprocess output, and either failure makes
+the hook exit nonzero.
+
+The hook accepts a `github_pat_` token and sends it only on stdin to
+`/usr/bin/gh auth login --hostname github.com --with-token --insecure-storage`.
+The child has a minimal environment without credential variables or debug
+settings. Login checks the token online. The headless guest stores it in
+`~/.config/gh/hosts.yml`; the hook requires private, owner-controlled storage,
+with mode 700 for the `gh` directory and 600 for existing config files. No
+workstation `gh` authentication/configuration is copied.
+
+Repeated login and successful token rotation replace the active credential.
+Failed login can leave the previously stored credential in place. Removing
+the `GH_TOKEN` line explicitly removes all cached `github.com` accounts using
+offline account lookup and logout; an already empty store succeeds. Other
+GitHub hosts are unchanged. Removal does not revoke the token at GitHub.
+All `gh` calls share a twenty-second deadline, inside Bombyx's sixty-second
+hook budget; failures and timeouts are reported without claiming success.
+
+Secret refresh runs the hook already in the guest checkout; it does not fetch
+new code. After merge, first use `bombyx shell silkboard` without refresh. With
+agent sessions idle and a clean `git status --short`, update the guest clone:
+
+```bash
+cd ~/silkboard
+git fetch origin main
+git merge --ff-only FETCH_HEAD
+```
+
+If the checkout has changes or the fast-forward fails, stop and preserve that
+work before proceeding. Exit the guest shell. After the operator supplies the
+vault mapping, run `bombyx shell silkboard --refresh-secrets` on the operator
+machine, then in the guest run `gh auth status --hostname github.com`. Do not
+use `--show-token` or share the credential files. A fixture pass or an
+empty-store check does not establish real authenticated private API access;
+that guest verification remains pending.
+
+The repository deploy key remains the Git SSH credential; it is not a `gh`
+token. The refresh hook never runs `gh auth setup-git` or changes the clone's
+`core.sshCommand`.
 
 The scripts and isolated tests do not establish a live Ubuntu VM, endpoint
 reachability, authenticated agent use or a working release signed by the actual
