@@ -18,6 +18,7 @@ const NPM_LICENSES: &[&str] = &[
     "BSD-3-Clause",
     "ISC",
     "MPL-2.0",
+    "(MPL-2.0 OR Apache-2.0)",
     "BlueOak-1.0.0",
     "CC0-1.0",
     "0BSD",
@@ -245,6 +246,7 @@ fn verify_versions(
                 Some("2026-10-15T14:41:14.210Z")
             }
             (true, "vitest", "4.1.12") => Some("2026-10-15T14:51:24.991Z"),
+            (true, "dompurify", "3.4.17") => Some("2026-10-12T12:41:28.880Z"),
             _ => None,
         };
         let security_fix = security_fix_date
@@ -742,8 +744,11 @@ mod tests {
             );
         }
     }
-    fn npm_security_document(name: &str, date: &str) -> (Value, NpmClaims) {
-        let version = "4.1.12";
+    fn npm_security_document(
+        name: &str,
+        version: &str,
+        date: &str,
+    ) -> (Value, NpmClaims) {
         let url = format!("https://registry.npmjs.org/{name}/-/fixture.tgz");
         let integrity = "sha512-fixture";
         let doc = json!({"time":{version:date},"versions":{version:{"name":name,"version":version,"license":"MIT","dist":{"tarball":url,"integrity":integrity}}}});
@@ -766,7 +771,7 @@ mod tests {
             ("@vitest/utils", "2026-10-15T14:41:14.210Z"),
             ("vitest", "2026-10-15T14:51:24.991Z"),
         ] {
-            let (doc, claims) = npm_security_document(name, date);
+            let (doc, claims) = npm_security_document(name, "4.1.12", date);
             let published = timestamp(date).unwrap();
             let request = [(true, name.into(), "4.1.12".into())];
             assert!(
@@ -778,7 +783,7 @@ mod tests {
                     .is_err()
             );
             let (changed_date, _) =
-                npm_security_document(name, "2026-10-16T00:00:00Z");
+                npm_security_document(name, "4.1.12", "2026-10-16T00:00:00Z");
             assert!(
                 verify_versions(
                     &changed_date,
@@ -801,8 +806,11 @@ mod tests {
                 .is_err()
             );
         }
-        let (doc, claims) =
-            npm_security_document("unlisted", "2026-10-15T14:51:24.991Z");
+        let (doc, claims) = npm_security_document(
+            "unlisted",
+            "4.1.12",
+            "2026-10-15T14:51:24.991Z",
+        );
         assert!(
             verify_versions(
                 &doc,
@@ -812,6 +820,45 @@ mod tests {
             )
             .is_err()
         );
+    }
+    #[test]
+    fn exact_dompurify_fix_preserves_cooldown_and_license_checks() {
+        let date = "2026-10-12T12:41:28.880Z";
+        let published = timestamp(date).unwrap();
+        let (mut doc, mut claims) =
+            npm_security_document("dompurify", "3.4.17", date);
+        let license = "(MPL-2.0 OR Apache-2.0)";
+        doc["versions"]["3.4.17"]["license"] = json!(license);
+        claims
+            .get_mut(&("dompurify".into(), "3.4.17".into()))
+            .unwrap()
+            .0 = license.into();
+        let request = [(true, "dompurify".into(), "3.4.17".into())];
+        assert!(
+            verify_versions(&doc, &request, &claims, published + 2 * 86400)
+                .is_ok()
+        );
+        assert!(
+            verify_versions(&doc, &request, &claims, published - 1).is_err()
+        );
+        doc["time"]["3.4.17"] = json!("2026-10-13T12:41:28Z");
+        assert!(
+            verify_versions(&doc, &request, &claims, published + 2 * 86400)
+                .is_err()
+        );
+        for (name, version) in [("dompurify", "3.4.16"), ("unlisted", "3.4.17")]
+        {
+            let (doc, claims) = npm_security_document(name, version, date);
+            assert!(
+                verify_versions(
+                    &doc,
+                    &[(true, name.into(), version.into())],
+                    &claims,
+                    published + 2 * 86400
+                )
+                .is_err()
+            );
+        }
     }
     #[test]
     fn rejects_unapproved_sources_licenses_and_missing_lock_fields() {

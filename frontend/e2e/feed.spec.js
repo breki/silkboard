@@ -89,6 +89,52 @@ test("one phone table shows all projects, opens safe event details, pages and re
     0,
   );
   const details = page.getByRole("region", { name: "Event details" });
+  const externalRequests = [];
+  await page.route("https://example.invalid/**", (route) => {
+    externalRequests.push(route.request().url());
+    return route.abort();
+  });
+  const markdownButton = page.getByRole("button", {
+    name: /^Event details: Markdown report Ready/,
+  });
+  await markdownButton.click();
+  await expect(details.locator("strong")).toHaveText("Markdown report");
+  await expect(details.locator("em")).toHaveText("Ready");
+  await expect(details.locator(".event-message code").first()).toHaveText(
+    "cargo test",
+  );
+  await expect(
+    details.getByRole("link", { name: "Reference" }),
+  ).toHaveAttribute("href", "https://example.invalid/reference");
+  await expect(details.locator("img,script,iframe,style")).toHaveCount(0);
+  await expect(details.locator('a[href^="javascript:"]')).toHaveCount(0);
+  await expect(details.getByText("Event ID", { exact: true })).toHaveCount(0);
+  await expect(details.getByText("Sequence", { exact: true })).toHaveCount(0);
+  await expect(details.locator("time")).toHaveText(
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/,
+  );
+  const tableTime = table.locator("tr.event-row time").first();
+  await expect(tableTime.locator("span").nth(0)).toHaveText(/^\d{2}:\d{2}$/);
+  await expect(tableTime.locator("span").nth(1)).toHaveText(/^\d{2}-\d{2}$/);
+  await page.setViewportSize({ width: 320, height: 812 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: info.outputPath("markdown-small-phone.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.screenshot({
+    path: info.outputPath("markdown-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 375, height: 812 });
+  expect(externalRequests).toEqual([]);
+  expect(await page.evaluate(() => window.injected)).toBeUndefined();
+  await markdownButton.click();
   const button = page.getByRole("button", {
     name: `Event details: ${hostile}`,
     exact: true,

@@ -171,3 +171,42 @@ test.each(["response", "body"])(
     expect(expired).not.toHaveBeenCalled();
   },
 );
+
+test.each([
+  [0, "00:04"],
+  [15, "15:04"],
+])(
+  "renders Markdown and exact local timestamps at hour %s",
+  async (hour, clock) => {
+    const received_at = new Date(2026, 0, 2, hour, 4, 5).getTime();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        routes({
+          "/api/owner/events": response(
+            page([
+              { ...report, received_at, message: "**Review** the `cache`." },
+            ]),
+          ),
+        }),
+      ),
+    );
+    const { default: EventFeed } = await import("./EventFeed.svelte");
+    render(EventFeed, { onexpire: vi.fn() });
+    const table = await screen.findByRole("table");
+    expect(
+      [...table.querySelectorAll("time span")].map((node) => node.textContent),
+    ).toEqual([clock, "01-02"]);
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Event details: Review the cache." }),
+    );
+    const details = screen.getByRole("region", { name: "Event details" });
+    expect(details.querySelector("strong").textContent).toBe("Review");
+    expect(details.querySelector("code").textContent).toBe("cache");
+    expect(details.querySelector("time").textContent).toBe(
+      `2026-01-02 ${clock}:05`,
+    );
+    expect(within(details).queryByText("Event ID")).toBeNull();
+    expect(within(details).queryByText("Sequence")).toBeNull();
+  },
+);

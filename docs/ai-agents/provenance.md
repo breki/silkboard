@@ -1,5 +1,23 @@
 # Canon provenance
 
+## Event Markdown and receipt-time format, 2026-10-23
+
+The owner created #64 in Basic UI improvements, requested Markdown messages,
+hid Event ID and Sequence from details, and selected full receipt timestamps
+as `yyyy-mm-dd HH:mm:ss`. They clarified that table time omits seconds: `HH:mm`
+above `MM-DD`. Existing browser-local timezone and API identity remain intact.
+
+[Marked renderer documentation](https://marked.js.org/using_pro) supplies the
+raw-HTML/image overrides; [DOMPurify](https://github.com/cure53/DOMPurify) supplies
+the tag/attribute allowlist and sanitized fragment output. The UI attaches only
+those nodes, without raw HTML injection. Compact previews extract rendered
+text. HTML stays literal, image labels do not load remote resources, and
+sanitizer URL checks remain enabled. No syntax-highlighting or execution plugin
+is added. The [exact security exception](../dependency-security-exceptions.md)
+records why DOMPurify 3.4.17 is needed despite its short age; normal registry,
+source, integrity and advisory gates still apply. Local fixtures establish
+formatting and safety behavior; production verification remains separate.
+
 ## Autonomous release version selection, 2026-10-23
 
 The owner instructed agents to choose future release version numbers using

@@ -96,3 +96,27 @@ remain refused. No advisory is ignored. Full observed dates:
 Remove the obsolete cases in a future scoped dependency update once their
 ordinary fourteen-day cooldown is satisfied. This does not create a generic
 exception flag or make npm dependencies generally exempt.
+
+## Markdown sanitizer security fix, 2026-10-23
+
+Issue #64 adds Marked 18.1.0 and DOMPurify for untrusted event Markdown.
+Preflight audit rejected cooldown-eligible DOMPurify 3.4.16 before executing
+it. The minimum patched release is 3.4.17 for these upstream advisories:
+
+- [Template-expression cleanup](https://github.com/advisories/GHSA-cg2g-xh64-v4q7)
+- [Detached-subtree neutralization](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr)
+- [XHTML URI guard](https://github.com/advisories/GHSA-c6gr-qvv4-5v3f)
+
+Admit only npm `dompurify` version `3.4.17` at its observed publication time
+`2026-10-12T12:41:28.880Z`. It is eleven days old at adoption. This exact
+security-fix exception avoids introducing a known-vulnerable sanitizer;
+source, integrity, license and full advisory checks remain required.
+Its `(MPL-2.0 OR Apache-2.0)` expression offers two already approved licenses;
+that exact expression is added to the npm allowlist, without admitting new
+license families. Regression checks reject future/changed publication dates,
+older versions and unrelated packages. Remove the age exception in a later
+scoped update once the normal fourteen-day cooldown is satisfied.
+
+Marked 18.1.0 was published `2026-10-05T15:40:41.608Z` and meets normal
+cooldown. The optional trusted-types declarations retain their normal age and
+license checks. No advisory is ignored and no generic exemption is added.

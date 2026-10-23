@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Render event Markdown safely, hide Event ID and Sequence from details, and
+  use fixed local 24-hour timestamps with compact minute-only table times.
+
 ## 0.5.1 - 2026-10-23
 
 - Compact the header, move owner actions into a top-right navigation menu,

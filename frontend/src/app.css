@@ -254,7 +254,6 @@ dd {
 }
 .event-message {
   overflow-wrap: anywhere;
-  white-space: pre-wrap;
 }
 @media (max-width: 40rem) {
   .events-table {
@@ -319,4 +318,50 @@ dd {
 .navigation nav a:hover,
 .navigation nav button:hover {
   background: #244751;
+}
+
+.event-message > :first-child {
+  margin-top: 0;
+}
+.event-message > :last-child {
+  margin-bottom: 0;
+}
+.event-message h1,
+.event-message h2,
+.event-message h3 {
+  font-size: 1.15rem;
+  letter-spacing: normal;
+  margin: 1rem 0 0.5rem;
+}
+.event-message a[href] {
+  color: #afe0ca;
+  text-decoration: underline;
+}
+.event-message pre {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0.75rem;
+  background: #0c171e;
+  border-radius: 0.4rem;
+  white-space: pre;
+}
+.event-message code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+.event-message blockquote {
+  margin: 1rem 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid #587482;
+}
+.event-message table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.event-message th,
+.event-message td {
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #587482;
 }

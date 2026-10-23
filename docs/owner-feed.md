@@ -40,13 +40,18 @@ credential manager. It stops on logout or page teardown.
 Click a row, or focus its message button and press Enter or Space, to expand
 that event beneath the row. One event is expanded at a time. Details include
 the full message, receipt time, optional readable session name, host/tool,
-native session/child/parent identity, event ID and sequence. Readable names
+native session/child/parent identity. Event ID and Sequence are hidden from
+the details view; the API retains them for identity and ordering. Readable names
 never merge identities. The event uses the most recent non-null name at or
 before its session-local sequence, so a later rename does not relabel an
 earlier event.
 
 Events appear newest-received first. Time is server receipt time, displayed
-in the browser's locale, rather than agent event time. Equal receipt times
+in the browser's local timezone, rather than agent event time. The table shows
+zero-padded 24-hour `HH:mm` above `MM-DD`, without seconds or year. Expanded
+details show `yyyy-mm-dd HH:mm:ss`, for example `2026-10-23 15:04:05`. These
+formats do not follow the browser's locale date-order or 12-hour preference.
+Equal receipt times
 are ordered deterministically by project and event ID. Sequence numbers only
 order a session's reports; they are not comparable across projects/sessions.
 Earlier/latest controls page through 20 events. Return to the latest page to
@@ -63,9 +68,18 @@ Expired/revoked login clears events and details and asks the owner to sign in.
 Sign out hides the feed immediately and revokes the browser session. If the
 request fails, the feed stays hidden with a retry action; the page does not
 claim server logout succeeded. Passwords and messages are not saved in local
-storage. Progress is plain text: embedded HTML, links and commands do not
-become executable controls. Agents continue to publish only; the feed grants
+storage. Event messages render as sanitized Markdown in expanded details,
+with emphasis, inline code and safe links. The current publisher API accepts
+single-line messages; see the [input contract](progress-ingestion.md). Table
+previews use compact text extracted from rendering; formatting-only events
+show View event. Raw HTML remains literal text and Markdown images show their
+labels without loading remote resources. Unsafe link destinations are removed.
+Session and host labels remain plain text. Commands in messages grant no agent
+execution authority. Agents continue to publish only; the feed grants
 no repository, development-file, VM-control, dispatch or execution authority.
+
+The Markdown and timestamp presentation is [#64](https://github.com/breki/silkboard/issues/64);
+its production rollout is separate from implementation.
 
 ## Read API
 

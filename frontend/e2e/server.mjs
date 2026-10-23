@@ -12,7 +12,7 @@ import { createServer as httpsServer } from "node:https";
 import { request } from "node:http";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { password, hostile } from "./fixture.mjs";
+import { password, hostile, markdownReport } from "./fixture.mjs";
 
 const dir = process.env.SILKBOARD_E2E_DIR;
 if (
@@ -190,7 +190,12 @@ try {
                     : `${tool} implementation`,
                 }
               : {}),
-            message: sequence === 25 ? hostile : `Checking step ${sequence}`,
+            message:
+              sequence === 25
+                ? hostile
+                : sequence === 24
+                  ? markdownReport
+                  : `Checking step ${sequence}`,
           }),
         },
       );
