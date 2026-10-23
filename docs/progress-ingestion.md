@@ -93,9 +93,10 @@ allowed only with a subagent ID. Native tools that report the parent's
 session ID for child hooks must include the separate native child ID.
 
 Event IDs and identity fields are 1–256 printable ASCII bytes without spaces.
-Messages are nonblank, single-line plain text up to 2,000 UTF-8 bytes; names
-have the same text rules with a 120-byte limit. Unknown fields, control
-characters and invalid types are rejected. The entire encoded JSON request
+Messages are nonblank Markdown text up to 2,000 UTF-8 bytes. LF, CR and tab
+characters are allowed for multiline Markdown; all other control characters
+are rejected. Names remain nonblank single-line text with a 120-byte limit
+and no control characters. Unknown fields and invalid types are rejected. The entire encoded JSON request
 is limited to 8,192 bytes, including escapes and whitespace.
 
 The session key is `(project, hostname, tool, session_id, subagent_id)`.

@@ -98,8 +98,13 @@ test("one phone table shows all projects, opens safe event details, pages and re
     name: /^Event details: Markdown report Ready/,
   });
   await markdownButton.click();
-  await expect(details.locator("strong")).toHaveText("Markdown report");
-  await expect(details.locator("em")).toHaveText("Ready");
+  await expect(details.locator("strong")).toHaveText("Ready");
+  await expect(details.locator("em")).toHaveText("reviewed");
+  await expect(details.locator("li")).toHaveCount(2);
+  await expect(details.locator("pre code")).toContainText("long-code-line-");
+  await expect(details.locator(".event-message table td").first()).toHaveText(
+    "Tests",
+  );
   await expect(details.locator(".event-message code").first()).toHaveText(
     "cargo test",
   );

@@ -164,6 +164,9 @@ fn invalid_inputs_never_create_counter_state() {
         ("session_id", "é"),
         ("message", "\n"),
         ("message", ""),
+        ("session_name", "name\nline"),
+        ("session_name", "name\tpart"),
+        ("session_id", "native\nchild"),
     ] {
         let mut value_report = report();
         value_report[key] = json!(value);
@@ -177,6 +180,14 @@ fn invalid_inputs_never_create_counter_state() {
     ] {
         let mut value_report = report();
         value_report[key] = value;
+        assert_eq!(f.run(&value_report), Err(Error::Input));
+    }
+    for control in (0..=159)
+        .filter_map(char::from_u32)
+        .filter(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t'))
+    {
+        let mut value_report = report();
+        value_report["message"] = json!(format!("before{control}after"));
         assert_eq!(f.run(&value_report), Err(Error::Input));
     }
     assert!(f.state_files("json").is_empty());

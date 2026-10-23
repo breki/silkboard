@@ -24,7 +24,7 @@ pub struct ProgressEvent {
     pub session_name: Option<String>,
     /// Positive sequence unique within the full session identity.
     pub sequence: i64,
-    /// Single-line plain text, at most 2,000 UTF-8 bytes.
+    /// Markdown text, at most 2,000 UTF-8 bytes; LF, CR and tabs are allowed.
     pub message: String,
 }
 
@@ -52,9 +52,9 @@ impl ProgressEvent {
         {
             return Err(ProgressError::Invalid);
         }
-        text(&self.message, 2000)?;
+        text(&self.message, 2000, true)?;
         if let Some(name) = &self.session_name {
-            text(name, 120)?;
+            text(name, 120, false)?;
         }
         Ok(())
     }
@@ -82,10 +82,16 @@ pub(crate) fn identity(value: &str) -> Result<(), ProgressError> {
     Ok(())
 }
 
-fn text(value: &str, limit: usize) -> Result<(), ProgressError> {
+fn text(
+    value: &str,
+    limit: usize,
+    multiline: bool,
+) -> Result<(), ProgressError> {
     if value.trim().is_empty()
         || value.len() > limit
-        || value.chars().any(char::is_control)
+        || value.chars().any(|c| {
+            c.is_control() && !(multiline && matches!(c, '\n' | '\r' | '\t'))
+        })
     {
         return Err(ProgressError::Invalid);
     }

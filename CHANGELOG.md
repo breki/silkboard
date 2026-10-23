@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Render event Markdown safely, hide Event ID and Sequence from details, and
-  use fixed local 24-hour timestamps with compact minute-only table times.
+- Render multiline event Markdown safely and accept line breaks/tabs in
+  bounded message inputs; hide Event ID and Sequence from details and use
+  fixed local 24-hour timestamps with minute-only table times.
 
 ## 0.5.1 - 2026-10-23
 

@@ -69,8 +69,9 @@ Sign out hides the feed immediately and revokes the browser session. If the
 request fails, the feed stays hidden with a retry action; the page does not
 claim server logout succeeded. Passwords and messages are not saved in local
 storage. Event messages render as sanitized Markdown in expanded details,
-with emphasis, inline code and safe links. The current publisher API accepts
-single-line messages; see the [input contract](progress-ingestion.md). Table
+including headings, emphasis, lists, quotes, code blocks, tables and safe
+links. Messages may include line breaks and tabs under the existing size
+limits; see the [input contract](progress-ingestion.md). Table
 previews use compact text extracted from rendering; formatting-only events
 show View event. Raw HTML remains literal text and Markdown images show their
 labels without loading remote resources. Unsafe link destinations are removed.

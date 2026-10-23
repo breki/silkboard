@@ -5,7 +5,11 @@
 The owner created #64 in Basic UI improvements, requested Markdown messages,
 hid Event ID and Sequence from details, and selected full receipt timestamps
 as `yyyy-mm-dd HH:mm:ss`. They clarified that table time omits seconds: `HH:mm`
-above `MM-DD`. Existing browser-local timezone and API identity remain intact.
+above `MM-DD`. After the existing single-line input constraint was identified,
+the owner explicitly selected multiline Markdown. Server and publisher message
+validation now allow LF, CR and tabs within the existing 2,000-byte limit;
+other controls, names, identities and request limits retain their rules.
+Browser-local timezone, API identity and automatic Codex summaries remain intact.
 
 [Marked renderer documentation](https://marked.js.org/using_pro) supplies the
 raw-HTML/image overrides; [DOMPurify](https://github.com/cure53/DOMPurify) supplies

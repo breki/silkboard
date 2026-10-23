@@ -3,7 +3,7 @@
 mod support;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn executable_survives_restarts_and_server_revocation() {
+async fn multiline_reports_survive_restarts_and_server_revocation() {
     let store = silkboard_web::progress::ProgressStore::open_memory().unwrap();
     silkboard_web::owner::set_password_from_reader(
         &store,
@@ -24,7 +24,11 @@ async fn executable_survives_restarts_and_server_revocation() {
     fixture.config["endpoint"] = serde_json::json!(origin);
     support::private(&fixture.root.join("token"), token.as_bytes());
     let args = fixture.args();
-    let report = serde_json::to_vec(&support::report()).unwrap();
+    let mut input = support::report();
+    input["message"] = serde_json::json!(
+        "## Report\r\n\r\n- First\n\t- Nested\n\n```rust\nfn main() {}\n```"
+    );
+    let report = serde_json::to_vec(&input).unwrap();
     for attempt in 0..3 {
         if attempt == 2 {
             store.revoke_token("silkboard", "client-test").unwrap();
