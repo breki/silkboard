@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.0 - 2026-10-23
+
 - Show individual events across all projects in one compact starting table,
   with inline details, bounded owner-only reads and automatic refresh.
 
