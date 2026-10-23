@@ -39,6 +39,8 @@ async fn unknown_api_and_mutation_requests_are_rejected() {
         ("GET", "/api/tasks", StatusCode::NOT_FOUND),
         ("POST", "/api/status", StatusCode::METHOD_NOT_ALLOWED),
         ("POST", "/health", StatusCode::METHOD_NOT_ALLOWED),
+        ("POST", "/status", StatusCode::METHOD_NOT_ALLOWED),
+        ("GET", "/status/missing", StatusCode::NOT_FOUND),
     ] {
         let response = create_router(Path::new("missing-frontend"))
             .oneshot(
@@ -69,6 +71,7 @@ async fn serves_built_assets_without_spa_fallback_or_path_escape() {
     std::fs::write(directory.join("app.js"), "console.log('status')").unwrap();
     for (path, expected_status, expected_body) in [
         ("/", StatusCode::OK, "<h1>Silkboard</h1>"),
+        ("/status", StatusCode::OK, "<h1>Silkboard</h1>"),
         ("/app.js", StatusCode::OK, "console.log('status')"),
         ("/missing.js", StatusCode::NOT_FOUND, ""),
         ("/../Cargo.toml", StatusCode::NOT_FOUND, ""),

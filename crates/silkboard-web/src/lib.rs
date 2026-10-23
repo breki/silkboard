@@ -57,6 +57,10 @@ pub fn create_router(frontend_path: &Path) -> Router {
     Router::new()
         .route("/health", get(|| async { Json(Health { status: "ok" }) }))
         .route("/api/status", get(status))
+        .route_service(
+            "/status",
+            ServeFile::new(frontend_path.join("index.html")),
+        )
         .fallback_service(ServeDir::new(frontend_path))
 }
 

@@ -3,6 +3,10 @@
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
   import EventFeed from "./EventFeed.svelte";
   import PublisherTokens from "./PublisherTokens.svelte";
+  import Header from "./Header.svelte";
+  import StatusCard from "./StatusCard.svelte";
+  import { poll } from "./poll";
+  let { statusPage = false }: { statusPage?: boolean } = $props();
   let managing = $state(false);
 
   type Phase =
@@ -19,6 +23,21 @@
   let notice = $state("");
   let alive = true;
   let active = new AbortController();
+  $effect(() => {
+    if (!statusPage || phase !== "signed-in") return;
+    return poll(async (signal) => {
+      try {
+        await ownerSession(signal);
+      } catch (error) {
+        if (
+          !signal.aborted &&
+          error instanceof ApiError &&
+          error.status === 401
+        )
+          expired();
+      }
+    });
+  });
   function begin() {
     active.abort();
     active = new AbortController();
@@ -41,6 +60,7 @@
     }
   }
   function expired() {
+    managing = false;
     begin();
     password = "";
     notice = "Your session expired. Sign in again.";
@@ -68,6 +88,7 @@
     }
   }
   async function logout() {
+    managing = false;
     const signal = begin();
     phase = "signing-out";
     notice = "";
@@ -91,61 +112,71 @@
   });
 </script>
 
-<section class="feed" aria-label="Agent progress">
-  {#if phase === "signed-in"}
-    <div class="section-heading">
-      <h2>Agent progress</h2>
-      <button onclick={() => void logout()}>Sign out</button>
-    </div>
-    <button onclick={() => (managing = !managing)}
-      >{managing
-        ? "Close credential manager"
-        : "Manage publisher credentials"}</button
-    >
-    {#if managing}<PublisherTokens onexpire={expired} />{/if}
-    <EventFeed onexpire={expired} />
-  {:else if phase === "signed-out"}
-    <div class="panel login">
-      <h2>Sign in to your progress feed</h2>
-      <p>Follow what your development agents are working on.</p>
-      {#if notice}<p role="alert">{notice}</p>{/if}
-      <form onsubmit={login}>
-        <label for="owner-password">Owner password</label><input
-          id="owner-password"
-          type="password"
-          autocomplete="current-password"
-          maxlength="1024"
-          bind:value={password}
-          required
-        />
-        <button class="primary" type="submit">Sign in</button>
-      </form>
-    </div>
-  {:else if phase === "logout-failed"}
-    <div class="panel">
-      <p role="alert">
-        Sign-out could not be confirmed. Your feed is hidden. Try again.
+<Header
+  owner={phase === "signed-in"
+    ? {
+        managing,
+        onmanage: () => (managing = !managing),
+        onlogout: () => void logout(),
+      }
+    : undefined}
+/>
+{#if phase === "signed-in" && managing}<PublisherTokens
+    onexpire={expired}
+  />{/if}
+{#if !statusPage || phase === "logout-failed"}
+  <section class="feed" aria-label="Progress feed">
+    {#if phase === "signed-in"}
+      <EventFeed onexpire={expired} />
+    {:else if phase === "signed-out"}
+      <div class="panel login">
+        <h2>Sign in to your progress feed</h2>
+        <p>Follow what your development agents are working on.</p>
+        {#if notice}<p role="alert">{notice}</p>{/if}
+        <form onsubmit={login}>
+          <label for="owner-password">Owner password</label><input
+            id="owner-password"
+            type="password"
+            autocomplete="current-password"
+            maxlength="1024"
+            bind:value={password}
+            required
+          />
+          <button class="primary" type="submit">Sign in</button>
+        </form>
+      </div>
+    {:else if phase === "logout-failed"}
+      <div class="panel">
+        <p role="alert">
+          Sign-out could not be confirmed. Your feed is hidden. Try again.
+        </p>
+        <button onclick={() => void logout()}>Retry sign out</button>
+      </div>
+    {:else if phase === "disabled"}
+      <div class="panel">
+        <p>Progress feed is not enabled on this server.</p>
+        <button onclick={() => void check()}>Check again</button>
+      </div>
+    {:else if phase === "unavailable"}
+      <div class="panel">
+        <p role="alert">Unable to check your sign-in. Try again.</p>
+        <button onclick={() => void check()}>Retry sign in</button>
+      </div>
+    {:else}
+      <p role="status">
+        {phase === "signing-in"
+          ? "Signing in…"
+          : phase === "signing-out"
+            ? "Signing out…"
+            : "Checking your sign-in…"}
       </p>
-      <button onclick={() => void logout()}>Retry sign out</button>
-    </div>
-  {:else if phase === "disabled"}
-    <div class="panel">
-      <h2>Agent progress</h2>
-      <p>Progress feed is not enabled on this server.</p>
-      <button onclick={() => void check()}>Check again</button>
-    </div>
-  {:else if phase === "unavailable"}
-    <div class="panel">
-      <p role="alert">Unable to check your sign-in. Try again.</p>
-      <button onclick={() => void check()}>Retry sign in</button>
-    </div>
-  {:else}
-    <p role="status">
-      {phase === "signing-in"
-        ? "Signing in…"
-        : phase === "signing-out"
-          ? "Signing out…"
-          : "Checking your sign-in…"}
-    </p>
-  {/if}
-</section>
+    {/if}
+  </section>
+{/if}
+
+{#if statusPage}
+  {#if notice}<p role="alert">
+      {notice} <a href="/">Return to sign in</a>
+    </p>{/if}
+  <StatusCard />
+{/if}

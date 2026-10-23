@@ -9,8 +9,9 @@ and expanded history. Live unauthenticated and publisher-only owner reads
 return 401. Remaining rollout evidence is
 [#39](https://github.com/breki/silkboard/issues/39); backups/recovery are #52.
 
-The unified starting table described below is [#59](https://github.com/breki/silkboard/issues/59);
-its production rollout is separate from implementation.
+The unified starting table was delivered in [#59](https://github.com/breki/silkboard/issues/59).
+The compact header and separate status page are [#61](https://github.com/breki/silkboard/issues/61);
+production rollout of that navigation change is separate from implementation.
 
 ## Using the page
 
@@ -19,6 +20,22 @@ starting view is one table of individual events across all projects, with
 Time, Project, Agent (tool and host), and a short Message preview. Long labels
 and previews stay compact; full values are available in the expanded details.
 No project selection is required.
+
+The compact header has a top-right Navigation menu. Open it by touch or with
+Enter/Space; Tab reaches its links and owner actions. Escape closes it and
+returns focus to the menu button. Clicking or moving focus outside also closes
+it. Events links to the starting view. Application status opens `/status`,
+which shows public health, version, release tag and commit, with navigation
+back to Events. It supports direct links, reloads and browser history.
+
+When signed in, the menu also contains Manage publisher credentials and Sign
+out. The credential manager opens inline on the current page; Close credential
+manager removes it and any disclosed token. Logout or expiry also removes the
+manager. Owner actions still require the existing authenticated APIs. The
+status page does not fetch event data and remains available without signing in.
+While signed in on that page, a visibility-aware session check runs every ten
+seconds to detect expiry or revocation and clear owner controls and any open
+credential manager. It stops on logout or page teardown.
 
 Click a row, or focus its message button and press Enter or Space, to expand
 that event beneath the row. One event is expanded at a time. Details include

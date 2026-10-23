@@ -21,6 +21,8 @@ function start(overrides = {}, component = PublisherTokens) {
   const fetch = vi.fn(async (path, options) => {
     if (path === "/api/owner/session")
       return response({ authenticated: true, csrf_token: csrf });
+    if (path === "/api/owner/events")
+      return response({ items: [], next_cursor: null });
     if (path === "/api/owner/projects")
       return response({ items: [], next_cursor: null });
     if (options.method === "POST")
@@ -324,17 +326,75 @@ test("a pending issue cannot disclose its result after navigation", async () => 
 });
 test("owner opens and closes the manager without persisting a disclosed credential", async () => {
   start({}, OwnerFeed);
+  await screen.findByText(
+    "No events on this page. New reports appear on the latest page.",
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
   await fireEvent.click(
     await screen.findByRole("button", { name: "Manage publisher credentials" }),
   );
   await issue();
   await screen.findByLabelText("New publisher token");
   await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
     screen.getByRole("button", { name: "Close credential manager" }),
   );
   expect(screen.queryByLabelText("New publisher token")).toBeNull();
   await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
     screen.getByRole("button", { name: "Manage publisher credentials" }),
   );
   expect(screen.getByLabelText("Credential project").value).toBe("");
+});
+
+test("closing the manager cancels a pending list and ignores its late result", async () => {
+  let done;
+  const { fetch } = start(
+    {
+      list: () =>
+        new Promise((resolve) => {
+          done = resolve;
+        }),
+    },
+    OwnerFeed,
+  );
+  await screen.findByText(
+    "No events on this page. New reports appear on the latest page.",
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Manage publisher credentials" }),
+  );
+  await fields();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Load credentials" }),
+  );
+  await waitFor(() => expect(done).toBeTypeOf("function"));
+  const request = fetch.mock.calls.find(([path]) =>
+    path.endsWith("/publishers"),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Close credential manager" }),
+  );
+  expect(request[1].signal.aborted).toBe(true);
+  done(
+    response({
+      items: [{ label: "Late metadata", revoked: false }],
+      next_cursor: null,
+    }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(screen.queryByText("Late metadata")).toBeNull();
+  expect(screen.queryByLabelText("Credential project")).toBeNull();
 });
