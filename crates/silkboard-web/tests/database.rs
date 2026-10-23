@@ -375,3 +375,33 @@ fn restore_refuses_leftover_destination_companions_without_touching_them() {
             .success()
     );
 }
+
+#[test]
+fn global_feed_index_is_added_without_changing_existing_data_or_schema_version()
+{
+    let f = Fixture::new();
+    let database = f.path("existing.sqlite");
+    let (store, _token) = seed(&database);
+    drop(store);
+    let conn = Connection::open(&database).unwrap();
+    conn.execute_batch("DROP INDEX events_feed; DROP INDEX events_named")
+        .unwrap();
+    let before: String = conn
+        .query_row("SELECT payload FROM events", [], |r| r.get(0))
+        .unwrap();
+    drop(conn);
+    let _store = ProgressStore::open(&database).unwrap();
+    let conn = Connection::open(&database).unwrap();
+    assert_eq!(
+        conn.query_row("PRAGMA user_version", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        3
+    );
+    assert_eq!(
+        conn.query_row("SELECT payload FROM events", [], |r| r
+            .get::<_, String>(0))
+            .unwrap(),
+        before
+    );
+    assert_eq!(conn.query_row("SELECT count(*) FROM sqlite_master WHERE type='index' AND name IN ('events_feed','events_named')",[],|r|r.get::<_,i64>(0)).unwrap(),2);
+}

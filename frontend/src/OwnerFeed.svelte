@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
-  import ProjectFeed from "./ProjectFeed.svelte";
+  import EventFeed from "./EventFeed.svelte";
   import PublisherTokens from "./PublisherTokens.svelte";
   let managing = $state(false);
 
@@ -103,7 +103,7 @@
         : "Manage publisher credentials"}</button
     >
     {#if managing}<PublisherTokens onexpire={expired} />{/if}
-    <ProjectFeed onexpire={expired} />
+    <EventFeed onexpire={expired} />
   {:else if phase === "signed-out"}
     <div class="panel login">
       <h2>Sign in to your progress feed</h2>

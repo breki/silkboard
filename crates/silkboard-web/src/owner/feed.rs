@@ -1,13 +1,13 @@
 //! Bounded owner-only projections; never return credential or raw payload rows.
 
 use super::{AuthError, OwnerAuth};
-use crate::progress::{ProgressStore, validate_project};
+use crate::progress::{ProgressStore, validate_identity, validate_project};
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
     routing::get,
 };
-use rusqlite::{OptionalExtension, params};
+use rusqlite::{OptionalExtension, Row, params};
 use serde::{Deserialize, Serialize};
 
 const PAGE_SIZE: usize = 20;
@@ -41,13 +41,76 @@ struct ProgressMessage {
 #[derive(Serialize)]
 struct AgentSession {
     id: String,
+    #[serde(flatten)]
+    identity: AgentIdentity,
+    latest: ProgressMessage,
+}
+
+#[derive(Serialize)]
+struct AgentIdentity {
     hostname: String,
     tool: String,
     session_id: String,
     subagent_id: Option<String>,
     parent_session_id: Option<String>,
     session_name: Option<String>,
-    latest: ProgressMessage,
+}
+
+impl AgentIdentity {
+    fn read(row: &Row<'_>, start: usize) -> rusqlite::Result<Self> {
+        Ok(Self {
+            hostname: row.get(start)?,
+            tool: row.get(start + 1)?,
+            session_id: row.get(start + 2)?,
+            subagent_id: row.get(start + 3)?,
+            parent_session_id: row.get(start + 4)?,
+            session_name: row.get(start + 5)?,
+        })
+    }
+}
+
+impl ProgressMessage {
+    fn read(row: &Row<'_>, start: usize) -> rusqlite::Result<Self> {
+        Ok(Self {
+            event_id: row.get(start)?,
+            sequence: row.get::<_, i64>(start + 1)?.to_string(),
+            received_at: row.get(start + 2)?,
+            message: row.get(start + 3)?,
+        })
+    }
+}
+
+#[derive(Serialize)]
+struct FeedEvent {
+    project: String,
+    #[serde(flatten)]
+    identity: AgentIdentity,
+    #[serde(flatten)]
+    message: ProgressMessage,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EventCursor {
+    received_at: i64,
+    project: String,
+    event_id: String,
+}
+
+impl EventCursor {
+    fn parse(value: &str) -> Result<Self, AuthError> {
+        if value.len() > 2048 {
+            return Err(AuthError::Invalid);
+        }
+        let cursor: Self =
+            serde_json::from_str(value).map_err(|_| AuthError::Invalid)?;
+        if !(0..=8_640_000_000_000_000).contains(&cursor.received_at) {
+            return Err(AuthError::Invalid);
+        }
+        validate_project(&cursor.project).map_err(|_| AuthError::Invalid)?;
+        validate_identity(&cursor.event_id).map_err(|_| AuthError::Invalid)?;
+        Ok(cursor)
+    }
 }
 
 #[derive(Deserialize)]
@@ -64,11 +127,71 @@ struct Before {
 pub(super) fn routes() -> Router<OwnerAuth> {
     Router::new()
         .route("/projects", get(projects))
+        .route("/events", get(events))
         .route("/projects/{project}/sessions", get(sessions))
         .route(
             "/projects/{project}/sessions/{session}/events",
             get(history),
         )
+}
+
+async fn events(
+    State(auth): State<OwnerAuth>,
+    Query(query): Query<Before>,
+) -> Result<Json<Page<FeedEvent>>, AuthError> {
+    let cursor = query
+        .before
+        .as_deref()
+        .map(EventCursor::parse)
+        .transpose()?;
+    let result = auth
+        .query(move |store| list_events(store, cursor.as_ref()))
+        .await?;
+    Ok(Json(result))
+}
+
+fn list_events(
+    store: &ProgressStore,
+    before: Option<&EventCursor>,
+) -> Result<Page<FeedEvent>, AuthError> {
+    let conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
+    let mut statement = conn.prepare(
+        "SELECT e.project,s.hostname,s.tool,s.native_id,
+                NULLIF(s.child_id,''),s.parent_id,
+           (SELECT session_name FROM events named
+            WHERE named.session=s.id AND named.session_name IS NOT NULL
+              AND named.sequence<=e.sequence
+            ORDER BY named.sequence DESC LIMIT 1),
+           e.event_id,e.sequence,e.received_at,e.message
+         FROM events e JOIN sessions s ON s.id=e.session
+         WHERE (e.received_at,e.project,e.event_id)<(?1,?2,?3)
+         ORDER BY e.received_at DESC,e.project DESC,e.event_id DESC
+         LIMIT 21",
+    )?;
+    let items = statement
+        .query_map(
+            params![
+                before.map_or(i64::MAX, |c| c.received_at),
+                before.map_or("", |c| c.project.as_str()),
+                before.map_or("", |c| c.event_id.as_str()),
+            ],
+            |row| {
+                Ok(FeedEvent {
+                    project: row.get(0)?,
+                    identity: AgentIdentity::read(row, 1)?,
+                    message: ProgressMessage::read(row, 7)?,
+                })
+            },
+        )?
+        .collect::<Result<Vec<_>, _>>()?;
+    Ok(page(items, |event| {
+        serde_json::json!({
+            "received_at": event.message.received_at,
+            "project": event.project,
+            "event_id": event.message.event_id,
+        })
+        .to_string()
+    }))
 }
 
 fn positive(value: &str) -> Result<i64, AuthError> {
@@ -146,18 +269,8 @@ fn list_sessions(
         .query_map(params![project, before], |r| {
             Ok(AgentSession {
                 id: r.get::<_, i64>(0)?.to_string(),
-                hostname: r.get(1)?,
-                tool: r.get(2)?,
-                session_id: r.get(3)?,
-                subagent_id: r.get(4)?,
-                parent_session_id: r.get(5)?,
-                session_name: r.get(6)?,
-                latest: ProgressMessage {
-                    event_id: r.get(7)?,
-                    sequence: r.get::<_, i64>(8)?.to_string(),
-                    received_at: r.get(9)?,
-                    message: r.get(10)?,
-                },
+                identity: AgentIdentity::read(r, 1)?,
+                latest: ProgressMessage::read(r, 7)?,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -193,16 +306,62 @@ async fn history(
             )?;
             let items = statement
                 .query_map(params![project, session, before], |r| {
-                    Ok(ProgressMessage {
-                        event_id: r.get(0)?,
-                        sequence: r.get::<_, i64>(1)?.to_string(),
-                        received_at: r.get(2)?,
-                        message: r.get(3)?,
-                    })
+                    ProgressMessage::read(r, 0)
                 })?
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(page(items, |e| e.sequence.clone()))
         })
         .await?;
     Ok(Json(result))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn tied_receipt_times_paginate_stably_even_after_vacuum() {
+        let store = ProgressStore::open_memory().unwrap();
+        {
+            let conn = store.0.lock().unwrap();
+            for (session, project) in [(1, "alpha"), (2, "bravo")] {
+                conn.execute("INSERT INTO projects VALUES (?1)", [project])
+                    .unwrap();
+                conn.execute("INSERT INTO sessions VALUES (?1,?2,'dev','codex','native','',NULL)",params![session,project]).unwrap();
+                for index in 1..=13 {
+                    conn.execute("INSERT INTO events(project,event_id,session,sequence,message,payload,received_at) VALUES (?1,?2,?3,?4,'A report','{}',1000)",params![project,format!("{index:02}"),session,index]).unwrap();
+                }
+            }
+            conn.execute_batch(
+                "UPDATE events SET session_name='Earlier name' WHERE sequence=1;
+                 UPDATE events SET session_name='Later name' WHERE sequence=10",
+            ).unwrap();
+        }
+        let first = list_events(&store, None).unwrap();
+        assert_eq!(first.items.len(), 20);
+        assert_eq!(first.items[0].project, "bravo");
+        assert_eq!(
+            first.items[0].identity.session_name.as_deref(),
+            Some("Later name")
+        );
+        let earlier = first
+            .items
+            .iter()
+            .find(|item| {
+                item.project == "bravo" && item.message.event_id == "09"
+            })
+            .unwrap();
+        assert_eq!(
+            earlier.identity.session_name.as_deref(),
+            Some("Earlier name")
+        );
+        let cursor =
+            EventCursor::parse(first.next_cursor.as_deref().unwrap()).unwrap();
+        store.0.lock().unwrap().execute_batch("VACUUM").unwrap();
+        let last = list_events(&store, Some(&cursor)).unwrap();
+        assert_eq!(last.items.len(), 6);
+        assert_eq!(last.items.last().unwrap().message.event_id, "01");
+        assert_eq!(last.items.last().unwrap().project, "alpha");
+        assert!(last.next_cursor.is_none());
+    }
 }

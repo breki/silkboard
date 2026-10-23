@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Show individual events across all projects in one compact starting table,
+  with inline details, bounded owner-only reads and automatic refresh.
+
 - Refresh development VM GitHub CLI authentication from the vault-supplied
   token, independently of publisher credentials, with bounded private handling
   and local logout when the token is removed.

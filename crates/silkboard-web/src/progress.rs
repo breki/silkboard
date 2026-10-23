@@ -109,6 +109,13 @@ impl ProgressStore {
         if version <= 2 {
             tx.execute_batch(include_str!("owner/setup.sql"))?;
         }
+        // A compatible read index: stored rows/schema version remain unchanged.
+        tx.execute_batch(
+            "CREATE INDEX IF NOT EXISTS events_feed
+             ON events(received_at DESC,project DESC,event_id DESC);
+             CREATE INDEX IF NOT EXISTS events_named
+             ON events(session,sequence DESC) WHERE session_name IS NOT NULL",
+        )?;
         tx.commit()?;
         Ok(Self(Arc::new(Mutex::new(connection))))
     }

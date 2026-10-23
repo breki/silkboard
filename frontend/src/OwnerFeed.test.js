@@ -8,7 +8,7 @@ import {
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import OwnerFeed from "./OwnerFeed.svelte";
 import App from "./App.svelte";
-import { csrf, page, response, routes, session } from "../test/support";
+import { csrf, page, response, routes, feedEvent } from "../test/support";
 
 beforeEach(() => vi.spyOn(document, "hidden", "get").mockReturnValue(false));
 afterEach(() => {
@@ -130,8 +130,8 @@ test("a poll detecting expired authentication removes the feed", async () => {
           authenticated: true,
           csrf_token: csrf,
         }),
-        "/api/owner/projects": () =>
-          response(page([{ id: "silkboard" }]), expired ? 401 : 200),
+        "/api/owner/events": () =>
+          response(page([feedEvent]), expired ? 401 : 200),
       }),
     ),
   );
@@ -154,7 +154,7 @@ test("late data cannot reappear after logout or unmount", async () => {
           csrf_token: csrf,
         }),
         "/api/owner/logout": response(null, 204),
-        "/api/owner/projects/silkboard/sessions": () =>
+        "/api/owner/events": () =>
           new Promise((done) => {
             resolve = done;
           }),
@@ -162,13 +162,11 @@ test("late data cannot reappear after logout or unmount", async () => {
     ),
   );
   const view = render(OwnerFeed);
-  await screen.findByLabelText("Project");
+  await screen.findByText("Loading events…");
   await waitFor(() => expect(resolve).toBeTypeOf("function"));
   await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
   await screen.findByLabelText("Owner password");
-  resolve(
-    response(page([{ ...session, session_name: "Late private content" }])),
-  );
+  resolve(response(page([{ ...feedEvent, message: "Late private content" }])));
   await new Promise((done) => setTimeout(done, 0));
   expect(screen.queryByText("Late private content")).toBeNull();
   view.unmount();
