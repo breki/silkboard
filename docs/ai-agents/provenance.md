@@ -1,5 +1,20 @@
 # Canon provenance
 
+## Unified starting event table, 2026-10-23
+
+The owner created milestone 3 and issue #59, then selected Time, Project,
+Agent (tool and host) and a short Message preview through the question UI.
+They selected expansion beneath the clicked row for full message/session
+identity. The [owner feed guide](../owner-feed.md) records those decisions
+and the global owner-only event projection. Stable receipt/project/event
+cursors preserve deterministic pagination without relying on mutable row IDs.
+Compatible read indexes leave schema version 3 and existing records intact;
+legacy project/session APIs and publisher/owner authority remain separate.
+
+Isolated route/component/browser checks establish local behavior, not a live
+production rollout. No dependency, credential, release or deployment policy
+change is part of this issue.
+
 ## Independent development VM GitHub credential refresh, 2026-10-23
 
 The operator supplied the Bombyx GitHub-token handoff: guest-side `GH_TOKEN`

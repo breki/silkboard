@@ -9,27 +9,39 @@ and expanded history. Live unauthenticated and publisher-only owner reads
 return 401. Remaining rollout evidence is
 [#39](https://github.com/breki/silkboard/issues/39); backups/recovery are #52.
 
+The unified starting table described below is [#59](https://github.com/breki/silkboard/issues/59);
+its production rollout is separate from implementation.
+
 ## Using the page
 
-Open the configured private HTTPS site, enter the owner password and choose
-a project. Cards show the optional readable name, host, tool, native session
-identity, child/parent identity, latest message and server receipt time.
-Readable names never merge sessions. The latest non-null name persists when
-later events omit it.
+Open the configured private HTTPS site and enter the owner password. The
+starting view is one table of individual events across all projects, with
+Time, Project, Agent (tool and host), and a short Message preview. Long labels
+and previews stay compact; full values are available in the expanded details.
+No project selection is required.
 
-Sessions appear newest-created first. Expand one card to read messages,
-highest sequence first, with server receipt timestamps. Retried/out-of-order
-deliveries do not change sequence ordering; receipt time is not agent event
-time. Earlier/latest controls page through 20 sessions or messages. Projects
-also use bounded pages. Return to the first/latest page to see new entries
-ahead of the current cursor.
+Click a row, or focus its message button and press Enter or Space, to expand
+that event beneath the row. One event is expanded at a time. Details include
+the full message, receipt time, optional readable session name, host/tool,
+native session/child/parent identity, event ID and sequence. Readable names
+never merge identities. The event uses the most recent non-null name at or
+before its session-local sequence, so a later rename does not relabel an
+earlier event.
 
-The visible page refreshes every ten seconds, with at most one request per
-list in flight. Hidden tabs pause polling and abort active list requests;
-returning resumes it. One history can be expanded at once. Changing projects
-cancels old reads. Failed refreshes retain displayed messages with a warning
+Events appear newest-received first. Time is server receipt time, displayed
+in the browser's locale, rather than agent event time. Equal receipt times
+are ordered deterministically by project and event ID. Sequence numbers only
+order a session's reports; they are not comparable across projects/sessions.
+Earlier/latest controls page through 20 events. Return to the latest page to
+see new events ahead of an older cursor.
+
+The visible page refreshes every ten seconds, with at most one event-list
+request in flight. Hidden tabs pause polling and abort active requests;
+returning resumes it. Expanded details follow the event's project/event ID
+across refreshes and close if the event leaves the displayed page. Pagination
+also closes details. Failed refreshes retain displayed events with a warning
 and retry action. Empty, loading and unavailable states explain what happened.
-Expired/revoked login clears the feed and asks the owner to sign in again.
+Expired/revoked login clears events and details and asks the owner to sign in.
 
 Sign out hides the feed immediately and revokes the browser session. If the
 request fails, the feed stays hidden with a retry action; the page does not
@@ -46,8 +58,9 @@ owner cookies cannot publish progress.
 
 | GET path | Optional cursor | Items |
 | --- | --- | --- |
+| `/api/owner/events` | `before=CURSOR` | Individual events across projects |
 | `/api/owner/projects` | `after=PROJECT` | `{id}` |
-| `/api/owner/projects/PROJECT/sessions` | `before=ID` | Session cards |
+| `/api/owner/projects/PROJECT/sessions` | `before=ID` | Sessions |
 | `/api/owner/projects/PROJECT/sessions/ID/events` | `before=SEQUENCE` | Messages |
 
 Responses contain `{items: [...], next_cursor: string | null}`, with at most
@@ -58,12 +71,23 @@ projects or sessions, including a session from another project, return 404.
 Existing empty projects return empty pages. Invalid/expired owner sessions
 return 401; storage/admission failures return 503.
 
+The global event cursor is an opaque JSON string, URL-encoded as a query value.
+It contains receipt time, project and event ID and must be returned unchanged.
+It does not use SQLite row IDs, so database maintenance does not invalidate
+its ordering. A global event contains `project`, `hostname`, `tool`,
+`session_id`, nullable `subagent_id`, `parent_session_id`, `session_name`,
+and the four message fields below. Full owner-visible details arrive in the
+bounded response; the UI reveals them on activation. Raw payloads and
+credentials are never returned. Compatible project/session/history routes
+remain available, though the starting view no longer uses project cards.
+
 A session contains `id`, `hostname`, `tool`, `session_id`, nullable
 `subagent_id`, `parent_session_id`, `session_name`, and `latest`. A message
 contains `event_id`, string `sequence`, numeric `received_at` (Unix
 milliseconds), and `message`. Latest means highest sequence, not latest
 delivery. Responses omit credential hashes and raw stored request payloads.
-These reads introduce no schema migration.
+The global feed adds compatible read indexes for receipt ordering and named
+reports. Existing rows and schema version 3 remain unchanged.
 
 ## Verification
 
@@ -80,6 +104,7 @@ temporary directory holds the local
 database, test password setup, publisher credential and self-signed certificate;
 the fixture removes its files on shutdown. Only this fixture trusts its
 certificate; production TLS/cookie policy is unchanged. Tests check real
-secure-cookie login/logout, reset-driven expiry, safe text, history, refresh
-and phone width. Local checks do not establish production dogfooding or
+secure-cookie login/logout, reset-driven expiry, safe text, cross-project
+events, inline details, pagination, refresh and phone width. Local checks do
+not establish production dogfooding or
 replace #39's live rollout evidence.

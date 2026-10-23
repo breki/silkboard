@@ -57,6 +57,11 @@ execFileSync(
   ["publisher", "issue", "silkboard", "browser", join(dir, "publisher.token")],
   { env },
 );
+execFileSync(
+  binary,
+  ["publisher", "issue", "bombyx", "browser", join(dir, "other.token")],
+  { env },
+);
 const setupDir = join(dir, "setup");
 mkdirSync(setupDir, { mode: 0o700 });
 const setupEnv = {
@@ -193,6 +198,26 @@ try {
         throw new Error(`Fixture publish failed: ${response.status}`);
     }
   }
+  const otherToken = readFileSync(join(dir, "other.token"), "utf8").trim();
+  const other = await fetch(
+    "http://127.0.0.1:38125/api/projects/bombyx/progress",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${otherToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_id: "other-project",
+        hostname: "other-vm",
+        tool: "codex",
+        session_id: "other-native",
+        sequence: 1,
+        message: "Work from another project",
+      }),
+    },
+  );
+  if (!other.ok) throw new Error("Other-project fixture publish failed");
   for (const [httpsPort, backendPort] of [
     [38126, 38127],
     [38124, 38125],

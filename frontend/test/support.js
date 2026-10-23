@@ -15,6 +15,17 @@ export const session = {
   session_name: "Fix the tests",
   latest: message,
 };
+export const feedEvent = {
+  ...message,
+  project: "silkboard",
+  hostname: session.hostname,
+  tool: session.tool,
+  session_id: session.session_id,
+  subagent_id: null,
+  parent_session_id: null,
+  session_name: session.session_name,
+  message: "Fix the tests",
+};
 export const page = (items, next_cursor = null) => ({ items, next_cursor });
 export const response = (body, status = 200) => ({
   ok: status >= 200 && status < 300,
@@ -36,6 +47,7 @@ export const routes =
         commit: "unknown",
       });
     if (path === "/api/owner/session") return response({}, 401);
+    if (path === "/api/owner/events") return response(page([feedEvent]));
     if (path === "/api/owner/projects")
       return response(page([{ id: "silkboard" }]));
     if (path.endsWith("/sessions")) return response(page([session]));

@@ -15,15 +15,20 @@ export interface Message {
   received_at: number;
   message: string;
 }
-export interface Session {
-  id: string;
+interface AgentIdentity {
   hostname: string;
   tool: string;
   session_id: string;
   subagent_id: string | null;
   parent_session_id: string | null;
   session_name: string | null;
+}
+export interface Session extends AgentIdentity {
+  id: string;
   latest: Message;
+}
+export interface FeedEvent extends AgentIdentity, Message {
+  project: string;
 }
 
 export class ApiError extends Error {
@@ -87,16 +92,23 @@ const message = (value: unknown): value is Message =>
   value.received_at >= 0 &&
   value.received_at <= 8640000000000000 &&
   text(value.message, 2000);
-const session = (value: unknown): value is Session =>
-  object(value) &&
-  positive(value.id) &&
+const identity = (value: Record<string, unknown>) =>
   text(value.hostname, 256) &&
   text(value.tool, 256) &&
   text(value.session_id, 256) &&
   nullable(value.subagent_id, 256) &&
   nullable(value.parent_session_id, 256) &&
-  nullable(value.session_name, 120) &&
+  nullable(value.session_name, 120);
+const session = (value: unknown): value is Session =>
+  object(value) &&
+  positive(value.id) &&
+  identity(value) &&
   message(value.latest);
+const feedEvent = (value: unknown): value is FeedEvent =>
+  object(value) &&
+  projectId(value.project) &&
+  identity(value) &&
+  message(value);
 
 function page<T>(
   value: unknown,
@@ -287,5 +299,20 @@ export async function history(
     ),
     message,
     positive,
+  );
+}
+
+export async function events(
+  before: string | null,
+  signal: AbortSignal,
+): Promise<Page<FeedEvent>> {
+  return page(
+    await request(
+      `/api/owner/events${before === null ? "" : `?before=${encodeURIComponent(before)}`}`,
+      {},
+      signal,
+    ),
+    feedEvent,
+    (value: unknown): value is string => text(value, 2048),
   );
 }

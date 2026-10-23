@@ -1,14 +1,15 @@
 # Silkboard architecture
 
-Updated 2026-10-19 for the agreed publish-only agent progress milestone.
+Updated 2026-10-23 for the agreed unified starting view and publish-only progress.
 The [roadmap](roadmap.md) controls delivery scope. This replaces the original
 proposal's task fetching, claims, handoff uploads and durable sync queue;
 those capabilities are not part of the agreed milestone or implemented API.
 
 ## Purpose and delivery status
 
-Show short observations from development agents, grouped by project and native
-session, so the owner can read independent activity and history on a phone.
+Show short observations from development agents in one cross-project event
+table, with native session identity in expandable details, so the owner can
+read independent activity and history on a phone.
 GitHub remains authoritative for tasks, priorities and acceptance criteria.
 A progress message is an observation, not evidence that work passed validation.
 
@@ -91,7 +92,7 @@ session; separate sessions have independent sequences and histories.
   never an owner cookie alone. Before owner initialization it returns 503.
 - `/api/auth/setup` handles one-time owner registration using a provisioner
   link; `/api/auth/login` creates a separate owner browser session.
-- `/api/owner` contains guarded project/session/history reads, credential
+- `/api/owner` contains guarded global-event/project/session/history reads, credential
   listing/issuance/revocation, session inspection and logout. Publishers cannot
   use it, including by presenting their token as an owner cookie.
 - `/health` and `/api/status` expose only health/build identity for the updater.

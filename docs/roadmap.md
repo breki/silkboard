@@ -4,9 +4,10 @@ Status: Milestone 1 in progress; the minimal application is implemented.
 Release gates, production deployment, automatic upgrades and live rollback/retry
 are verified. Updater reboot recovery and the remaining evidence below are pending.
 Milestone 2 is agreed independently: agent progress dogfooding.
+Milestone 3 covers the owner-agreed basic UI improvements.
 
 This roadmap replaces the original milestone list in the architecture proposal.
-Milestones follow the owner's priorities; scope after milestone 2 is not set.
+Milestones follow the owner's priorities; scope after milestone 3 is not set.
 
 ## 1. Complete deployment pipeline with a minimal status page
 
@@ -189,7 +190,18 @@ Backup destination, key custody, schedule and retention remain undecided.
 Release/publication authorization and safeguards for schema-changing or
 otherwise destructive operations remain required.
 
+## 3. Basic UI improvements
+
+Agreed with the owner on 2026-10-23. The [GitHub milestone](https://github.com/breki/silkboard/milestone/3)
+tracks individually agreed UI changes. Its first item is
+[#59](https://github.com/breki/silkboard/issues/59): replace the starting view
+with one compact table of events across all projects. Columns are Time,
+Project, Agent (tool and host) and Message preview; clicking an event expands
+its full message and session identity beneath the row. Keep owner-only reads
+and the existing publish-only authority boundaries. Other UI priorities will
+be agreed issue by issue.
+
 ## Later milestones
 
-To be defined with the owner. Task coordination and persistent handoff
+Milestones after 3 are to be defined with the owner. Task coordination and persistent handoff
 sharing are not part of the agreed agent progress milestone.

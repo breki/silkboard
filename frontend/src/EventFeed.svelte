@@ -1,0 +1,187 @@
+<script lang="ts">
+  import { ApiError, events, type Page, type FeedEvent } from "./feed-api";
+  import { poll } from "./poll";
+  let { onexpire }: { onexpire: () => void } = $props();
+  let page = $state<Page<FeedEvent> | null>(null);
+  let before = $state<string | null>(null);
+  let failed = $state(false);
+  let busy = $state(false);
+  let retry = $state(0);
+  let expanded = $state<string | null>(null);
+  const key = (event: FeedEvent) =>
+    JSON.stringify([event.project, event.event_id]);
+  const preview = (message: string) => {
+    const chars = Array.from(message);
+    return chars.length > 120 ? chars.slice(0, 120).join("") + "…" : message;
+  };
+  const day = (value: number) =>
+    new Date(value).toLocaleDateString(undefined, {
+      month: "numeric",
+      day: "numeric",
+    });
+  const clock = (value: number) =>
+    new Date(value).toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  $effect(() => {
+    const cursor = before;
+    void retry;
+    return poll(async (signal) => {
+      busy = true;
+      try {
+        const value = await events(cursor, signal);
+        if (signal.aborted) return;
+        page = value;
+        failed = false;
+        if (
+          expanded !== null &&
+          !value.items.some((event) => key(event) === expanded)
+        )
+          expanded = null;
+      } catch (error) {
+        if (signal.aborted) return;
+        if (error instanceof ApiError && error.status === 401) onexpire();
+        else failed = true;
+      } finally {
+        if (!signal.aborted) busy = false;
+      }
+    });
+  });
+  function navigate(cursor: string | null) {
+    page = null;
+    expanded = null;
+    before = cursor;
+  }
+  function toggle(event: FeedEvent) {
+    expanded = expanded === key(event) ? null : key(event);
+  }
+  // Pointer activation anywhere on the row shares the native button action.
+  // The button retains normal keyboard behavior and table row semantics.
+  function clickableRow(node: HTMLTableRowElement, activate: () => void) {
+    const click = (event: MouseEvent) => {
+      if (event.target instanceof Element && !event.target.closest("button"))
+        activate();
+    };
+    node.addEventListener("click", click);
+    return {
+      update(next: () => void) {
+        activate = next;
+      },
+      destroy() {
+        node.removeEventListener("click", click);
+      },
+    };
+  }
+</script>
+
+<div class="event-heading">
+  <h3>Events</h3>
+  <p class="muted">
+    All projects · Updates every 10 seconds while this page is visible.
+  </p>
+</div>
+{#if failed}
+  <div class="notice">
+    <p role="alert">
+      Unable to update events. Displayed events may be out of date.
+    </p>
+    <button onclick={() => retry++}>Retry events</button>
+  </div>
+{/if}
+{#if page}
+  {#if !page.items.length}
+    <p class="empty">
+      No events on this page. New reports appear on the latest page.
+    </p>
+  {:else}
+    <table class="events-table" aria-label="Events from all projects">
+      <colgroup
+        ><col class="event-time" /><col class="event-project" /><col
+          class="event-agent"
+        /><col class="event-summary" /></colgroup
+      >
+      <thead
+        ><tr
+          ><th scope="col">Time</th><th scope="col">Project</th><th scope="col"
+            >Agent</th
+          ><th scope="col">Message</th></tr
+        ></thead
+      >
+      <tbody>
+        {#each page.items as event, index (key(event))}
+          <tr class="event-row" use:clickableRow={() => toggle(event)}>
+            <td
+              ><time datetime={new Date(event.received_at).toISOString()}
+                ><span>{day(event.received_at)}</span><span
+                  >{clock(event.received_at)}</span
+                ></time
+              ></td
+            >
+            <td><span class="cell-label">{event.project}</span></td>
+            <td
+              ><span class="cell-label">{event.tool}</span><span
+                class="cell-label muted">{event.hostname}</span
+              ></td
+            >
+            <td
+              ><button
+                class="event-preview"
+                aria-label={`Event details: ${preview(event.message)}`}
+                aria-expanded={expanded === key(event)}
+                aria-controls={`event-details-${index}`}
+                onclick={() => toggle(event)}>{preview(event.message)}</button
+              ></td
+            >
+          </tr>
+          {#if expanded === key(event)}
+            <tr class="event-details"
+              ><td colspan="4">
+                <section
+                  id={`event-details-${index}`}
+                  aria-label="Event details"
+                >
+                  {#if event.session_name}<h4>{event.session_name}</h4>{/if}
+                  <p class="event-message">{event.message}</p>
+                  <dl class="identity">
+                    <dt>Project</dt>
+                    <dd>{event.project}</dd>
+                    <dt>Tool</dt>
+                    <dd>{event.tool}</dd>
+                    <dt>Host</dt>
+                    <dd>{event.hostname}</dd>
+                    <dt>Received</dt>
+                    <dd>
+                      <time datetime={new Date(event.received_at).toISOString()}
+                        >{new Date(event.received_at).toLocaleString()}</time
+                      >
+                    </dd>
+                    <dt>Native session</dt>
+                    <dd>{event.session_id}</dd>
+                    {#if event.subagent_id}<dt>Subagent</dt>
+                      <dd>{event.subagent_id}</dd>{/if}
+                    {#if event.parent_session_id}<dt>Parent session</dt>
+                      <dd>{event.parent_session_id}</dd>{/if}
+                    <dt>Event ID</dt>
+                    <dd>{event.event_id}</dd>
+                    <dt>Sequence</dt>
+                    <dd>{event.sequence}</dd>
+                  </dl>
+                </section>
+              </td></tr
+            >
+          {/if}
+        {/each}
+      </tbody>
+    </table>
+  {/if}
+  <div class="page-controls">
+    {#if before !== null}<button disabled={busy} onclick={() => navigate(null)}
+        >Latest events</button
+      >{/if}
+    {#if page.next_cursor}<button
+        disabled={busy}
+        onclick={() => navigate(page!.next_cursor)}>Earlier events</button
+      >{/if}
+  </div>
+{:else if !failed}<p role="status">Loading events…</p>{/if}

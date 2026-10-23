@@ -157,3 +157,42 @@ test("ignores late mocked responses after cancellation and supports already-abor
     status: 0,
   });
 });
+
+test("validates global events and safely encodes the opaque mixed-project cursor", async () => {
+  const { events } = await import("./feed-api");
+  const { feedEvent } = await import("../test/support");
+  const cursor = '{"received_at":1,"project":"alpha","event_id":"x&y"}';
+  const fetch = vi.fn().mockResolvedValue(response(page([feedEvent], cursor)));
+  vi.stubGlobal("fetch", fetch);
+  expect((await events(cursor, signal())).items[0].project).toBe("silkboard");
+  expect(fetch.mock.calls[0][0]).toBe(
+    `/api/owner/events?before=${encodeURIComponent(cursor)}`,
+  );
+});
+test.each([
+  { project: "INVALID" },
+  { session_id: "" },
+  { subagent_id: 42 },
+  { sequence: "01" },
+  { message: "" },
+])("rejects malformed global event records %j", async (changes) => {
+  const { events } = await import("./feed-api");
+  const { feedEvent } = await import("../test/support");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(response(page([{ ...feedEvent, ...changes }]))),
+  );
+  await expect(events(null, signal())).rejects.toBeInstanceOf(ApiError);
+});
+test.each(["", 123, "x".repeat(2049)])(
+  "rejects malformed global event cursors",
+  async (cursor) => {
+    const { events } = await import("./feed-api");
+    const { feedEvent } = await import("../test/support");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(response(page([feedEvent], cursor))),
+    );
+    await expect(events(null, signal())).rejects.toBeInstanceOf(ApiError);
+  },
+);
