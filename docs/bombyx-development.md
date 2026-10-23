@@ -171,11 +171,23 @@ GitHub hosts are unchanged. Removal does not revoke the token at GitHub.
 All `gh` calls share a twenty-second deadline, inside Bombyx's sixty-second
 hook budget; failures and timeouts are reported without claiming success.
 
-After the change is merged and the operator supplies the vault mapping, run
-`bombyx shell silkboard --refresh-secrets`, then in the guest run
-`gh auth status --hostname github.com`. Do not use `--show-token` or share the
-credential files. A fixture pass or an empty-store check does not establish
-real authenticated private API access; that guest verification remains pending.
+Secret refresh runs the hook already in the guest checkout; it does not fetch
+new code. After merge, first use `bombyx shell silkboard` without refresh. With
+agent sessions idle and a clean `git status --short`, update the guest clone:
+
+```bash
+cd ~/silkboard
+git fetch origin main
+git merge --ff-only FETCH_HEAD
+```
+
+If the checkout has changes or the fast-forward fails, stop and preserve that
+work before proceeding. Exit the guest shell. After the operator supplies the
+vault mapping, run `bombyx shell silkboard --refresh-secrets` on the operator
+machine, then in the guest run `gh auth status --hostname github.com`. Do not
+use `--show-token` or share the credential files. A fixture pass or an
+empty-store check does not establish real authenticated private API access;
+that guest verification remains pending.
 
 The repository deploy key remains the Git SSH credential; it is not a `gh`
 token. The refresh hook never runs `gh auth setup-git` or changes the clone's

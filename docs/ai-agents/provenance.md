@@ -18,7 +18,10 @@ disposable empty HOME/config check on the actual Fusion guest confirmed that
 result without touching its real credential store. The shared twenty-second
 deadline and minimal child environment are exercised by isolated fake-CLI
 tests. Real token login/private API verification remains an operator rollout
-step after merge and secret refresh. No new dependency or signing authority.
+step after merge and secret refresh. Bombyx's local `shell_run` and
+`refresh_secrets_then_hook` implementations confirm that refresh leaves the
+guest checkout unchanged, so the guide requires a clean, idle fast-forward
+before running the newly merged hook. No new dependency or signing authority.
 
 ## Development VM Git-status prerequisite, 2026-10-22
 
