@@ -14,6 +14,7 @@ test("phone owner issues, saves once and revokes a project-scoped publisher toke
   expect(document.headers()["x-frame-options"]).toBe("DENY");
   await page.getByLabel("Owner password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("button", { name: "Navigation menu" }).click();
   await page
     .getByRole("button", { name: "Manage publisher credentials" })
     .click();
@@ -91,6 +92,7 @@ test("phone owner issues, saves once and revokes a project-scoped publisher toke
     "Saved with mobile token",
   );
   await page.reload();
+  await page.getByRole("button", { name: "Navigation menu" }).click();
   await page
     .getByRole("button", { name: "Manage publisher credentials" })
     .click();

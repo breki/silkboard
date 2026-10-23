@@ -30,6 +30,7 @@ test("owner login uses a secure cookie and logout revokes event access", async (
   expect(await page.evaluate(() => document.cookie)).not.toContain(
     "silkboard-owner",
   );
+  await page.getByRole("button", { name: "Navigation menu" }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page.getByLabel("Owner password")).toBeVisible();
   expect((await context.request.get("/api/owner/events")).status()).toBe(401);
@@ -45,6 +46,34 @@ test("one phone table shows all projects, opens safe event details, pages and re
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const table = page.getByRole("table", { name: "Events from all projects" });
   await expect(table.locator("tr.event-row")).toHaveCount(20);
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.getByRole("button", { name: "Navigation menu" }).click();
+  await expect(
+    page.getByRole("button", { name: "Manage publisher credentials" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("owner-menu-small-phone.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole("link", { name: "Application status" }).click();
+  await expect(page.getByText("Healthy", { exact: true })).toBeVisible();
+  await expect(table).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: "Navigation menu" }).click();
+  await expect(
+    page.getByRole("button", { name: "Sign out", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Events", exact: true }).click();
+  await expect(table.locator("tr.event-row")).toHaveCount(20);
+  await page.setViewportSize({ width: 375, height: 812 });
   await expect(table.getByRole("columnheader")).toHaveText([
     "Time",
     "Project",
@@ -129,8 +158,9 @@ test("one phone table shows all projects, opens safe event details, pages and re
   await expect(details.getByText(hostile, { exact: true })).toBeVisible();
 });
 
-test("resetting the owner password removes all visible events and details on refresh", async ({
+test("revocation clears events and a status-page token in the same owner session", async ({
   page,
+  context,
 }) => {
   await page.goto("/");
   await page.getByLabel("Owner password").fill(password);
@@ -140,6 +170,19 @@ test("resetting the owner password removes all visible events and details on ref
   await expect(
     page.getByRole("region", { name: "Event details" }),
   ).toBeVisible();
+  const statusPage = await context.newPage();
+  await statusPage.goto("/status");
+  await expect(statusPage.getByText("Healthy", { exact: true })).toBeVisible();
+  await statusPage.getByRole("button", { name: "Navigation menu" }).click();
+  await statusPage
+    .getByRole("button", { name: "Manage publisher credentials" })
+    .click();
+  await statusPage.getByLabel("Credential project").fill("status-cleanup");
+  await statusPage.getByLabel("Installation label").fill("status-expiry");
+  await statusPage
+    .getByRole("button", { name: "Issue token", exact: true })
+    .click();
+  await expect(statusPage.getByLabel("New publisher token")).toBeVisible();
   const state = JSON.parse(
     readFileSync(join(process.env.SILKBOARD_E2E_DIR, "state.json"), "utf8"),
   );
@@ -154,4 +197,19 @@ test("resetting the owner password removes all visible events and details on ref
   await expect(page.getByRole("region", { name: "Event details" })).toHaveCount(
     0,
   );
+  await expect(statusPage.getByRole("alert")).toContainText(
+    "Your session expired",
+    { timeout: 15000 },
+  );
+  await expect(statusPage.getByLabel("New publisher token")).toHaveCount(0);
+  await expect(statusPage.getByLabel("Credential project")).toHaveCount(0);
+  await expect(statusPage.getByText("Healthy", { exact: true })).toBeVisible();
+  await statusPage.getByRole("button", { name: "Navigation menu" }).click();
+  await expect(
+    statusPage.getByRole("button", { name: "Sign out", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    statusPage.getByRole("button", { name: "Manage publisher credentials" }),
+  ).toHaveCount(0);
+  await statusPage.close();
 });

@@ -544,3 +544,13 @@ repository instructions and GitHub's own signed package repository for its CLI;
 the maintainers report deprecated API failures in Ubuntu's older package.
 Installation starts the daemon but performs no account/device login, host
 firewall change, route advertisement or workstation credential migration.
+
+## Compact header and status navigation
+
+On 2026-10-23, the owner requested #61 in Basic UI improvements: reduce the
+header, remove visible Agent progress, move Sign out and Manage publisher
+credentials to a top-right hamburger menu, and move Application status to its
+own page reached from that menu. Implementation uses normal `/status` and `/`
+links with an explicit status shell route, retaining public status and
+owner-only administration. Component, HTTP and browser tests establish local
+behavior; production rollout remains separate.

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Compact the header, move owner actions into a top-right navigation menu,
+  and put application status on a separate reloadable page.
+
 ## 0.5.0 - 2026-10-23
 
 - Show individual events across all projects in one compact starting table,

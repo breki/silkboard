@@ -14,6 +14,7 @@ const app = mount(App, {
   target,
   props: {
     setupPage: window.location.pathname === "/setup",
+    statusPage: window.location.pathname === "/status",
     takeSetupCredential: () => {
       const value = setupCredential;
       setupCredential = "";

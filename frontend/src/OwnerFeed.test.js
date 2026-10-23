@@ -25,11 +25,19 @@ async function submit() {
   await fireEvent.submit(input.closest("form"));
 }
 
-test("keeps public release status alongside the owner login", async () => {
+test("keeps release status off the starting view and links to its own page", async () => {
   vi.stubGlobal("fetch", vi.fn(routes()));
   render(App);
   await screen.findByLabelText("Owner password");
-  await screen.findByText("Healthy");
+  expect(screen.queryByLabelText("Application status")).toBeNull();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  expect(
+    screen
+      .getByRole("link", { name: "Application status" })
+      .getAttribute("href"),
+  ).toBe("/status");
   expect(screen.getAllByRole("heading", { name: "Silkboard" })).toHaveLength(1);
 });
 test.each([
@@ -89,6 +97,9 @@ test("signs in, clears private content during logout and retries an unconfirmed 
   render(OwnerFeed);
   await submit();
   await screen.findByText("Fix the tests");
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
   await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
   await screen.findByRole("button", { name: "Retry sign out" });
   expect(screen.queryByText("Fix the tests")).toBeNull();
@@ -116,6 +127,9 @@ test("already revoked session is truthfully signed out", async () => {
   render(OwnerFeed);
   await screen.findByText("Fix the tests");
   revoked = true;
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
   await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
   await screen.findByLabelText("Owner password");
 });
@@ -164,6 +178,9 @@ test("late data cannot reappear after logout or unmount", async () => {
   const view = render(OwnerFeed);
   await screen.findByText("Loading events…");
   await waitFor(() => expect(resolve).toBeTypeOf("function"));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
   await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
   await screen.findByLabelText("Owner password");
   resolve(response(page([{ ...feedEvent, message: "Late private content" }])));
@@ -184,4 +201,172 @@ test("teardown aborts a stalled initial session check", async () => {
   expect(screen.getByRole("status").textContent).toContain("Checking");
   view.unmount();
   expect(signal.aborted).toBe(true);
+});
+
+test("status is separate and keeps logout recovery", async () => {
+  const fetch = vi.fn(
+    routes({
+      "/api/owner/session": response({ authenticated: true, csrf_token: csrf }),
+      "/api/owner/logout": response({}, 503),
+    }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  render(App, { statusPage: true });
+  await screen.findByText("Healthy");
+  expect(screen.queryByRole("table")).toBeNull();
+  expect(fetch.mock.calls.some(([path]) => path === "/api/owner/events")).toBe(
+    false,
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", { name: "Sign out" }),
+  );
+  await screen.findByRole("button", { name: "Retry sign out" });
+  expect(screen.getByText("Healthy")).toBeTruthy();
+  expect(screen.queryByText("Agent progress")).toBeNull();
+});
+test("signed-out status needs no password and links back to events", async () => {
+  vi.stubGlobal("fetch", vi.fn(routes()));
+  render(App, { statusPage: true });
+  await screen.findByText("Healthy");
+  expect(screen.queryByLabelText("Owner password")).toBeNull();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  expect(
+    screen.getByRole("link", { name: "Events" }).getAttribute("href"),
+  ).toBe("/");
+  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+});
+
+test("credential expiry on status clears owner actions and offers sign-in navigation", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      routes({
+        "/api/owner/session": response({
+          authenticated: true,
+          csrf_token: csrf,
+        }),
+        "/api/owner/projects/silkboard/publishers": response({}, 401),
+      }),
+    ),
+  );
+  render(App, { statusPage: true });
+  await screen.findByText("Healthy");
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", { name: "Manage publisher credentials" }),
+  );
+  await fireEvent.input(screen.getByLabelText("Credential project"), {
+    target: { value: "silkboard" },
+  });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Load credentials" }),
+  );
+  await screen.findByText("Return to sign in");
+  expect(screen.queryByLabelText("Credential project")).toBeNull();
+  expect(screen.getByText("Healthy")).toBeTruthy();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+});
+
+test("idle status session revocation removes a disclosed token without another action", async () => {
+  vi.useFakeTimers();
+  let revoked = false;
+  const token = "b".repeat(64);
+  const fetch = vi.fn(
+    routes({
+      "/api/owner/session": () =>
+        response(
+          { authenticated: true, csrf_token: csrf },
+          revoked ? 401 : 200,
+        ),
+      "/api/owner/projects/silkboard/publishers": (options) =>
+        options.method === "POST"
+          ? response({ token }, 201)
+          : response({
+              items: [{ label: "dev", revoked: false }],
+              next_cursor: null,
+            }),
+    }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  render(App, { statusPage: true });
+  await vi.advanceTimersByTimeAsync(0);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Manage publisher credentials" }),
+  );
+  await fireEvent.input(screen.getByLabelText("Credential project"), {
+    target: { value: "silkboard" },
+  });
+  await fireEvent.input(screen.getByLabelText("Installation label"), {
+    target: { value: "dev" },
+  });
+  await fireEvent.submit(
+    screen.getByLabelText("Installation label").closest("form"),
+  );
+  await vi.advanceTimersByTimeAsync(0);
+  expect(screen.getByLabelText("New publisher token").value).toBe(token);
+  revoked = true;
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(screen.queryByLabelText("New publisher token")).toBeNull();
+  expect(screen.queryByLabelText("Credential project")).toBeNull();
+  expect(screen.getByRole("alert").textContent).toContain("session expired");
+  expect(screen.getByText("Healthy")).toBeTruthy();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+  expect(fetch.mock.calls.some(([path]) => path === "/api/owner/events")).toBe(
+    false,
+  );
+});
+
+test("status session checks pause while hidden, tolerate outages and cancel on teardown", async () => {
+  vi.useFakeTimers();
+  const hidden = vi.spyOn(document, "hidden", "get").mockReturnValue(true);
+  let count = 0,
+    pendingSignal;
+  const fetch = vi.fn(
+    routes({
+      "/api/owner/session": (options) => {
+        count++;
+        if (count === 4) {
+          pendingSignal = options.signal;
+          return new Promise(() => {});
+        }
+        return response(
+          { authenticated: true, csrf_token: csrf },
+          count === 2 ? 503 : 200,
+        );
+      },
+    }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  const view = render(App, { statusPage: true });
+  await vi.advanceTimersByTimeAsync(0);
+  expect(count).toBe(1);
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(count).toBe(1);
+  hidden.mockReturnValue(false);
+  document.dispatchEvent(new Event("visibilitychange"));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(count).toBe(2);
+  expect(screen.getByText("Healthy")).toBeTruthy();
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(count).toBe(3);
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(pendingSignal.aborted).toBe(false);
+  view.unmount();
+  expect(pendingSignal.aborted).toBe(true);
 });

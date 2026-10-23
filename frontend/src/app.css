@@ -15,10 +15,14 @@ body {
 main {
   max-width: 68rem;
   margin: 0 auto;
-  padding: clamp(1rem, 4vw, 2.75rem);
+  padding: clamp(0.75rem, 3vw, 1.75rem);
 }
 .masthead {
-  margin: 1rem 0 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
 }
 h1,
 h2,
@@ -29,7 +33,7 @@ h5 {
   overflow-wrap: anywhere;
 }
 h1 {
-  font-size: clamp(2.5rem, 7vw, 4rem);
+  font-size: clamp(1.4rem, 4vw, 1.75rem);
   letter-spacing: -0.05em;
   margin: 0;
 }
@@ -46,13 +50,6 @@ h4 {
 h5 {
   font-size: 1rem;
   margin: 0;
-}
-.eyebrow {
-  color: #a3c1ce;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.72rem;
-  margin-bottom: 0.5rem;
 }
 .section-heading {
   display: flex;
@@ -168,7 +165,7 @@ dd {
 }
 .status-panel {
   border-top: 1px solid #2a424f;
-  margin-top: 3rem;
+  margin-top: 0;
   padding-top: 1rem;
   font-size: 0.85rem;
 }
@@ -279,4 +276,47 @@ dd {
 
 .event-row {
   cursor: pointer;
+}
+
+.navigation {
+  position: relative;
+}
+.menu-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  padding: 0.5rem;
+}
+.navigation nav {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  z-index: 10;
+  width: min(18rem, calc(100vw - 1.5rem));
+  padding: 0.4rem;
+  display: grid;
+  gap: 0.25rem;
+  background: #14242e;
+  border: 1px solid #587482;
+  border-radius: 0.5rem;
+  box-shadow: 0 0.5rem 1.5rem #0008;
+}
+.navigation nav a,
+.navigation nav button {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 0.3rem;
+  color: #d5f2e6;
+  background: transparent;
+  text-decoration: none;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.navigation nav a:hover,
+.navigation nav button:hover {
+  background: #244751;
 }

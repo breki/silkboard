@@ -1,22 +1,23 @@
 <script lang="ts">
   import OwnerFeed from "./OwnerFeed.svelte";
-  import StatusCard from "./StatusCard.svelte";
+  import Header from "./Header.svelte";
   import OwnerSetup from "./OwnerSetup.svelte";
   let {
     setupPage = false,
+    statusPage = false,
     takeSetupCredential = () => "",
-  }: { setupPage?: boolean; takeSetupCredential?: () => string } = $props();
+  }: {
+    setupPage?: boolean;
+    statusPage?: boolean;
+    takeSetupCredential?: () => string;
+  } = $props();
 </script>
 
 <main>
-  <header class="masthead">
-    <p class="eyebrow">Private development dashboard</p>
-    <h1>Silkboard</h1>
-  </header>
   {#if setupPage}
+    <Header showMenu={false} />
     <OwnerSetup takeCredential={takeSetupCredential} />
   {:else}
-    <OwnerFeed />
-    <StatusCard />
+    <OwnerFeed {statusPage} />
   {/if}
 </main>
