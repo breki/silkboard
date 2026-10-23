@@ -96,6 +96,13 @@ creates a new event, rather than replaying the old one. No report is saved
 for later delivery. Responses supply acknowledgements only, never tasks,
 instructions or a new endpoint.
 
+Messages may contain multiline Markdown within the existing 2,000 UTF-8-byte
+limit. Encode LF, CR and tab as JSON escapes (`\n`, `\r`, `\t`); other control
+characters remain invalid. Names and identity rules are unchanged. Upgrade
+the server before sending multiline reports, and update older publisher
+binaries that reject line breaks. Existing single-line reports remain valid.
+Automatic Codex reporting retains its first-sentence summary policy.
+
 ## Counters and integration
 
 The private state directory contains hashed-identity counter/lock files per

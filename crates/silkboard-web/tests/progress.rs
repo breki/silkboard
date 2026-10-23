@@ -86,7 +86,11 @@ async fn validates_payloads_and_keeps_feed_unreadable() {
     for (field, value) in [
         ("message", json!("")),
         ("message", json!(" \t ")),
-        ("message", json!("line\nbreak")),
+        ("message", json!("line\u{001b}break")),
+        ("message", json!("é".repeat(1001))),
+        ("message", json!("\n\r\t ")),
+        ("session_name", json!("line\nbreak")),
+        ("session_name", json!("tab\tname")),
         ("message", json!("x".repeat(2001))),
         ("hostname", json!("bad host")),
         ("tool", json!("")),
@@ -175,4 +179,47 @@ async fn concurrent_retries_are_atomic() {
     );
     assert_eq!(first.0, StatusCode::OK);
     assert_eq!(first, second);
+}
+
+#[tokio::test]
+async fn multiline_markdown_preserves_bytes_and_retry_identity() {
+    let store = initialized_store();
+    let token = store.issue_token("silkboard", "markdown").unwrap();
+    let router = create_progress_router(Path::new("missing"), store);
+    let mut body = event();
+    body["message"] = json!(
+        "## Report\r\n\r\n- First\n\t- Nested\n\n```rust\nfn main() {}\n```"
+    );
+    let (status, ack) = publish(router.clone(), &token, body.clone()).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(publish(router.clone(), &token, body.clone()).await.1, ack);
+    body["message"] =
+        json!(body["message"].as_str().unwrap().replace("\r\n", "\n"));
+    assert_eq!(
+        publish(router.clone(), &token, body).await.0,
+        StatusCode::CONFLICT
+    );
+    let mut maximum = event();
+    maximum["event_id"] = json!("maximum");
+    maximum["sequence"] = json!(2);
+    maximum["message"] = json!(format!("{}\n", "x".repeat(1999)));
+    assert_eq!(publish(router, &token, maximum).await.0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn multiline_messages_still_reject_other_control_characters() {
+    let store = initialized_store();
+    let token = store.issue_token("silkboard", "controls").unwrap();
+    let router = create_progress_router(Path::new("missing"), store);
+    for control in (0..=159)
+        .filter_map(char::from_u32)
+        .filter(|c| c.is_control() && !matches!(c, '\n' | '\r' | '\t'))
+    {
+        let mut body = event();
+        body["message"] = json!(format!("before{control}after"));
+        assert_eq!(
+            publish(router.clone(), &token, body).await.0,
+            StatusCode::BAD_REQUEST
+        );
+    }
 }

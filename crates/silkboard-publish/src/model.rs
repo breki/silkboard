@@ -71,12 +71,16 @@ impl Report {
         if self.parent_session_id.is_some() && self.subagent_id.is_none() {
             return Err(Error::Input);
         }
-        for (s, limit) in std::iter::once((&self.message, 2000))
-            .chain(self.session_name.as_ref().map(|s| (s, 120)))
+        for (s, limit, multiline) in
+            std::iter::once((&self.message, 2000, true))
+                .chain(self.session_name.as_ref().map(|s| (s, 120, false)))
         {
             if s.trim().is_empty()
                 || s.len() > limit
-                || s.chars().any(char::is_control)
+                || s.chars().any(|c| {
+                    c.is_control()
+                        && !(multiline && matches!(c, '\n' | '\r' | '\t'))
+                })
             {
                 return Err(Error::Input);
             }

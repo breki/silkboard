@@ -1,6 +1,8 @@
 <script lang="ts">
   import { ApiError, events, type Page, type FeedEvent } from "./feed-api";
   import { poll } from "./poll";
+  import { eventTimestamp } from "./event-format";
+  import { messagePreview, renderMarkdown } from "./markdown";
   let { onexpire }: { onexpire: () => void } = $props();
   let page = $state<Page<FeedEvent> | null>(null);
   let before = $state<string | null>(null);
@@ -10,20 +12,6 @@
   let expanded = $state<string | null>(null);
   const key = (event: FeedEvent) =>
     JSON.stringify([event.project, event.event_id]);
-  const preview = (message: string) => {
-    const chars = Array.from(message);
-    return chars.length > 120 ? chars.slice(0, 120).join("") + "…" : message;
-  };
-  const day = (value: number) =>
-    new Date(value).toLocaleDateString(undefined, {
-      month: "numeric",
-      day: "numeric",
-    });
-  const clock = (value: number) =>
-    new Date(value).toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   $effect(() => {
     const cursor = before;
     void retry;
@@ -110,12 +98,12 @@
       >
       <tbody>
         {#each page.items as event, index (key(event))}
+          {@const stamp = eventTimestamp(event.received_at)}
+          {@const summary = messagePreview(event.message)}
           <tr class="event-row" use:clickableRow={() => toggle(event)}>
             <td
               ><time datetime={new Date(event.received_at).toISOString()}
-                ><span>{day(event.received_at)}</span><span
-                  >{clock(event.received_at)}</span
-                ></time
+                ><span>{stamp.clock}</span><span>{stamp.day}</span></time
               ></td
             >
             <td><span class="cell-label">{event.project}</span></td>
@@ -127,10 +115,10 @@
             <td
               ><button
                 class="event-preview"
-                aria-label={`Event details: ${preview(event.message)}`}
+                aria-label={`Event details: ${summary}`}
                 aria-expanded={expanded === key(event)}
                 aria-controls={`event-details-${index}`}
-                onclick={() => toggle(event)}>{preview(event.message)}</button
+                onclick={() => toggle(event)}>{summary}</button
               ></td
             >
           </tr>
@@ -142,7 +130,10 @@
                   aria-label="Event details"
                 >
                   {#if event.session_name}<h4>{event.session_name}</h4>{/if}
-                  <p class="event-message">{event.message}</p>
+                  <div
+                    class="event-message"
+                    use:renderMarkdown={event.message}
+                  ></div>
                   <dl class="identity">
                     <dt>Project</dt>
                     <dd>{event.project}</dd>
@@ -153,7 +144,7 @@
                     <dt>Received</dt>
                     <dd>
                       <time datetime={new Date(event.received_at).toISOString()}
-                        >{new Date(event.received_at).toLocaleString()}</time
+                        >{stamp.full}</time
                       >
                     </dd>
                     <dt>Native session</dt>
@@ -162,10 +153,6 @@
                       <dd>{event.subagent_id}</dd>{/if}
                     {#if event.parent_session_id}<dt>Parent session</dt>
                       <dd>{event.parent_session_id}</dd>{/if}
-                    <dt>Event ID</dt>
-                    <dd>{event.event_id}</dd>
-                    <dt>Sequence</dt>
-                    <dd>{event.sequence}</dd>
                   </dl>
                 </section>
               </td></tr
