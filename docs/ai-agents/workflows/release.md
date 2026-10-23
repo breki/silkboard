@@ -8,9 +8,13 @@ stale availability note.
 
 1. Require a clean tree and nonempty Unreleased changelog. Keep release
    bookkeeping separate from substantive changes.
-2. Use an explicit requested bump; otherwise infer major for BREAKING/Removed,
-   minor for Added, patch otherwise. Explain the inference and ask the owner
-   to choose the release version. Do not infer agreement from silence.
+2. Use an explicitly requested version or bump. Otherwise choose the next
+   SemVer version autonomously: major for breaking changes, minor for added
+   functionality, patch for compatible fixes or refinements. Judge the actual
+   changes rather than changelog labels alone. State the selected version and
+   brief rationale; do not ask the owner to choose or confirm the number.
+   Version selection does not itself authorize publication or deployment;
+   preserve any authorization already given.
 3. Resolve the version source from the actual workspace manifests. Bump it
    once, synchronize workspace lockfile entries without broad dependency
    updates, and promote Unreleased into a dated release section.

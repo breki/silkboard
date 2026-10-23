@@ -20,8 +20,8 @@ still require their safeguards and separate approval.
 
 Remaining #39 acceptance:
 1. Review and merge the exact live evidence through normal documentation checks.
-2. Obtain the release-version decision, prepare the next compatible signed
-   release, then obtain exact publication/upgrade authorization.
+2. Select the version under the release workflow, prepare the next compatible
+   signed release, then obtain exact publication/upgrade authorization.
 3. Verify all real existing reports and native identities survive a normal
    tagged automatic upgrade. Retain updater trust/state and schema 3.
 4. Verify post-upgrade automatic publishing and owner phone feed/history access,

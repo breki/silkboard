@@ -89,10 +89,10 @@ can be reused; do not copy GitHub credentials into the application.
 1. Complete full local validation, ARM64 lint and sequential independent
    reviews of the final preparation. Record exact head and CI results.
 2. Obtain merge authorization and merge only the reviewed CI-green head.
-3. Ask the owner to choose the release version. This adds user-visible
-   functionality since v0.2.2, so a minor release is the normal recommendation;
-   do not invent or publish a tag here. Prepare separate release bookkeeping,
-   full gates/standalone audit and a locally verified signed annotated tag.
+3. Select the release version using SemVer judgment under the release workflow,
+   without asking the owner to choose or confirm the number. Prepare separate
+   release bookkeeping, full gates/standalone audit and a locally verified
+   signed annotated tag.
 4. Record and seek approval for the exact publication and live rollout.
    Publication can trigger the existing automatic updater. For the controlled
    initial rollout, stop the polling timer only when authorized, wait for any
@@ -185,8 +185,9 @@ and prepare a new label/link as appropriate. Do not bypass first-owner setup.
 2. Prepare a compatible reviewed release to demonstrate a real tagged automatic
    upgrade with existing data. The initial status-only v0.2.2 to v0.3.0 upgrade
    predates state creation and cannot prove this. Use legitimate pending changes
-   and reviewed evidence; obtain the owner's version and exact publication
-   decisions through the release workflow. No schema change is proposed.
+   and reviewed evidence; select the version under the release workflow and
+   obtain the required exact publication authorization. No schema change is
+   proposed.
 3. Capture a fresh baseline of existing event/session metadata before activation.
    Verify the exact release suite, admission and automatic activation, then that
    every baseline observation/native identity remains intact. Verify new real

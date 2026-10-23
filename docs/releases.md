@@ -79,8 +79,10 @@ PR #9 fixed checkout selection before `v0.1.1` was published.
 ## Local preparation
 
 Use the separate [release workflow](ai-agents/workflows/release.md) only when
-a release is requested. It requires the owner's version choice, a clean
-worktree, and a nonempty Unreleased changelog; it never publishes implicitly.
+a release is requested. It requires a clean worktree and a nonempty Unreleased
+changelog. Agents choose the version using SemVer judgment without asking for
+confirmation, unless the owner explicitly supplies a version or bump.
+Version selection never authorizes publication implicitly.
 No release has been requested just by implementing these gates.
 
 1. Inspect `crates/silkboard-web/Cargo.toml` as the application version source.

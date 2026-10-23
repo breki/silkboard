@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Autonomous release version selection, 2026-10-23
+
+The owner instructed agents to choose future release version numbers using
+their own judgment without asking for a version decision. The
+[release workflow](workflows/release.md) now owns autonomous SemVer selection;
+an explicit owner-supplied version or bump takes precedence. This supersedes
+the earlier mandatory version-choice question in release and rollout guides.
+The instruction delegates version selection only: validation, signing and
+merge/publication/deployment authorization boundaries remain unchanged, and
+existing authorization continues to apply.
+
 ## Unified starting event table, 2026-10-23
 
 The owner created milestone 3 and issue #59, then selected Time, Project,
