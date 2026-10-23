@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.5.1 - 2026-10-23
+
 - Compact the header, move owner actions into a top-right navigation menu,
   and put application status on a separate reloadable page.
 
