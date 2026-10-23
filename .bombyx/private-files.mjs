@@ -67,7 +67,7 @@ export function replace(filePath, value) {
     fs.rmSync(temp, { force: true });
   }
 }
-export function paths(home) {
+export function configParent(home) {
   if (
     !path.isAbsolute(home) ||
     fs.realpathSync(home) !== home ||
@@ -85,7 +85,10 @@ export function paths(home) {
     fs.realpathSync(configParent) !== configParent
   )
     throw Error("config parent");
-  const configDir = path.join(configParent, "silkboard-publish");
+  return configParent;
+}
+export function paths(home) {
+  const configDir = path.join(configParent(home), "silkboard-publish");
   directory(configDir);
   return {
     configDir,

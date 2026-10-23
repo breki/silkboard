@@ -7,9 +7,12 @@ import { test } from "node:test";
 import { createHash } from "node:crypto";
 import { configure } from "../configure.mjs";
 import { refresh } from "../refresh.mjs";
+import { refreshGithub } from "../github-auth.mjs";
+import { refreshSecrets } from "../refresh-secrets.mjs";
 const root = path.resolve(import.meta.dirname, "../..");
 const node = process.execPath;
 const token = "a".repeat(64);
+const githubToken = "github_pat_" + "c".repeat(64);
 const endpoint = "https://dashboard.example.test";
 function fixture(t) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "silkboard-bombyx-"));
@@ -53,6 +56,355 @@ function fixture(t) {
   );
   return { home, repo, envFile, env, run, put, configPath, tokenPath };
 }
+function hookFixture(f) {
+  fs.cpSync(path.join(root, ".bombyx"), path.join(f.repo, ".bombyx"), {
+    recursive: true,
+  });
+  const runtime = path.join(
+    f.home,
+    ".local/share/silkboard-tools/node-v24.14.1/bin",
+  );
+  fs.mkdirSync(runtime, { recursive: true });
+  if (!fs.existsSync(path.join(runtime, "node")))
+    fs.symlinkSync(node, path.join(runtime, "node"));
+  const fakeGh = path.join(f.home, "fake-gh");
+  fs.writeFileSync(
+    fakeGh,
+    `#!${node}
+const fs = require('node:fs');
+const home = process.env.HOME;
+const args = process.argv.slice(2);
+const input = fs.readFileSync(0, 'utf8');
+fs.appendFileSync(home + '/gh-calls.jsonl', JSON.stringify({args,input,env:process.env}) + '\\n');
+if (fs.existsSync(home + '/gh-stall')) setInterval(() => {}, 1000);
+else if (fs.existsSync(home + '/gh-fail')) { console.error(input); console.log(input); process.exit(1); }
+else if (args[1] === 'login') fs.writeFileSync(home + '/.config/gh/hosts.yml', input, {mode:0o600});
+else if (args[0] === 'config') {
+  if (!fs.existsSync(home + '/.config/gh/hosts.yml')) process.exit(1);
+  console.log(fs.existsSync(home + '/gh-users.json') ? JSON.parse(fs.readFileSync(home + '/gh-users.json'))[0] : 'fixture-user');
+}
+else if (args[1] === 'logout') {
+  const file = home + '/.config/gh/hosts.yml';
+  if (!fs.existsSync(file)) { console.error('not logged in to any hosts'); process.exit(1); }
+  const usersFile = home + '/gh-users.json';
+  if (fs.existsSync(usersFile)) {
+    const users = JSON.parse(fs.readFileSync(usersFile));
+    if (args.at(-1) !== users.shift()) process.exit(1);
+    if (users.length) fs.writeFileSync(usersFile, JSON.stringify(users));
+    else { fs.unlinkSync(usersFile); fs.unlinkSync(file); }
+  } else fs.unlinkSync(file);
+} else process.exit(70);
+`,
+    { mode: 0o755 },
+  );
+  const auth = path.join(f.repo, ".bombyx/github-auth.mjs");
+  if (fs.existsSync(auth))
+    fs.writeFileSync(
+      auth,
+      fs
+        .readFileSync(auth, "utf8")
+        .replace('"/usr/bin/gh"', JSON.stringify(fakeGh)),
+    );
+  const run = (extraEnv = {}) =>
+    spawnSync("/bin/bash", [path.join(f.repo, ".bombyx/refresh-secrets.sh")], {
+      env: {
+        HOME: f.home,
+        PATH: "/usr/local/bin:/usr/bin:/bin",
+        BOMBYX_PROJECT: "silkboard",
+        BOMBYX_ENV_FILE: f.envFile,
+        ...extraEnv,
+      },
+      encoding: "utf8",
+      input: "",
+      timeout: 45000,
+    });
+  const calls = () =>
+    fs.existsSync(path.join(f.home, "gh-calls.jsonl"))
+      ? fs
+          .readFileSync(path.join(f.home, "gh-calls.jsonl"), "utf8")
+          .trim()
+          .split("\n")
+          .map(JSON.parse)
+      : [];
+  return { run, calls, fakeGh };
+}
+test("refresh orchestration keeps fixed GitHub arguments, private storage and an isolated child environment", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  const runner = (command, args, options) => {
+    assert.equal(command, "/usr/bin/gh");
+    assert.ok(options.timeout > 0 && options.timeout <= 20000);
+    assert.equal(options.killSignal, "SIGKILL");
+    assert.deepEqual(Object.keys(options.env).sort(), [
+      "GH_CONFIG_DIR",
+      "GH_PROMPT_DISABLED",
+      "GIT_TERMINAL_PROMPT",
+      "HOME",
+      "PATH",
+    ]);
+    return spawnSync(hook.fakeGh, args, options);
+  };
+  const run = () =>
+    refreshSecrets(f.home, f.envFile, (home, envFile) =>
+      refreshGithub(home, envFile, runner),
+    );
+  for (const publisher of [token, "bad", '"unterminated']) {
+    f.put(`SILKBOARD_PUBLISH_TOKEN=${publisher}\nGH_TOKEN=${githubToken}\n`);
+    assert.equal(run().length, publisher === token ? 0 : 1);
+  }
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\n`);
+  assert.deepEqual(run(), []);
+  assert.deepEqual(run(), []);
+  assert.doesNotThrow(() =>
+    refreshGithub(f.home, f.envFile, () => ({
+      status: 1,
+      stderr: "not logged in to github.com\n",
+    })),
+  );
+  let attempts = 0;
+  assert.doesNotThrow(() =>
+    refreshGithub(f.home, f.envFile, () => {
+      attempts++;
+      if (attempts === 2) return { status: 0 };
+      return { status: 1, stderr: "not logged in to any hosts" };
+    }),
+  );
+  assert.throws(() =>
+    refreshGithub(f.home, f.envFile, (_cmd, args) =>
+      args[0] === "config"
+        ? { status: 0, stdout: "repeated-user\n" }
+        : { status: 0 },
+    ),
+  );
+  assert.throws(() =>
+    refreshGithub(f.home, f.envFile, () => ({
+      status: 0,
+      stdout: "--unsafe-user\n",
+    })),
+  );
+  for (const result of [
+    { error: Error("unavailable") },
+    { signal: "SIGTERM" },
+    { status: 1, stderr: "unexpected failure" },
+    { status: 2, stderr: "not logged in to any hosts" },
+  ]) {
+    assert.throws(() => refreshGithub(f.home, f.envFile, () => result));
+  }
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=bad\n`);
+  assert.equal(run().length, 1);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=bad\nGH_TOKEN="unterminated\n`);
+  assert.equal(run().length, 2);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  const config = path.join(f.home, ".config/gh/config.yml");
+  fs.writeFileSync(config, "version: 1\n", { mode: 0o600 });
+  assert.deepEqual(run(), []);
+  fs.chmodSync(config, 0o644);
+  assert.equal(run().length, 1);
+});
+test("bare refresh logs GitHub in using stdin only, reruns and rotates independently", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  execFileSync("git", [
+    "-C",
+    f.repo,
+    "config",
+    "core.sshCommand",
+    "ssh -i retained-deploy-key",
+  ]);
+  for (const value of [
+    githubToken,
+    githubToken,
+    "github_pat_" + "d".repeat(64),
+  ]) {
+    f.put(
+      `SILKBOARD_PUBLISH_TOKEN=${token}\nexport GH_TOKEN = '${value}' ignored trailing text\r\n`,
+    );
+    const result = hook.run({
+      GH_TOKEN: "ambient-credential",
+      GITHUB_TOKEN: "other-ambient-credential",
+      GH_DEBUG: "api",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout + result.stderr, "");
+    assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+    const calls = hook.calls();
+    assert.ok(calls.length > 0, "refresh must invoke GitHub CLI");
+    const call = calls.at(-1);
+    assert.deepEqual(call.args, [
+      "auth",
+      "login",
+      "--hostname",
+      "github.com",
+      "--with-token",
+      "--insecure-storage",
+    ]);
+    assert.equal(call.input, value + "\n");
+    assert.equal(JSON.stringify(call.args).includes(value), false);
+    assert.equal(JSON.stringify(call.env).includes(value), false);
+    assert.equal(call.env.GH_TOKEN, undefined);
+    assert.equal(call.env.GITHUB_TOKEN, undefined);
+    assert.equal(call.env.GH_DEBUG, undefined);
+  }
+  assert.equal(
+    execFileSync("git", ["-C", f.repo, "config", "core.sshCommand"], {
+      encoding: "utf8",
+    }).trim(),
+    "ssh -i retained-deploy-key",
+  );
+});
+test("removal clears multiple cached GitHub accounts without relying on network status", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  assert.equal(hook.run().status, 0);
+  fs.writeFileSync(
+    path.join(f.home, "gh-users.json"),
+    JSON.stringify(["first-user", "second-user"]),
+  );
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\n`);
+  const result = hook.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.existsSync(path.join(f.home, ".config/gh/hosts.yml")), false);
+  const removals = hook.calls().filter((call) => call.args.includes("--user"));
+  assert.deepEqual(
+    removals.map((call) => call.args.at(-1)),
+    ["first-user", "second-user"],
+  );
+  assert.equal(
+    hook.calls().some((call) => call.args.includes("status")),
+    false,
+  );
+});
+test("removing the GitHub token logs out locally and repeated absence succeeds", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  assert.equal(hook.run().status, 0);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\n`);
+  for (let i = 0; i < 2; i++) {
+    const result = hook.run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout + result.stderr, "");
+    assert.equal(
+      fs.existsSync(path.join(f.home, ".config/gh/hosts.yml")),
+      false,
+    );
+    assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+    assert.deepEqual(hook.calls().at(-1).args, [
+      "auth",
+      "logout",
+      "--hostname",
+      "github.com",
+    ]);
+  }
+});
+test("malformed selected GitHub input cannot skip or remove a valid publisher token", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  for (const value of [
+    "classic-token",
+    "github_pat_",
+    "github_pat_x$(touch OWNED)",
+    '"unterminated',
+    "",
+    "valid\nGH_TOKEN=",
+  ]) {
+    f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${value}\n`);
+    const result = hook.run();
+    assert.notEqual(result.status, 0);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /GitHub CLI secret refresh failed/);
+    assert.doesNotMatch(result.stderr, /publisher secret refresh failed/);
+    assert.equal(result.stderr.includes(value.trim() || token), false);
+    assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+  }
+  assert.equal(hook.calls().length, 0);
+  assert.equal(fs.existsSync(path.join(f.repo, "OWNED")), false);
+});
+test("GitHub failure is opaque and independent from publisher success; both failures are reported", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  fs.writeFileSync(path.join(f.home, "gh-fail"), "");
+  for (const publisher of [token, "bad-publisher-token"]) {
+    f.put(`SILKBOARD_PUBLISH_TOKEN=${publisher}\nGH_TOKEN=${githubToken}\n`);
+    const result = hook.run();
+    assert.notEqual(result.status, 0);
+    assert.equal(result.stdout, "");
+    assert.match(result.stderr, /GitHub CLI secret refresh failed/);
+    assert.equal(result.stderr.includes(githubToken), false);
+    assert.equal(result.stderr.includes(publisher), false);
+    assert.equal(fs.existsSync(f.tokenPath), publisher === token);
+    assert.equal(
+      /publisher secret refresh failed/.test(result.stderr),
+      publisher !== token,
+    );
+  }
+  assert.equal(hook.calls().length, 2);
+});
+test("invalid publisher tokens and paths do not block valid GitHub login", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  for (const publisher of ["not-valid", '"unterminated']) {
+    f.put(`SILKBOARD_PUBLISH_TOKEN=${publisher}\nGH_TOKEN=${githubToken}\n`);
+    const result = hook.run();
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /publisher secret refresh failed/);
+    assert.doesNotMatch(result.stderr, /GitHub CLI secret refresh failed/);
+    assert.equal(hook.calls().at(-1).input, githubToken + "\n");
+    assert.equal(fs.existsSync(f.tokenPath), false);
+  }
+  fs.chmodSync(path.dirname(f.configPath), 0o755);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  const result = hook.run();
+  assert.notEqual(result.status, 0);
+  assert.doesNotMatch(result.stderr, /GitHub CLI secret refresh failed/);
+  assert.equal(hook.calls().length, 3);
+});
+test("GitHub storage paths are private and unsafe paths do not affect publisher refresh", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  assert.equal(hook.run().status, 0);
+  const dir = path.join(f.home, ".config/gh");
+  const hosts = path.join(dir, "hosts.yml");
+  assert.equal(fs.statSync(dir).mode & 0o777, 0o700);
+  assert.equal(fs.statSync(hosts).mode & 0o777, 0o600);
+  fs.renameSync(hosts, hosts + ".saved");
+  fs.symlinkSync(hosts + ".saved", hosts);
+  const result = hook.run();
+  assert.notEqual(result.status, 0);
+  assert.equal(hook.calls().length, 1);
+  assert.equal(fs.readFileSync(hosts + ".saved", "utf8"), githubToken + "\n");
+  assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+  fs.unlinkSync(hosts);
+  fs.renameSync(hosts + ".saved", hosts);
+  fs.chmodSync(dir, 0o755);
+  assert.notEqual(hook.run().status, 0);
+  assert.equal(hook.calls().length, 1);
+});
+test("a stalled GitHub command is killed well inside the sixty-second hook budget", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const hook = hookFixture(f);
+  f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\nGH_TOKEN=${githubToken}\n`);
+  fs.writeFileSync(path.join(f.home, "gh-stall"), "");
+  const start = Date.now();
+  const result = hook.run();
+  assert.notEqual(result.status, 0);
+  assert.equal(result.error, undefined);
+  assert.ok(Date.now() - start < 35000);
+  assert.match(result.stderr, /GitHub CLI secret refresh failed/);
+  assert.equal(result.stderr.includes(githubToken), false);
+  assert.equal(fs.readFileSync(f.tokenPath, "utf8"), token + "\n");
+});
 test("configure is rerunnable, signs only the clone, and refresh rotates privately", (t) => {
   const f = fixture(t);
   for (let i = 0; i < 2; i++)
@@ -140,31 +492,15 @@ test("configuration preserves existing choices and rejects unsafe key/config pat
 test("refresh shell hook works twice in the exact bare environment and keeps failures opaque", (t) => {
   const f = fixture(t);
   assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
-  const runtime = path.join(
-    f.home,
-    ".local/share/silkboard-tools/node-v24.14.1/bin",
-  );
-  fs.mkdirSync(runtime, { recursive: true });
-  fs.symlinkSync(node, path.join(runtime, "node"));
+  const hook = hookFixture(f);
   f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\n`);
   for (let i = 0; i < 2; i++) {
-    const out = spawnSync(
-      "/bin/bash",
-      [path.join(root, ".bombyx/refresh-secrets.sh")],
-      {
-        env: { ...f.env, PATH: "/usr/local/bin:/usr/bin:/bin" },
-        encoding: "utf8",
-        input: "",
-      },
-    );
+    const out = hook.run();
     assert.equal(out.status, 0);
     assert.equal(out.stdout + out.stderr, "");
   }
   f.put("SILKBOARD_PUBLISH_TOKEN=private-invalid-input\n");
-  const out = spawnSync(node, [path.join(root, ".bombyx/refresh-cli.mjs")], {
-    env: f.env,
-    encoding: "utf8",
-  });
+  const out = hook.run();
   assert.notEqual(out.status, 0);
   assert.equal(out.stdout, "");
   assert.equal(out.stderr.includes("private-invalid-input"), false);
@@ -310,6 +646,7 @@ esac`,
     "ssh -i retained-deploy-key",
   ]);
   const env = { ...f.env, PATH: fake + ":" + process.env.PATH };
+  hookFixture(f);
   for (let i = 0; i < 2; i++) {
     const out = spawnSync(
       "/bin/bash",
