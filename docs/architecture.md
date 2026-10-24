@@ -1,6 +1,7 @@
 # Silkboard architecture
 
-Updated 2026-10-23 for the agreed unified starting view and publish-only progress.
+Updated 2026-10-24 for the agreed task-plan reporting scope, separate from
+current publish-only progress implementation.
 The [roadmap](roadmap.md) controls delivery scope. This replaces the original
 proposal's task fetching, claims, handoff uploads and durable sync queue;
 those capabilities are not part of the agreed milestone or implemented API.
@@ -118,6 +119,27 @@ It never reads transcript paths, prompts, source files or tool logs. The hook
 returns no instructions or execution permission. Existing validation and Git
 summary hooks remain separate, and user hook trust still requires review.
 
+## Planned task-plan reporting
+
+Milestone 5 adds an owner-visible graph of an agent's evolving plan. The
+[task-plan contract](task-plan-contract.md), owned by #73, specifies stable
+identity, prerequisite edges, state, bounded full snapshots and received
+history. It is not an implemented API or database migration. Existing progress
+payloads, installed hooks and schema 3 remain unchanged by the contract.
+
+The owner selected continuity through an explicit local session handoff,
+multiple active steps and reopening with history. One reporting agent
+maintains each task; a monotonic reporting generation fences earlier sessions.
+A complete later snapshot repairs missed reports without dashboard reads or
+an outbound queue. Local task state and counters are not dashboard tasks,
+repository mounts, handoff uploads or execution permission.
+
+Publishers retain their existing project-scoped write authority. The owner
+alone reads current and historical graphs through private authenticated APIs
+once implemented. Reported completion is not verification, approval to merge
+or release eligibility. API/storage, CLI, Codex integration, UI, reconciliation,
+combined verification and production dogfooding are separate milestone issues.
+
 ## Network and untrusted content
 
 Tailscale controls private HTTPS reachability; application authentication
@@ -170,6 +192,7 @@ history, live read denial and application restart persistence. A tagged upgrade
 with existing data and post-upgrade owner/feed acceptance remain #39.
 The owner deferred independent backups, isolated restore and application
 recovery acceptance to #52; those no longer block #39. Preserve updater
-credentials/privileges and unrelated services. Scope after milestone 2,
-Claude integration and the independent milestone-1 recovery gaps remain as
-recorded in the roadmap; this document grants no new deployment authority.
+credentials/privileges and unrelated services. Milestone 5 task-plan work,
+separate Claude integration and the independent milestone-1 recovery gaps
+remain as recorded in the roadmap; this document grants no new deployment
+authority.
