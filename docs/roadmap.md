@@ -4,10 +4,11 @@ Status: Milestone 1 in progress; the minimal application is implemented.
 Release gates, production deployment, automatic upgrades and live rollback/retry
 are verified. Updater reboot recovery and the remaining evidence below are pending.
 Milestone 2 is agreed independently: agent progress dogfooding.
-Milestone 3 covers the owner-agreed basic UI improvements.
+Milestone 3 covers the owner-agreed basic UI improvements. Milestone 4 covers
+build efficiency; milestone 5 adds evolving task-progress graphs.
 
 This roadmap replaces the original milestone list in the architecture proposal.
-Milestones follow the owner's priorities; scope after milestone 3 is not set.
+Milestones follow the owner's priorities; scope after milestone 5 is not set.
 
 ## 1. Complete deployment pipeline with a minimal status page
 
@@ -201,7 +202,41 @@ its full message and session identity beneath the row. Keep owner-only reads
 and the existing publish-only authority boundaries. Other UI priorities will
 be agreed issue by issue.
 
+## 4. Build efficiency
+
+The owner broadened the existing production build-efficiency milestone to
+include local development and CI optimizations on 2026-10-24. The
+[GitHub milestone](https://github.com/breki/silkboard/milestone/4) owns its
+individually agreed issues. This does not weaken validation, release admission
+or cache trust boundaries, and does not block milestone 5's contract work.
+
+## 5. Task-progress graphs
+
+Agreed with the owner on 2026-10-24. The
+[GitHub milestone](https://github.com/breki/silkboard/milestone/5) owns delivery;
+[#73](https://github.com/breki/silkboard/issues/73) defines the
+[reporting contract](task-plan-contract.md) before API, publisher and UI work.
+The contract is design documentation, not implemented functionality.
+
+- Display an agent's evolving task-specific directed plan. Arrows show step
+  prerequisites; steps can be pending, active, done or blocked. Several steps
+  may be active at once. Step selection reveals its description and report.
+- Keep the same graph across native sessions through an explicit local
+  reporting-state handoff. Independent attempts remain separate. Reopen a
+  completed step under its existing identity and retain earlier completions
+  in received history. Show plan revisions and last-report freshness clearly.
+- Extend structured publishing, private storage/APIs and the responsive owner
+  view, with Codex first. Full current-plan snapshots repair missed updates
+  without a daemon or durable outgoing queue. Reporting remains publish-only;
+  GitHub remains the task tracker, and Silkboard gains no execution, repository,
+  VM-control or agent task-fetch authority.
+- The standalone interactive HTML mockup is illustrative, not evidence that
+  its completed example steps have been implemented. Delivery includes normal
+  validation/review and a separately authorized release with real phone
+  dogfooding. Schema changes need compatible recovery before rollout.
+
 ## Later milestones
 
-Milestones after 3 are to be defined with the owner. Task coordination and persistent handoff
-sharing are not part of the agreed agent progress milestone.
+Milestones after 5 are to be defined with the owner. Task coordination and
+dashboard-hosted handoff uploads remain outside the agreed publish-only scope.
+A local handoff of current reporting state does not add either capability.

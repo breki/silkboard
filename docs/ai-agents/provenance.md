@@ -604,3 +604,22 @@ override to 7.30.1, published `2026-10-15T14:18:31.283Z`; the exact
 [exception record](../dependency-security-exceptions.md) links the advisories
 and preserves registry/integrity checks. This is test/build tooling, with no
 production installation or release implied.
+
+## Evolving task-progress graphs — 2026-10-24
+
+The owner requested directed task-progress graphs showing required steps,
+completed work and current activity, selected an agent's evolving task-specific
+plan, requested the standalone interactive mockup, and authorized milestone 5
+and issues #73–#81. The prototype's task completion states are fictional.
+While starting #73, the owner selected the same graph across sessions through
+an explicit handoff, multiple active steps and reopening the same step while
+retaining earlier completions in history.
+
+The [reporting contract](../task-plan-contract.md) translates those choices into
+a bounded full-snapshot design, separate ordering/plan revision/reporting
+generation, immutable received history and private owner reads. Numeric limits
+and wire rules are technical design choices for review, not additional
+owner-supplied requirements. Current progress payloads, schema 3, installed
+hooks and production remain unchanged. Implementation and live dogfooding
+follow the linked milestone issues; the contract grants no merge, release or
+new dashboard execution authority.

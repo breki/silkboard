@@ -13,7 +13,9 @@ It must run in a dedicated Raspberry Pi VM and automatically upgrade from
 eligible verified, tagged GitHub revisions, with health checks and recovery.
 Milestone 2 is agreed: publish-only agent progress dogfooding, Codex first.
 GitHub remains the task tracker. Agents never fetch dashboard tasks/content
-or receive execution permission from Silkboard. Scope after milestone 2 is unset.
+or receive execution permission from Silkboard. Milestones 3–5 cover the
+owner-agreed UI, build-efficiency and task-plan work in the roadmap; scope
+after milestone 5 is unset.
 
 ## Working agreement
 
