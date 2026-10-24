@@ -717,6 +717,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "silkboard-plan"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "silkboard-publish"
 version = "0.1.0"
 dependencies = [
@@ -749,6 +757,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "silkboard-plan",
  "subtle",
  "tokio",
  "tower",

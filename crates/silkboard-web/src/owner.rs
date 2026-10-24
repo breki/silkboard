@@ -2,6 +2,7 @@
 
 mod feed;
 mod http;
+mod plans;
 mod publishers;
 mod setup;
 mod storage;

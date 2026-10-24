@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Store bounded evolving task-plan snapshots with fenced writer handoff,
+  received history and owner-only private reads, alongside existing progress.
+
 - Preserve compatible CI Rust dependency caches across unrelated tooling
   changes while retaining cache-management and build-configuration inputs.
 

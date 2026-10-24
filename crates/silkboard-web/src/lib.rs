@@ -10,6 +10,7 @@ use serde::Serialize;
 use tower_http::services::{ServeDir, ServeFile};
 
 pub mod owner;
+pub mod plans;
 pub mod progress;
 mod secrets;
 
@@ -47,7 +48,9 @@ pub fn create_progress_router(
     frontend_path: &Path,
     store: progress::ProgressStore,
 ) -> Router {
-    create_router(frontend_path).merge(progress::routes(store))
+    create_router(frontend_path)
+        .merge(plans::routes(store.clone()))
+        .merge(progress::routes(store))
 }
 
 /// Construct the status application's HTTP routes and static file service.

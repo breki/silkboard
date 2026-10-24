@@ -116,6 +116,7 @@ impl ProgressStore {
              CREATE INDEX IF NOT EXISTS events_named
              ON events(session,sequence DESC) WHERE session_name IS NOT NULL",
         )?;
+        crate::plans::schema::initialize(&tx)?;
         tx.commit()?;
         Ok(Self(Arc::new(Mutex::new(connection))))
     }

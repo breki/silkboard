@@ -639,3 +639,22 @@ the jobs API returned empty step metadata even when the completed log showed
 full validation and ARM64 lint. A premature stall inference caused one retry.
 The [working rule](working-rules.md) now distinguishes missing telemetry from
 evidence of stopped execution; no gate or merge requirement is relaxed.
+
+## Task-plan persistence and private APIs — 2026-10-24
+
+Issue #75 implements the previously agreed #73 wire contract using a shared
+`silkboard-plan` model and additive SQLite component version 1, retaining base
+schema 3. The separate component version is an implementation choice to keep
+retained v0.6.0 progress/owner paths compatible; it does not authorize future
+schema changes or a production rollout. Normalized snapshots are also capped
+at 256 KiB so direct library writes cannot bypass the transport bound. No new
+registry dependency versions are adopted.
+
+Local route, restart and backup/restore tests check private access, ordering,
+received history and authority invalidation. A separate loopback process drill
+used actual signed v0.6.0 source at `07026bbd0d6a1feff9d04a4e47856d1611afa00d`
+against fixture data containing plan tables: ordinary progress/feed and legacy
+snapshot/restore worked, new-code reads retained plans, and restored credentials
+were denied. The old binary is compatibility-test evidence, not a clean current
+security-audit result. No live production migration/recovery was performed.
+See the [API guide](../task-plan-api.md) for bounds and remaining integrations.

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/silkboard-web",
+    "crates/silkboard-plan",
     "crates/silkboard-updater",
     "crates/silkboard-publish",
     "xtask",
