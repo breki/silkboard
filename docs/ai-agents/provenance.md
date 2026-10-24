@@ -587,3 +587,20 @@ own page reached from that menu. Implementation uses normal `/status` and `/`
 links with an explicit status shell route, retaining public status and
 owner-only administration. Component, HTTP and browser tests establish local
 behavior; production rollout remains separate.
+
+## Tokio I/O-safety repair — 2026-10-24
+
+The owner authorized a separate Tokio security fix to unblock #70 and its
+merge. RustSec RUSTSEC-2026-0386 lists Tokio 1.53.3 as patched; crates.io
+reports publication at `2026-10-13T20:51:46.498182Z`. The exact
+[security exception](../dependency-security-exceptions.md) records this
+short-age adoption. The regression test failed before the exception and
+passes with only that package/version/publication second admitted. Advisory
+checks remain enabled; this record does not establish production deployment.
+
+The subsequent npm audit rejected existing jsdom/Undici 7.30.0 for three
+upstream advisories. The same prerequisite repair updates only the existing
+override to 7.30.1, published `2026-10-15T14:18:31.283Z`; the exact
+[exception record](../dependency-security-exceptions.md) links the advisories
+and preserves registry/integrity checks. This is test/build tooling, with no
+production installation or release implied.
