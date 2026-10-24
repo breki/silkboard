@@ -120,7 +120,7 @@ jobs:
         id: rust_cache
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         env:
-          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/**') }}
+          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/src/ci_cache.rs', 'xtask/src/lib.rs', 'xtask/src/main.rs') }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: cargo xtask ci-cache-plan >> "$GITHUB_OUTPUT"
@@ -207,7 +207,7 @@ jobs:
         id: rust_cache_prune
         if: steps.rust_cache.outputs.enabled == 'true' && ((steps.normal_cache.outputs.cache-hit != 'true' && steps.normal_pr_cache.outputs.cache-hit != 'true') || (steps.coverage_cache.outputs.cache-hit != 'true' && steps.coverage_pr_cache.outputs.cache-hit != 'true') || (steps.arm64_cache.outputs.cache-hit != 'true' && steps.arm64_pr_cache.outputs.cache-hit != 'true'))
         env:
-          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/**') }}
+          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/src/ci_cache.rs', 'xtask/src/lib.rs', 'xtask/src/main.rs') }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_NORMAL_KEY: ${{ steps.rust_cache.outputs.normal_local }}

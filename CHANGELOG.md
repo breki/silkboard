@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preserve compatible CI Rust dependency caches across unrelated tooling
+  changes while retaining cache-management and build-configuration inputs.
+
 ## 0.6.0 - 2026-10-23
 
 - Render multiline event Markdown safely and accept line breaks/tabs in
