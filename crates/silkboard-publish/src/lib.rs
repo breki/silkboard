@@ -36,7 +36,7 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Usage => "usage: silkboard-publish {publish|codex-hook|plan start|plan publish|plan handoff} --config PATH (JSON on stdin)",
+            Self::Usage => "usage: silkboard-publish {publish|codex-hook|codex-plan start|codex-plan publish|plan start|plan publish|plan handoff} --config PATH (JSON on stdin)",
             Self::Input => "invalid publisher input or configuration",
             Self::PrivateFile => "publisher requires readable private files and directories",
             Self::State => "publisher working state unavailable or incompatible",
@@ -62,7 +62,7 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         }
         [help] if help == "--help" => {
             return Ok(
-                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nsilkboard-publish plan {start|publish|handoff} --config PATH\nRead one JSON progress/plan report, handoff or native Codex hook payload from stdin. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
+                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nsilkboard-publish codex-plan {start|publish} --config PATH\nsilkboard-publish plan {start|publish|handoff} --config PATH\nRead one JSON progress/plan report, handoff or native Codex hook payload from stdin. codex-plan derives identity from operator Codex configuration and CODEX_THREAD_ID. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
             );
         }
         [version] if version == "--version" => {
@@ -88,6 +88,11 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         }
         [plan, command, flag, path] if plan == "plan" && flag == "--config" => {
             return plans::run(command, Path::new(path), input);
+        }
+        [plan, command, flag, path]
+            if plan == "codex-plan" && flag == "--config" =>
+        {
+            return plans::run_codex(command, Path::new(path), input);
         }
         _ => return Err(Error::Usage),
     }

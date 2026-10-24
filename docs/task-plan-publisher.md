@@ -2,9 +2,10 @@
 
 Implemented for [#76](https://github.com/breki/silkboard/issues/76) in the
 standalone Rust publisher. This is locally verified functionality, not a
-production installation. Automatic Codex plan capture remains
+production installation. The explicit [Codex workflow](ai-agents/codex-plans.md)
+and `codex-plan` adapter implement
 [#77](https://github.com/breki/silkboard/issues/77); current turn-summary hooks
-continue unchanged. The [reporting contract](task-plan-contract.md) defines
+continue independently. The [reporting contract](task-plan-contract.md) defines
 graph semantics and the [private API](task-plan-api.md) defines server behavior.
 GitHub remains the task tracker. Reported completion grants no execution,
 merge or release permission.
@@ -18,14 +19,15 @@ configuration and project-scoped publish-only token. Plan input cannot choose
 a destination, credential, filesystem path or command to execute.
 
 Upgrade the server to a reviewed release containing #75 before using these
-commands, then install a compatible publisher containing #76. Neither issue
-has a dedicated released version yet. Preserve private client state during
+commands, then install a compatible publisher containing #76 and, for the
+Codex adapter, #77. These features have no dedicated released version yet.
+Preserve private client state during
 replacement. Verify that `--help` lists `plan {start|publish|handoff}`; the
 publisher package version alone does not identify the server release.
 Older servers cannot ingest plans; rejection is not success.
 Existing single-line/multiline progress and Codex lifecycle reports remain
 compatible and use their existing separate counters. Publishing plans does
-not enable the future graph page, automatic plan reporting or hook trust.
+not enable the future graph page, Codex's separate plan opt-in or hook trust.
 
 ## Publish a complete current plan
 

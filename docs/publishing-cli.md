@@ -109,8 +109,9 @@ Automatic Codex reporting retains its first-sentence summary policy.
 The [task-plan commands](task-plan-publisher.md) publish complete bounded graphs
 and explicitly hand off the reporting role between native sessions. They use
 the same private configuration and transport, with separate task-local working
-state and counters. Automatic Codex plan reporting remains #77; existing
-summary/lifecycle hooks do not call these commands yet.
+state and counters. The [Codex workflow](ai-agents/codex-plans.md) uses
+`codex-plan {start|publish}` with explicit operator opt-in and native identity.
+Existing summary/lifecycle hooks never infer or complete a task graph.
 
 ## Counters and integration
 
