@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Preserve compatible CI Rust dependency caches across unrelated tooling
+  changes while retaining cache-management and build-configuration inputs.
+
 - Update Tokio to 1.53.3 to address the AsyncFd I/O-safety advisory
   RUSTSEC-2026-0386, and patch Undici in frontend test tooling without
   relaxing audit requirements.
