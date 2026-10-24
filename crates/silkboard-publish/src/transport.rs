@@ -19,6 +19,22 @@ pub(super) fn send(
     event: &ProgressEvent,
     token: &str,
 ) -> Result<(), Error> {
+    let body = serde_json::to_vec(event).map_err(|_| Error::Input)?;
+    let bytes = post(config, "progress", body, token)?;
+    let ack: Acknowledgement =
+        serde_json::from_slice(&bytes).map_err(|_| Error::Acknowledgement)?;
+    if ack.event_id != event.event_id || ack.received_at < 0 {
+        return Err(Error::Acknowledgement);
+    }
+    Ok(())
+}
+
+fn post(
+    config: &Config,
+    route: &str,
+    body: Vec<u8>,
+    token: &str,
+) -> Result<Vec<u8>, Error> {
     let agent = ureq::Agent::config_builder()
         .timeout_global(Some(Duration::from_secs(3)))
         .max_redirects(0)
@@ -27,10 +43,9 @@ pub(super) fn send(
         .http_status_as_error(false)
         .build()
         .new_agent();
-    let body = serde_json::to_vec(event).map_err(|_| Error::Input)?;
     let mut response = agent
         .post(format!(
-            "{}/api/projects/{}/progress",
+            "{}/api/projects/{}/{route}",
             config.endpoint, config.project
         ))
         .header("Authorization", format!("Bearer {token}"))
@@ -44,15 +59,27 @@ pub(super) fn send(
         409 => return Err(Error::Conflict),
         _ => return Err(Error::Rejected),
     }
-    let bytes = response
+    response
         .body_mut()
         .with_config()
         .limit(1024)
         .read_to_vec()
-        .map_err(|_| Error::Acknowledgement)?;
-    let ack: Acknowledgement =
+        .map_err(|_| Error::Acknowledgement)
+}
+
+pub(super) fn send_plan(
+    config: &Config,
+    snapshot: &silkboard_plan::Snapshot,
+    token: &str,
+) -> Result<(), Error> {
+    let body = serde_json::to_vec(snapshot).map_err(|_| Error::Input)?;
+    let bytes = post(config, "plans", body, token)?;
+    let ack: silkboard_plan::Acknowledgement =
         serde_json::from_slice(&bytes).map_err(|_| Error::Acknowledgement)?;
-    if ack.event_id != event.event_id || ack.received_at < 0 {
+    if ack.task_id != snapshot.task_id
+        || ack.sequence != snapshot.sequence
+        || ack.received_at < 0
+    {
         return Err(Error::Acknowledgement);
     }
     Ok(())

@@ -97,14 +97,7 @@ pub(super) fn allocate(
     ))
     .map_err(|_| Error::Input)?;
     let key = hex(&Sha256::digest(identity));
-    let lock_path = config.state_dir.join(format!("{key}.lock"));
-    let mut options = OpenOptions::new();
-    options.read(true).write(true).create(true).truncate(false);
-    #[cfg(unix)]
-    options.mode(0o600);
-    let lock = options.open(&lock_path).map_err(|_| Error::State)?;
-    check(&lock, &lock_path)?;
-    lock.try_lock().map_err(|_| Error::Busy)?;
+    let _lock = lock(&config.state_dir, &key)?;
     let path = config.state_dir.join(format!("{key}.json"));
     let previous = match path.symlink_metadata() {
         Ok(_) => serde_json::from_slice::<Counter>(&read_private(&path, 1024)?)
@@ -132,24 +125,47 @@ pub(super) fn allocate(
     if serde_json::to_vec(&event).map_err(|_| Error::Input)?.len() > 8192 {
         return Err(Error::Input);
     }
-    let temporary = config.state_dir.join(format!(".{key}.{}", event.event_id));
+    replace(
+        &path,
+        &serde_json::to_vec(&Counter {
+            schema: 1,
+            sequence,
+            parent: event.report.parent_session_id.clone(),
+        })
+        .map_err(|_| Error::State)?,
+    )?;
+    Ok(event)
+}
+
+/// Keep lock files stable across atomic state replacements.
+pub(super) fn lock(directory_path: &Path, key: &str) -> Result<File, Error> {
+    directory(directory_path)?;
+    let path = directory_path.join(format!("{key}.lock"));
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true).truncate(false);
+    #[cfg(unix)]
+    options.mode(0o600);
+    let file = options.open(&path).map_err(|_| Error::State)?;
+    check(&file, &path)?;
+    file.try_lock().map_err(|_| Error::Busy)?;
+    Ok(file)
+}
+
+/// Write private, synchronized state; callers hold the task/session lock.
+pub(super) fn replace(path: &Path, bytes: &[u8]) -> Result<(), Error> {
+    let directory = path.parent().ok_or(Error::State)?;
+    let temporary = directory.join(format!(".publisher-{}", random_id()?));
     let persist = || -> Result<(), Error> {
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
         #[cfg(unix)]
         options.mode(0o600);
         let mut file = options.open(&temporary).map_err(|_| Error::State)?;
-        let bytes = serde_json::to_vec(&Counter {
-            schema: 1,
-            sequence,
-            parent: event.report.parent_session_id.clone(),
-        })
-        .map_err(|_| Error::State)?;
-        file.write_all(&bytes)
+        file.write_all(bytes)
             .and_then(|()| file.sync_all())
             .map_err(|_| Error::State)?;
-        fs::rename(&temporary, &path).map_err(|_| Error::State)?;
-        File::open(&config.state_dir)
+        fs::rename(&temporary, path).map_err(|_| Error::State)?;
+        File::open(directory)
             .and_then(|f| f.sync_all())
             .map_err(|_| Error::State)?;
         Ok(())
@@ -158,6 +174,5 @@ pub(super) fn allocate(
     if result.is_err() {
         let _ = fs::remove_file(&temporary);
     }
-    result?;
-    Ok(event)
+    result
 }

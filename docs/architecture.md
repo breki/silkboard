@@ -127,8 +127,10 @@ identity, prerequisite edges, state, bounded full snapshots and received
 history. The [private API and storage](task-plan-api.md) are implemented for
 #75 and locally verified. Additive plan tables have component version 1; the
 base schema remains 3 for compatibility with retained v0.6.0. Existing progress
-payloads and installed hooks remain unchanged. No production migration is
-claimed.
+payloads and installed hooks remain unchanged. The
+[installed plan commands](task-plan-publisher.md) in #76 allocate private
+task-local sequence/revision/generation state and support an explicit local
+writer handoff. No production migration or publisher installation is claimed.
 
 The owner selected continuity through an explicit local session handoff,
 multiple active steps and reopening with history. One reporting agent
@@ -139,7 +141,7 @@ repository mounts, handoff uploads or execution permission.
 
 Publishers retain their existing project-scoped write authority. The owner
 alone reads current and historical snapshots through private authenticated APIs. Reported completion is not verification, approval to merge
-or release eligibility. CLI, Codex integration, UI, reconciliation,
+or release eligibility. Codex integration, UI, reconciliation,
 combined verification and production dogfooding are separate milestone issues.
 
 The [presentation design](task-plan-design.md), owned by #74, keeps Events as

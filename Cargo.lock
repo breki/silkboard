@@ -733,6 +733,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "silkboard-plan",
  "silkboard-web",
  "tokio",
  "ureq",

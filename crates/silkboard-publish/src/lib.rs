@@ -1,7 +1,8 @@
-//! Installed, best-effort progress publishing without an outgoing queue.
+//! Installed, best-effort progress and task-plan publishing without an outgoing queue.
 
 mod codex;
 mod model;
+mod plans;
 mod state;
 mod transport;
 
@@ -16,15 +17,15 @@ pub enum Error {
     Input,
     /// A private file/directory was inaccessible, unsafe or malformed.
     PrivateFile,
-    /// Counter persistence failed or incompatible state was found.
+    /// Working-state persistence failed or incompatible state was found.
     State,
-    /// Another process is allocating this session's sequence.
+    /// Another process is changing this session or task state.
     Busy,
     /// Delivery did not complete within the network budget.
     Network,
     /// The publisher credential was not accepted.
     Unauthorized,
-    /// The server rejected a conflicting event/session identity.
+    /// Local writer binding or server ordering/identity conflicted.
     Conflict,
     /// The server returned another unsuccessful HTTP status.
     Rejected,
@@ -35,16 +36,16 @@ pub enum Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Usage => "usage: silkboard-publish publish --config PATH (JSON report on stdin)",
+            Self::Usage => "usage: silkboard-publish {publish|codex-hook|plan start|plan publish|plan handoff} --config PATH (JSON on stdin)",
             Self::Input => "invalid publisher input or configuration",
             Self::PrivateFile => "publisher requires readable private files and directories",
-            Self::State => "publisher counter state unavailable or incompatible",
+            Self::State => "publisher working state unavailable or incompatible",
             Self::Busy => "publisher session busy; report was not sent",
-            Self::Network => "progress delivery failed or timed out; no automatic retry",
+            Self::Network => "report delivery failed or timed out; no automatic retry",
             Self::Unauthorized => "publisher credential not accepted",
-            Self::Conflict => "progress identity conflict; check session configuration",
-            Self::Rejected => "progress report rejected by server",
-            Self::Acknowledgement => "progress acknowledgement invalid; delivery unconfirmed",
+            Self::Conflict => "report conflict; check session or task state",
+            Self::Rejected => "publisher report rejected by server",
+            Self::Acknowledgement => "publisher acknowledgement invalid; delivery unconfirmed",
         })
     }
 }
@@ -61,7 +62,7 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         }
         [help] if help == "--help" => {
             return Ok(
-                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nRead one JSON report or native Codex hook payload from stdin. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
+                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nsilkboard-publish plan {start|publish|handoff} --config PATH\nRead one JSON progress/plan report, handoff or native Codex hook payload from stdin. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
             );
         }
         [version] if version == "--version" => {
@@ -85,6 +86,9 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
             let _ = codex::run(Path::new(path), input);
             return Ok("{}");
         }
+        [plan, command, flag, path] if plan == "plan" && flag == "--config" => {
+            return plans::run(command, Path::new(path), input);
+        }
         _ => return Err(Error::Usage),
     }
     Ok("Progress acknowledged")
@@ -100,6 +104,12 @@ fn configuration(path: &Path) -> Result<model::Config, Error> {
 
 fn publish(config: &model::Config, report: model::Report) -> Result<(), Error> {
     report.validate()?;
+    let token = token(config)?;
+    let event = state::allocate(config, report)?;
+    transport::send(config, &event, &token)
+}
+
+fn token(config: &model::Config) -> Result<String, Error> {
     let token_bytes = state::read_private(&config.token_file, 66)?;
     let token =
         std::str::from_utf8(&token_bytes).map_err(|_| Error::PrivateFile)?;
@@ -111,6 +121,5 @@ fn publish(config: &model::Config, report: model::Report) -> Result<(), Error> {
     {
         return Err(Error::PrivateFile);
     }
-    let event = state::allocate(config, report)?;
-    transport::send(config, &event, token)
+    Ok(token.to_owned())
 }

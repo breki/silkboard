@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Publish evolving task plans from the standalone CLI with synchronized local
+  counters, automatic definition revisions and explicit writer handoff.
+
 - Store bounded evolving task-plan snapshots with fenced writer handoff,
   received history and owner-only private reads, alongside existing progress.
 

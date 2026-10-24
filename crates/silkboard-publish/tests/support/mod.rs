@@ -71,6 +71,14 @@ pub fn report() -> Value {
 
 pub fn server(
     count: usize,
+    respond: impl FnMut(Value) -> (u16, String) + Send + 'static,
+) -> (String, thread::JoinHandle<Vec<Value>>) {
+    server_at(count, "progress", respond)
+}
+
+pub fn server_at(
+    count: usize,
+    route: &'static str,
     mut respond: impl FnMut(Value) -> (u16, String) + Send + 'static,
 ) -> (String, thread::JoinHandle<Vec<Value>>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -111,9 +119,9 @@ pub fn server(
             let headers = std::str::from_utf8(&bytes[..split])
                 .unwrap()
                 .to_ascii_lowercase();
-            assert!(headers.starts_with(
-                "post /api/projects/silkboard/progress http/1.1\r\n"
-            ));
+            assert!(headers.starts_with(&format!(
+                "post /api/projects/silkboard/{route} http/1.1\r\n"
+            )));
             assert!(headers.contains(&format!(
                 "authorization: bearer {}\r\n",
                 "a".repeat(64)

@@ -3,8 +3,9 @@
 Status: milestone 5 design contract for
 [issue #73](https://github.com/breki/silkboard/issues/73).
 The storage and private APIs are implemented for [#75](task-plan-api.md) and
-locally verified. CLI reporting, local handoff, Codex integration and the owner
-graph page remain planned; no production rollout is claimed.
+locally verified. The [installed publisher and local handoff](task-plan-publisher.md)
+are implemented for #76. Codex plan capture and the owner graph page remain
+planned; no production rollout is claimed.
 The existing [progress API](progress-ingestion.md) remains unchanged.
 
 ## Agreed behavior and authority
@@ -320,8 +321,9 @@ and recovery policy remains [#52](https://github.com/breki/silkboard/issues/52).
 migration/recovery compatibility; #76 extends the installed publisher; #77
 integrates actual Codex plan reporting; #78 implements the owner view; #79
 exercises reconciliation/freshness; #80 owns combined verification; #81 owns
-an authorized release and real dogfooding. Storage/APIs are locally implemented;
-the later integrations remain future work. Current turn-summary hooks do not
+an authorized release and real dogfooding. Storage/APIs and installed plan
+commands are locally implemented; the later integrations remain future work.
+Current turn-summary hooks do not
 expose complete plans.
 
 A new data schema needs explicit compatibility and recovery handling before

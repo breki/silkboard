@@ -2,8 +2,9 @@
 
 Implemented for [#75](https://github.com/breki/silkboard/issues/75), with local
 verification only. This does not install a production migration. The installed
-publisher, Codex hooks and owner pages do not yet send or display plans; those
-are separate milestone 5 issues. The [wire contract](task-plan-contract.md)
+publisher now has [explicit plan commands](task-plan-publisher.md) in #76;
+Codex hooks and owner pages do not yet send or display plans. Those are separate
+milestone 5 issues. The [wire contract](task-plan-contract.md)
 defines fields, graph validation, ordering and writer handoff.
 
 ## Publishing
@@ -29,7 +30,7 @@ Both encoded request and normalized snapshot must fit 262,144 bytes. All
 individual field, node and edge limits still apply. Existing progress requests
 retain their separate 8,192-byte limit. Eight plan requests may be admitted at
 once; database work runs off the async executor. Delivery retries and local
-writer-state management belong to the future publisher integration.
+writer-state management are described in the publisher command guide.
 
 ## Owner reads
 
