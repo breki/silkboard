@@ -216,6 +216,7 @@ fn verify_versions(
         // Exact urgent fixes only; no configurable bypass. See the security
         // exception record for advisories and observed registry timestamps.
         let security_fix_date = match (*npm, name.as_str(), version.as_str()) {
+            (false, "tokio", "1.53.3") => Some("2026-10-13T20:51:46.498182Z"),
             (false, "rustls", "0.23.46") => Some("2026-10-14T09:54:15.075873Z"),
             (false, "rustls-webpki", "0.103.16") => {
                 Some("2026-10-20T08:58:28.008618Z")
@@ -246,6 +247,7 @@ fn verify_versions(
                 Some("2026-10-15T14:41:14.210Z")
             }
             (true, "vitest", "4.1.12") => Some("2026-10-15T14:51:24.991Z"),
+            (true, "undici", "7.30.1") => Some("2026-10-15T14:18:31.283Z"),
             (true, "dompurify", "3.4.17") => Some("2026-10-12T12:41:28.880Z"),
             _ => None,
         };
@@ -704,8 +706,9 @@ mod tests {
         );
     }
     #[test]
-    fn only_exact_tls_distrust_fixes_can_use_short_cooldown() {
+    fn only_exact_cargo_security_fixes_can_use_short_cooldown() {
         for (name, version, date) in [
+            ("tokio", "1.53.3", "2026-10-13T20:51:46.498182Z"),
             ("rustls-webpki", "0.103.16", "2026-10-20T08:58:28.008618Z"),
             ("webpki-roots", "1.0.10", "2026-10-19T20:11:32.333071Z"),
         ] {
@@ -817,6 +820,41 @@ mod tests {
                 &[(true, "unlisted".into(), "4.1.12".into())],
                 &claims,
                 timestamp("2026-10-17T00:00:00Z").unwrap()
+            )
+            .is_err()
+        );
+    }
+    #[test]
+    fn exact_undici_fix_preserves_cooldown_and_integrity_checks() {
+        let date = "2026-10-15T14:18:31.283Z";
+        let published = timestamp(date).unwrap();
+        let check = |name: &str, version: &str, date: &str, now| {
+            let (doc, claims) = npm_security_document(name, version, date);
+            verify_versions(
+                &doc,
+                &[(true, name.into(), version.into())],
+                &claims,
+                now,
+            )
+        };
+        assert!(check("undici", "7.30.1", date, published + 86400).is_ok());
+        assert!(check("undici", "7.30.1", date, published - 1).is_err());
+        for (name, version, date) in [
+            ("other", "7.30.1", date),
+            ("undici", "7.30.0", date),
+            ("undici", "7.30.2", date),
+            ("undici", "7.30.1", "2026-10-15T14:18:32Z"),
+        ] {
+            assert!(check(name, version, date, published + 86400).is_err());
+        }
+        let (mut doc, claims) = npm_security_document("undici", "7.30.1", date);
+        doc["versions"]["7.30.1"]["dist"]["integrity"] = json!("sha512-other");
+        assert!(
+            verify_versions(
+                &doc,
+                &[(true, "undici".into(), "7.30.1".into())],
+                &claims,
+                published + 86400,
             )
             .is_err()
         );

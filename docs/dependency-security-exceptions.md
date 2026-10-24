@@ -120,3 +120,45 @@ scoped update once the normal fourteen-day cooldown is satisfied.
 Marked 18.1.0 was published `2026-10-05T15:40:41.608Z` and meets normal
 cooldown. The optional trusted-types declarations retain their normal age and
 license checks. No advisory is ignored and no generic exemption is added.
+
+## Tokio I/O safety fix, 2026-10-24
+
+The final audit for #70 rejects Tokio 1.52.3 with
+[RUSTSEC-2026-0386](https://rustsec.org/advisories/RUSTSEC-2026-0386),
+an informational unsoundness warning denied by the existing audit policy.
+The upstream advisory lists 1.53.3 as patched: AsyncFd constructors can violate
+file-descriptor ownership and permit invalid memory access. No direct
+AsyncFd calls were found in Silkboard; that does not replace dependency audit.
+
+On 2026-10-24 the owner authorized a separate Tokio fix and a narrow security
+exception before resuming #70. Admit only crates.io Tokio 1.53.3 published at
+`2026-10-13T20:51:46.498182Z`, eleven days old at adoption. The gate uses
+whole-second precision and rejects changed/future dates, other packages,
+versions and registries. Regression checks cover those boundaries. The
+lockfile retains the registry checksum; source, license, integrity and advisory
+checks remain required. No advisory is ignored and no general bypass is added.
+Remove the obsolete special case in a later scoped update after normal
+cooldown is satisfied. This dependency repair does not publish or deploy code.
+
+Sources: [upstream fix](https://github.com/tokio-rs/tokio/pull/8587),
+[registry publication](https://crates.io/api/v1/crates/tokio/1.53.3).
+
+## Frontend test HTTP-client fix, 2026-10-24
+
+After the Tokio repair passed RustSec audit, full validation reached npm audit
+and rejected jsdom's locked Undici 7.30.0. The three upstream advisories list
+7.30.1 as patched:
+
+- [EventSource parser memory growth](https://github.com/advisories/GHSA-4qv8-2p9j-2685)
+- [Subresource-integrity algorithm matching](https://github.com/advisories/GHSA-f72v-6w45-q472)
+- [Excess content-encoding error handling](https://github.com/advisories/GHSA-xjj6-f33q-929c)
+
+As part of the prerequisite security repair for #70, update the existing npm
+override to exact Undici 7.30.1. It is a frontend build/test dependency; the
+production application serves compiled assets. Admit only that npm package
+and version published at `2026-10-15T14:18:31.283Z`, nine days old at adoption.
+The MIT license is already allowed. Registry source/name/version, tarball,
+sha512 integrity, date and advisory checks remain required. Regression tests
+reject adjacent versions, other packages, changed/future publication seconds
+and mismatched integrity. Remove the narrow exception after the ordinary
+cooldown is satisfied in a future scoped update. No advisory is ignored.
