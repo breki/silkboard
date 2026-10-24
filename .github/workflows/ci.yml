@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 40
     env:
       CARGO_INCREMENTAL: '0'
+      CARGO_BUILD_JOBS: '2'
+      RUST_TEST_THREADS: '2'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -120,7 +122,8 @@ jobs:
         id: rust_cache
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         env:
-          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/src/ci_cache.rs', 'xtask/src/lib.rs', 'xtask/src/main.rs') }}
+          DATE_POLICY_HASH: ${{ hashFiles('xtask/src/dependencies.rs', 'xtask/src/registry_dates.rs', 'xtask/src/ci_inputs.rs') }}
+          CACHE_CONFIG_HASH: ${{ hashFiles('.cargo/**', 'rust-toolchain*', 'xtask/src/ci_cache.rs', 'xtask/src/ci_inputs.rs') }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: cargo xtask ci-cache-plan >> "$GITHUB_OUTPUT"
@@ -181,6 +184,27 @@ jobs:
           cargo clean --target-dir "$CARGO_LLVM_COV_TARGET_DIR"
           cargo clean --target-dir "$CI_ARM64_TARGET_DIR"
           echo 'A Rust cache restore failed. Discarded all partial build caches; all gates use cold builds.' >> "$GITHUB_STEP_SUMMARY"
+      # Publication dates are immutable facts, not cached cooldown verdicts.
+      # Never promote PR-written facts to the trusted main/release namespace.
+      - name: Prepare private publication evidence directory
+        if: steps.rust_cache.outputs.dates_enabled == 'true'
+        run: install -d -m 0700 "$RUNNER_TEMP/silkboard-ci-metadata"
+      - name: Restore trusted Rust publication dates
+        id: dates_cache
+        if: steps.rust_cache.outputs.dates_enabled == 'true'
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/silkboard-ci-metadata/rust-publication-dates.json
+          key: ${{ steps.rust_cache.outputs.dates_trusted }}
+      - name: Restore exact-head PR publication dates
+        id: dates_pr_cache
+        if: steps.rust_cache.outputs.dates_enabled == 'true' && github.event_name == 'pull_request' && steps.dates_cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/silkboard-ci-metadata/rust-publication-dates.json
+          key: ${{ steps.rust_cache.outputs.dates_local }}
       - name: Install locked frontend tools and Chromium
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         working-directory: frontend
@@ -191,8 +215,10 @@ jobs:
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: cargo fetch --locked
       - name: Full read-only validation
+        env:
+          SILKBOARD_RUST_DATES_FILE: ${{ steps.rust_cache.outputs.dates_enabled == 'true' && format('{0}/silkboard-ci-metadata/rust-publication-dates.json', runner.temp) || '' }}
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
-        run: cargo xtask validate --check
+        run: cargo xtask validate --check --parallel
       - name: ARM64 cross-target lint
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         env:
@@ -201,13 +227,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
           cargo xtask clippy --target aarch64-unknown-linux-gnu
+      - name: Verify publication evidence archive path
+        id: dates_verified
+        if: steps.rust_cache.outputs.dates_enabled == 'true' && steps.dates_cache.outputs.cache-hit != 'true' && steps.dates_pr_cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        run: |
+          cargo xtask ci-publication-dates-check "$RUNNER_TEMP/silkboard-ci-metadata/rust-publication-dates.json"
+      - name: Save verified Rust publication dates
+        if: steps.dates_verified.outcome == 'success'
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/silkboard-ci-metadata/rust-publication-dates.json
+          key: ${{ steps.rust_cache.outputs.dates_local }}
       # Explicit saves happen only after the full gate suite and ARM64 pass.
       # No workspace binaries, reports, raw profiles or verdicts are archived.
       - name: Clean and verify dependency-only Rust archives
         id: rust_cache_prune
         if: steps.rust_cache.outputs.enabled == 'true' && ((steps.normal_cache.outputs.cache-hit != 'true' && steps.normal_pr_cache.outputs.cache-hit != 'true') || (steps.coverage_cache.outputs.cache-hit != 'true' && steps.coverage_pr_cache.outputs.cache-hit != 'true') || (steps.arm64_cache.outputs.cache-hit != 'true' && steps.arm64_pr_cache.outputs.cache-hit != 'true'))
         env:
-          CACHE_CONFIG_HASH: ${{ hashFiles('Cargo.lock', '**/Cargo.toml', '.cargo/**', 'rust-toolchain*', '.github/workflows/ci.yml', 'xtask/src/ci_cache.rs', 'xtask/src/lib.rs', 'xtask/src/main.rs') }}
+          DATE_POLICY_HASH: ${{ hashFiles('xtask/src/dependencies.rs', 'xtask/src/registry_dates.rs', 'xtask/src/ci_inputs.rs') }}
+          CACHE_CONFIG_HASH: ${{ hashFiles('.cargo/**', 'rust-toolchain*', 'xtask/src/ci_cache.rs', 'xtask/src/ci_inputs.rs') }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           EXPECTED_NORMAL_KEY: ${{ steps.rust_cache.outputs.normal_local }}

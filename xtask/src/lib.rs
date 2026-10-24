@@ -4,21 +4,24 @@ use std::path::Path;
 
 pub mod ci;
 mod ci_cache;
+mod ci_inputs;
 mod dependencies;
+mod registry_dates;
 mod release;
+mod validation;
 
 /// Subprocess adapter shared by real execution and behavioral tests.
-/// Registry checks may invoke it concurrently; other gates run sequentially.
+/// Registry checks and explicitly parallel validation may invoke it concurrently.
 pub type Runner<'a> =
     dyn Fn(&str, &[&str], &Path) -> Result<String, String> + Sync + 'a;
 
 /// Supported task syntax. Validation is read-only with or without `--check`.
 pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
-[--target TARGET]|doc|test [FILTER]|validate [--check]|coverage|dupes|deny|\
+[--target TARGET]|doc|test [FILTER]|validate [--check] [--parallel]|coverage|dupes|deny|\
 audit|dep-age-check|frontend|frontend-check|frontend-fmt [--check]|\
 frontend-test|frontend-coverage|frontend-dupes|browser-test|handoff-test|bombyx-test|\
 release-check TAG|canon-check|ci-mode EVENT BASE HEAD|ci-cache-plan|\
-ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY>";
+ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY|ci-publication-dates-check PATH>";
 
 /// Run a supported repository task.
 ///
@@ -29,17 +32,39 @@ pub fn dispatch(
     root: &Path,
     runner: &mut Runner<'_>,
 ) -> Result<(), String> {
+    dispatch_with_publication_cache(args, root, runner, None)
+}
+
+/// Run a task with an operator-selected publication evidence file.
+/// The file is used only by dependency admission, never inherited by tasks.
+///
+/// # Errors
+/// Returns an error for unsupported tasks, invalid configuration or failed gates.
+pub fn dispatch_with_publication_cache(
+    args: &[String],
+    root: &Path,
+    runner: &mut Runner<'_>,
+    dates: Option<&Path>,
+) -> Result<(), String> {
     let args: Vec<_> = args.iter().map(String::as_str).collect();
     match args.as_slice() {
         ["--help" | "-h"] => {
             println!("{USAGE}");
             Ok(())
         }
-        ["validate"] | ["validate", "--check"] => validate(root, runner),
-        ["dep-age-check"] => dependencies::check(root, runner),
+        ["validate"] | ["validate", "--check"] => validate(root, runner, dates),
+        ["validate", "--parallel"]
+        | ["validate", "--check", "--parallel"]
+        | ["validate", "--parallel", "--check"] => {
+            validation::parallel(root, runner, dates)
+        }
+        ["dep-age-check"] => dependencies::check(root, runner, dates),
         ["release-check", tag] => release::check(root, runner, tag),
         ["canon-check"] => canon_check(root),
         ["ci-cache-plan"] => ci_cache::print_plan(root, runner),
+        ["ci-publication-dates-check", path] => {
+            registry_dates::verify(root, Path::new(path))
+        }
         ["ci-cache-prune", temp, expected_key] => {
             ci_cache::prune_checked(root, runner, Path::new(temp), expected_key)
         }
@@ -196,10 +221,14 @@ fn clippy(
     cargo(root, runner, &args)
 }
 
-fn validate(root: &Path, runner: &mut Runner<'_>) -> Result<(), String> {
+fn validate(
+    root: &Path,
+    runner: &mut Runner<'_>,
+    dates: Option<&Path>,
+) -> Result<(), String> {
+    validation::admission(root, runner, dates)?;
     // Shared dispatch guarantees standalone gates and aggregate validation agree.
     for task in [
-        "dep-age-check",
         "canon-check",
         "fmt --check",
         "dupes",
@@ -216,13 +245,7 @@ fn validate(root: &Path, runner: &mut Runner<'_>) -> Result<(), String> {
         "coverage",
         "audit",
     ] {
-        eprintln!("Checking {task}...");
-        let args: Vec<_> = task.split_whitespace().map(String::from).collect();
-        timed_gate(
-            task,
-            || dispatch(&args, root, runner),
-            |line| eprintln!("{line}"),
-        )?;
+        validation::task(task, root, runner)?;
     }
     println!("All required gates passed.");
     Ok(())
@@ -339,6 +362,7 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "ci-mode"
                     | "ci-cache-plan"
                     | "ci-cache-prune"
+                    | "ci-publication-dates-check"
                     | "--help"
                     | "-h"
             ) {

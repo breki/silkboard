@@ -695,3 +695,20 @@ not a change in gate order, dependency prerequisites, thresholds, cache trust
 or release eligibility. Ranked optimizations are proposals requiring their
 own implementation decisions. Local instrumentation tests/full validation
 and independent reviews are separate from the pre-instrumentation CI sample.
+
+## Full validation optimizations, 2026-10-24
+
+After the #86 timing analysis and PR #87 ranked proposals, the owner explicitly
+asked to implement them. The [optimization report](../ci-validation-optimizations.md)
+records all five changes, matched local measurements and GitHub evidence limits.
+The [Cargo profiles reference](https://doc.rust-lang.org/cargo/reference/profiles.html)
+defines workspace/package overrides and test-profile behavior. The
+[TOML parser documentation](https://docs.rs/toml/0.8.23/toml/) supplies typed
+manifest/lock parsing; it is repository tooling, not a new publisher dependency.
+
+Before compilation, registry timestamps, checksums, licenses and advisory gates
+were checked for newly resolved toml 0.8.23, toml_edit 0.22.27,
+toml_datetime 0.6.11, serde_spanned 0.6.9, indexmap 2.14.2,
+winnow 0.7.15 and equivalent 1.0.2. Equivalent remains pinned in the lockfile
+to 1.0.2 because the newer release had not completed the fourteen-day cooldown.
+No security exception or validation threshold was added or relaxed.

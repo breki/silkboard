@@ -97,7 +97,11 @@ component tests cover loading, identity, failed requests, and timeouts; the
 isolated Chromium suite checks the built app and mobile layout. The frontend
 check runs types, lint, formatting, tests, and the production build.
 Run `cargo xtask validate --check` for the full required suite after
-installing [the gate prerequisites](ai-agents/tooling.md). These commands do not establish a Pi deployment.
+installing [the gate prerequisites](ai-agents/tooling.md). Add `--parallel`
+for the bounded two-lane schedule used in CI. See the
+[optimization report](ci-validation-optimizations.md) for test profiles,
+optional local publication evidence and measurement limits. These commands
+do not establish a Pi deployment.
 
 The frontend lockfile retains upstream versions where possible, with security
 patches selected after advisory checks. Vitest is pinned to 4.1.11, and

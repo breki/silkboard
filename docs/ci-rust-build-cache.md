@@ -24,9 +24,10 @@ downloads/configuration, credentials, advisory databases and the final release
 build are outside these archives. Documentation-only PRs do not access them.
 
 The key planner fingerprints the exact `rustc -vV` identity, image OS/version,
-runner OS/architecture and configuration digest. That digest covers Cargo.lock,
-workspace/package manifests, `.cargo`, toolchain files, the CI workflow and
-the three xtask files that own cache planning, cleanup and command execution. Compiler, Rustdoc, profile, target, coverage and native
+runner OS/architecture and configuration digest. That digest covers normalized
+resolved external dependencies, checksums, features,
+root profiles and resolver, `.cargo`, toolchain files and cache-input/planning
+code. Compiler, Rustdoc, profile, target, coverage and native
 compiler environment overrides are included. Mode-specific keys separate
 host dev/test, instrumented coverage with the pinned tool version, and ARM64.
 Key-input metadata is hashed through a private temporary file outside the
@@ -40,19 +41,19 @@ same input set:
 
 | Input | Reason to invalidate |
 | --- | --- |
-| `Cargo.lock`, `**/Cargo.toml` | Resolved dependencies, features, workspace membership and build profiles |
+| Normalized locked external graph and features | Resolved dependency content and enabled features |
+| Root profiles and resolver | Build settings and resolution semantics |
 | `.cargo/**`, `rust-toolchain*` | Cargo configuration and compiler/toolchain selection |
-| `.github/workflows/ci.yml` | Build commands, environment, tool versions, archive paths and restore/save policy |
 | `xtask/src/ci_cache.rs` | Key schema, mode identity, planning and dependency-only cleanup/verification |
-| `xtask/src/lib.rs` | Task dispatch, Cargo arguments, coverage cleaning and validation orchestration |
-| `xtask/src/main.rs` | Subprocess execution and inherited/overridden build environment |
+| `xtask/src/ci_inputs.rs` | Normalized Cargo compatibility input semantics |
 
 The planner additionally binds compiler identity, runner/image identity and
 compiler-related environment overrides as described above. Embedded tests in
 the retained Rust files still invalidate caches; unrelated modules such as
-`xtask/src/dependencies.rs` and standalone tooling tests do not. If build or
-cache execution moves to another file, add that file to both workflow hash
-expressions. Bump the key schema epoch for changed archive semantics.
+`xtask/src/dependencies.rs` and standalone tooling tests do not. When changing
+build semantics, update the explicit configuration or key schema as appropriate;
+both workflow hash expressions must agree. Bump the key schema epoch for
+changed archive semantics.
 
 A security-policy-only edit can therefore reuse compatible dependency builds,
 while the changed xtask workspace code is rebuilt and current security checks
@@ -60,13 +61,11 @@ still execute. This is dependency reuse, not reuse of policy verdicts. The
 workflow change itself causes one initial cold run; this change does not
 recover entries written with the previous fingerprint.
 
-Local mutation checks verified that security-policy, PR-classifier, standalone
-test and application-source edits leave the selected input digest unchanged;
-lockfile, manifest, Cargo configuration, toolchain, workflow and each retained
-xtask-file edit change it. These checks inspect the input set, not GitHub
-runner ordering or cache transfer performance. Record actual cold/warm CI
-timing, hit/miss and archive-size evidence in the implementation PR for #70;
-a first run cannot establish the warm-run benefit.
+Normalized-key tests verify workspace-only bookkeeping preserves keys, while
+external checksums/features and root profiles invalidate them. The
+[optimization report](ci-validation-optimizations.md) records the adoption and
+local profile measurements. Historical #70 input-set evidence describes the
+previous schema.
 
 There is no prefix fallback across configurations. Trusted configuration
 entries can span application source-only revisions. A PR first tries the
@@ -80,7 +79,8 @@ key's text. Other workflow contexts use cold builds without build-cache access.
 Every cache hit still runs the complete selected gate suite. Workspace builds,
 tests and coverage calculations remain fresh. The coverage command retains
 both workspace cleaning and its 90% overall / 85% per-file thresholds.
-Registry-age/source/license/integrity checks and advisory audits remain live.
+Rust publication timestamps may reuse separately verified immutable facts;
+current age/exception policy, npm metadata and advisory audits still run.
 
 Restores and saves are optional network operations. A restore action failure
 discards all partial Rust build directories before validation proceeds cold.

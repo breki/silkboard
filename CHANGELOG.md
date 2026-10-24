@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reduce full-validation work through verified Rust publication-date evidence,
+  normalized dependency-cache keys, cheaper workspace test builds, fresh
+  browser binary reuse and bounded parallel scheduling.
+
 - Report elapsed time for each validation gate, including failures, and
   document a measured breakdown of representative full CI runs.
 

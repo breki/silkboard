@@ -39,10 +39,16 @@ const env = {
   SILKBOARD_LISTEN: "127.0.0.1:38125",
   SILKBOARD_FRONTEND: join(repo, "frontend/dist"),
 };
-execFileSync("cargo", ["build", "--locked", "-p", "silkboard-web"], {
-  cwd: repo,
-  stdio: "inherit",
-});
+// Use the same profile as the fresh normal test binary. Cargo still checks
+// all source/build inputs; standalone browser runs build it when necessary.
+execFileSync(
+  "cargo",
+  ["build", "--locked", "--profile", "test", "-p", "silkboard-web"],
+  {
+    cwd: repo,
+    stdio: "inherit",
+  },
+);
 const metadata = JSON.parse(
   execFileSync(
     "cargo",

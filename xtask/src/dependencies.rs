@@ -45,7 +45,8 @@ impl CratePacer {
 
 pub(super) fn check(
     root: &Path,
-    runner: &mut Runner<'_>,
+    runner: &Runner<'_>,
+    cache: Option<&Path>,
 ) -> Result<(), String> {
     let metadata = runner(
         "cargo",
@@ -58,7 +59,7 @@ pub(super) fn check(
         .duration_since(UNIX_EPOCH)
         .map_err(|e| e.to_string())?
         .as_secs();
-    check_at(root, runner, &metadata, &npm, now)
+    check_at_cached(root, runner, &metadata, &npm, now, cache)
 }
 
 fn json(text: &str) -> Result<Value, String> {
@@ -79,6 +80,7 @@ fn text<'a>(value: &'a Value, field: &str) -> Result<&'a str, String> {
         .ok_or_else(|| format!("missing {field} string"))
 }
 
+#[cfg(test)]
 fn check_at(
     root: &Path,
     runner: &Runner<'_>,
@@ -86,6 +88,121 @@ fn check_at(
     npm: &str,
     now: u64,
 ) -> Result<(), String> {
+    check_at_cached(root, runner, metadata, npm, now, None)
+}
+
+fn check_at_cached(
+    root: &Path,
+    runner: &Runner<'_>,
+    metadata: &str,
+    npm: &str,
+    now: u64,
+    cache: Option<&Path>,
+) -> Result<(), String> {
+    let dates = crate::registry_dates::Dates::load(root, cache)?;
+    let (dependencies, npm_claims) = locked_versions(metadata, npm)?;
+    let count = dependencies.len();
+    let mut requests: BTreeMap<String, Vec<(bool, String, String)>> =
+        BTreeMap::new();
+    let mut reused = 0;
+    for (npm, name, version) in dependencies {
+        if !npm && let Some(date) = dates.get(&name, &version)? {
+            verify_versions(
+                &serde_json::json!({"version":{"created_at":date}}),
+                &[(false, name, version)],
+                &npm_claims,
+                now,
+            )?;
+            reused += 1;
+            continue;
+        }
+        let encoded = package_segment(&name)?;
+        let url = if npm {
+            format!("https://registry.npmjs.org/{encoded}")
+        } else {
+            format!("https://crates.io/api/v1/crates/{encoded}/{version}")
+        };
+        requests.entry(url).or_default().push((npm, name, version));
+    }
+    let (mut crates, mut npm): (VecDeque<_>, VecDeque<_>) = requests
+        .into_iter()
+        .partition(|(url, _)| url.starts_with("https://crates.io/"));
+    let mut requests = Vec::new();
+    // Let npm work overlap the paced crates.io requests instead of queuing
+    // every npm package behind the complete crates.io phase.
+    while let Some(request) = crates.pop_front() {
+        requests.push(request);
+        requests.extend(npm.drain(..npm.len().min(CONCURRENCY - 1)));
+    }
+    requests.extend(npm);
+    let pacer = CratePacer(Mutex::new(None));
+    let mut checked = reused;
+    for batch in requests.chunks(CONCURRENCY) {
+        let previous = checked;
+        let results = std::thread::scope(|scope| {
+            let workers: Vec<_> = batch
+                .iter()
+                .map(|(url, versions)| {
+                    let claims = &npm_claims;
+                    let pacer = &pacer;
+                    let dates = &dates;
+                    scope.spawn(move || {
+                        if url.starts_with("https://crates.io/") {
+                            pacer.wait(Duration::from_secs(1))?;
+                        }
+                        let document = fetch(root, runner, url)?;
+                        let checked =
+                            verify_versions(&document, versions, claims, now)
+                                .map_err(|error| format!("{url}: {error}"))?;
+                        for (npm, name, version) in versions {
+                            if !npm {
+                                dates.remember(
+                                    name,
+                                    version,
+                                    text(&document["version"], "created_at")?,
+                                )?;
+                            }
+                        }
+                        Ok::<usize, String>(checked)
+                    })
+                })
+                .collect();
+            // Join every worker, even on errors. Return errors in request
+            // order rather than whichever worker happened to finish first.
+            workers
+                .into_iter()
+                .map(|worker| {
+                    worker.join().unwrap_or_else(|_| {
+                        Err("registry worker panicked".into())
+                    })
+                })
+                .collect::<Vec<_>>()
+        });
+        for result in results {
+            checked += result?;
+        }
+        if checked / 25 != previous / 25 || checked == count {
+            eprintln!("Checked dependency ages: {checked}/{count}");
+        }
+    }
+    if dates.save().is_err() {
+        eprintln!(
+            "Could not save Rust publication evidence; verified checks still passed."
+        );
+    }
+    println!(
+        "Dependency ages and npm license/sources passed ({count} versions, {} live requests, {reused} reused Rust dates, concurrency {CONCURRENCY}).",
+        requests.len()
+    );
+    Ok(())
+}
+
+type LockedVersions = BTreeSet<(bool, String, String)>;
+
+fn locked_versions(
+    metadata: &str,
+    npm: &str,
+) -> Result<(LockedVersions, NpmClaims), String> {
     let metadata = json(metadata)?;
     let members = array(&metadata, "workspace_members")?;
     let packages = array(&metadata, "packages")?;
@@ -118,72 +235,22 @@ fn check_at(
             .keys()
             .map(|(name, version)| (true, name.clone(), version.clone())),
     );
-    let count = dependencies.len();
-    let mut requests: BTreeMap<String, Vec<(bool, String, String)>> =
-        BTreeMap::new();
-    for (npm, name, version) in dependencies {
-        let encoded = package_segment(&name)?;
-        let url = if npm {
-            format!("https://registry.npmjs.org/{encoded}")
-        } else {
-            format!("https://crates.io/api/v1/crates/{encoded}/{version}")
-        };
-        requests.entry(url).or_default().push((npm, name, version));
-    }
-    let (mut crates, mut npm): (VecDeque<_>, VecDeque<_>) = requests
-        .into_iter()
-        .partition(|(url, _)| url.starts_with("https://crates.io/"));
-    let mut requests = Vec::new();
-    // Let npm work overlap the paced crates.io requests instead of queuing
-    // every npm package behind the complete crates.io phase.
-    while let Some(request) = crates.pop_front() {
-        requests.push(request);
-        requests.extend(npm.drain(..npm.len().min(CONCURRENCY - 1)));
-    }
-    requests.extend(npm);
-    let pacer = CratePacer(Mutex::new(None));
-    let mut checked = 0;
-    for batch in requests.chunks(CONCURRENCY) {
-        let previous = checked;
-        let results = std::thread::scope(|scope| {
-            let workers: Vec<_> = batch
-                .iter()
-                .map(|(url, versions)| {
-                    let claims = &npm_claims;
-                    let pacer = &pacer;
-                    scope.spawn(move || {
-                        if url.starts_with("https://crates.io/") {
-                            pacer.wait(Duration::from_secs(1))?;
-                        }
-                        let document = fetch(root, runner, url)?;
-                        verify_versions(&document, versions, claims, now)
-                            .map_err(|error| format!("{url}: {error}"))
-                    })
-                })
-                .collect();
-            // Join every worker, even on errors. Return errors in request
-            // order rather than whichever worker happened to finish first.
-            workers
-                .into_iter()
-                .map(|worker| {
-                    worker.join().unwrap_or_else(|_| {
-                        Err("registry worker panicked".into())
-                    })
-                })
-                .collect::<Vec<_>>()
-        });
-        for result in results {
-            checked += result?;
-        }
-        if checked / 25 != previous / 25 || checked == count {
-            eprintln!("Checked dependency ages: {checked}/{count}");
-        }
-    }
-    println!(
-        "Dependency ages and npm license/sources passed ({count} versions, {} live requests, concurrency {CONCURRENCY}).",
-        requests.len()
-    );
-    Ok(())
+    Ok((dependencies, npm_claims))
+}
+
+pub(super) fn verify_cached_rust(
+    name: &str,
+    version: &str,
+    date: &str,
+    now: u64,
+) -> Result<(), String> {
+    verify_versions(
+        &serde_json::json!({"version":{"created_at":date}}),
+        &[(false, name.into(), version.into())],
+        &BTreeMap::new(),
+        now,
+    )
+    .map(|_| ())
 }
 
 fn verify_versions(
@@ -390,7 +457,7 @@ fn package_segment(name: &str) -> Result<String, String> {
     Ok(name.replace('/', "%2F"))
 }
 
-fn timestamp(date: &str) -> Result<u64, String> {
+pub(super) fn timestamp(date: &str) -> Result<u64, String> {
     fn parse(value: Option<&str>) -> Result<u64, String> {
         value
             .ok_or("short registry timestamp")?
@@ -473,6 +540,70 @@ mod tests {
         let mut other = version.clone();
         other["version"] = json!("2.0.0");
         json!({"time":{"1.0.0":"2020-01-01T00:00:00Z","2.0.0":"2020-01-01T00:00:00Z"},"versions":{"1.0.0":version,"2.0.0":other}}).to_string()
+    }
+
+    #[test]
+    fn verified_rust_dates_are_reused_while_npm_claims_stay_live() {
+        use std::sync::atomic::{AtomicUsize, Ordering::SeqCst};
+        let root = std::env::temp_dir()
+            .join(format!("silkboard-dates-red-{}", std::process::id()));
+        fs::create_dir(&root).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&root, fs::Permissions::from_mode(0o700))
+                .unwrap();
+        }
+        fs::write(root.join("Cargo.lock"),format!("version=4\n[[package]]\nname=\"axum\"\nversion=\"0.8.9\"\nsource=\"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum=\"{}\"\n","a".repeat(64))).unwrap();
+        let path = root.join("rust-publication-dates.json");
+        fs::write(&path,json!({"schema":1,"entries":[{"name":"axum","version":"0.8.9","checksum":"a".repeat(64),"created_at":"2020-01-01T00:00:00Z"}]}).to_string()).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
+                .unwrap();
+        }
+        let npm_calls = AtomicUsize::new(0);
+        let result = check_at_cached(
+            &root,
+            &|_, argv, _| {
+                let url = argv.last().unwrap();
+                if url.starts_with("https://crates.io/") {
+                    return Err(
+                        "verified cache unexpectedly requested Rust metadata"
+                            .into(),
+                    );
+                }
+                npm_calls.fetch_add(1, SeqCst);
+                Ok(registry_versions("@scope/tool"))
+            },
+            &metadata(&json!(
+                "registry+https://github.com/rust-lang/crates.io-index"
+            )),
+            &npm().to_string(),
+            timestamp("2020-01-15T00:00:00Z").unwrap(),
+            Some(&path),
+        );
+        result.unwrap();
+        assert_eq!(npm_calls.load(SeqCst), 1);
+        let rejected = check_at_cached(
+            &root,
+            &|_, _, _| {
+                let mut document: Value =
+                    serde_json::from_str(&registry_versions("@scope/tool"))
+                        .unwrap();
+                document["versions"]["1.0.0"]["license"] = json!("GPL-3.0");
+                Ok(document.to_string())
+            },
+            &metadata(&json!(
+                "registry+https://github.com/rust-lang/crates.io-index"
+            )),
+            &npm().to_string(),
+            timestamp("2020-01-15T00:00:00Z").unwrap(),
+            Some(&path),
+        );
+        fs::remove_dir_all(root).unwrap();
+        assert!(rejected.is_err());
     }
 
     #[test]

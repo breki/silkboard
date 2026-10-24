@@ -15,3 +15,5 @@ path = "../.codex/hooks/tests/stop_check.rs"
 
 [dependencies]
 serde_json = "1"
+toml = { version = "=0.8.23", default-features = false, features = ["parse"] }
+serde = { version = "1", features = ["derive"] }
