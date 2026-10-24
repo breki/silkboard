@@ -40,6 +40,10 @@ not interactive questions to the owner. Use concise success output and useful
 failure details; long operations need durable logs and visible progress.
 Use meaningful exit codes appropriate to the actual interface.
 
+Missing per-step CI telemetry is not proof that a runner stalled. Use overall
+job results and completed logs to establish which checks ran; do not cancel
+and retry solely because step metadata is empty.
+
 Keep nontrivial automation in Rust/xtask when practical. Shell wrappers should
 be thin; bootstrap scripts that run before Cargo exists are a valid exception.
 Do not rely on Python for repository tooling or tests.
