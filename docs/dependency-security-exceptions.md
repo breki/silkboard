@@ -142,3 +142,23 @@ cooldown is satisfied. This dependency repair does not publish or deploy code.
 
 Sources: [upstream fix](https://github.com/tokio-rs/tokio/pull/8587),
 [registry publication](https://crates.io/api/v1/crates/tokio/1.53.3).
+
+## Frontend test HTTP-client fix, 2026-10-24
+
+After the Tokio repair passed RustSec audit, full validation reached npm audit
+and rejected jsdom's locked Undici 7.30.0. The three upstream advisories list
+7.30.1 as patched:
+
+- [EventSource parser memory growth](https://github.com/advisories/GHSA-4qv8-2p9j-2685)
+- [Subresource-integrity algorithm matching](https://github.com/advisories/GHSA-f72v-6w45-q472)
+- [Excess content-encoding error handling](https://github.com/advisories/GHSA-xjj6-f33q-929c)
+
+As part of the prerequisite security repair for #70, update the existing npm
+override to exact Undici 7.30.1. It is a frontend build/test dependency; the
+production application serves compiled assets. Admit only that npm package
+and version published at `2026-10-15T14:18:31.283Z`, nine days old at adoption.
+The MIT license is already allowed. Registry source/name/version, tarball,
+sha512 integrity, date and advisory checks remain required. Regression tests
+reject adjacent versions, other packages, changed/future publication seconds
+and mismatched integrity. Remove the narrow exception after the ordinary
+cooldown is satisfied in a future scoped update. No advisory is ignored.

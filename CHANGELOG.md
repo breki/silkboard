@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Update Tokio to 1.53.3 to address the AsyncFd I/O-safety advisory
-  RUSTSEC-2026-0386 without relaxing audit requirements.
+  RUSTSEC-2026-0386, and patch Undici in frontend test tooling without
+  relaxing audit requirements.
 
 ## 0.6.0 - 2026-10-23
 

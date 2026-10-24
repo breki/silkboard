@@ -597,3 +597,10 @@ reports publication at `2026-10-13T20:51:46.498182Z`. The exact
 short-age adoption. The regression test failed before the exception and
 passes with only that package/version/publication second admitted. Advisory
 checks remain enabled; this record does not establish production deployment.
+
+The subsequent npm audit rejected existing jsdom/Undici 7.30.0 for three
+upstream advisories. The same prerequisite repair updates only the existing
+override to 7.30.1, published `2026-10-15T14:18:31.283Z`; the exact
+[exception record](../dependency-security-exceptions.md) links the advisories
+and preserves registry/integrity checks. This is test/build tooling, with no
+production installation or release implied.
