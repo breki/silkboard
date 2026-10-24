@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Report elapsed time for each validation gate, including failures, and
+  document a measured breakdown of representative full CI runs.
+
 - Publish evolving task plans from the standalone CLI with synchronized local
   counters, automatic definition revisions and explicit writer handoff.
 

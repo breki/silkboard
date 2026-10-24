@@ -1,0 +1,7 @@
+run_id,event,head_sha,rust_cache_state,cache_key_image_component,job_seconds,pre_job_seconds,setup_seconds,tool_cache_restore_seconds,rust_cache_restore_seconds,frontend_install_seconds,dependency_fetch_seconds,validation_seconds,arm64_seconds,cache_cleanup_seconds,cache_save_seconds,other_seconds
+40121515147,pull_request,26982eabdf7de4e700338f3fca5e51866a9a6bf3,miss-all3,20261023.334.3,726,21,30,2,1,32,2,598,40,3,14,4
+40121451441,push,d085d0a2f5a602a4064fbc657c2734a8e87aced2,miss-all3,20261012.334.1,690,2,33,1,1,28,2,567,43,2,8,5
+40120086986,pull_request,178779c99824fa99eb8ab47f5c3288b3c1f576d0,miss-all3,20261023.334.3,685,2,31,1,2,30,2,563,38,3,10,5
+40117417685,push,35c59e8a8ee006292723909159f3212b7e2fe68e,hit-all3,20261012.334.1,492,2,32,0,11,34,2,395,13,0,0,5
+40116593219,pull_request,0c0d0d93a9c6fa7dcafc7951856e47ff705076fd,hit-all3,20261012.334.1,530,2,28,1,8,31,2,443,12,0,0,5
+40116144015,push,86faa6695a59a2fbd066962a512a7f24250ca5e6,miss-all3,20261023.334.3,838,3,32,2,1,33,1,691,51,3,19,5

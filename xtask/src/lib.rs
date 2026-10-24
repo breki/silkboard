@@ -218,10 +218,31 @@ fn validate(root: &Path, runner: &mut Runner<'_>) -> Result<(), String> {
     ] {
         eprintln!("Checking {task}...");
         let args: Vec<_> = task.split_whitespace().map(String::from).collect();
-        dispatch(&args, root, runner)?;
+        timed_gate(
+            task,
+            || dispatch(&args, root, runner),
+            |line| eprintln!("{line}"),
+        )?;
     }
     println!("All required gates passed.");
     Ok(())
+}
+
+// Explicit elapsed values remain useful if the log collector batches markers.
+fn timed_gate(
+    task: &str,
+    action: impl FnOnce() -> Result<(), String>,
+    emit: impl FnOnce(&str),
+) -> Result<(), String> {
+    let started = std::time::Instant::now();
+    let result = action();
+    let record = serde_json::json!({
+        "gate": task,
+        "elapsed_ms": started.elapsed().as_millis(),
+        "outcome": if result.is_ok() {"pass"} else {"fail"},
+    });
+    emit(&format!("Validation timing: {record}"));
+    result
 }
 
 fn canon_check(root: &Path) -> Result<(), String> {
@@ -328,4 +349,38 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod timing_tests {
+    #[test]
+    fn reports_after_work_without_exposing_or_replacing_errors() {
+        for outcome in [Ok(()), Err("private fixture diagnostic".into())] {
+            let called = std::cell::Cell::new(false);
+            let mut reports = Vec::new();
+            let result = super::timed_gate(
+                "fmt --check",
+                || {
+                    assert!(!called.replace(true));
+                    outcome.clone()
+                },
+                |line| {
+                    assert!(called.get());
+                    reports.push(line.to_owned());
+                },
+            );
+            assert_eq!(result, outcome);
+            assert_eq!(reports.len(), 1);
+            let json = reports[0].strip_prefix("Validation timing: ").unwrap();
+            let record: serde_json::Value = serde_json::from_str(json).unwrap();
+            assert_eq!(record["gate"], "fmt --check");
+            assert_eq!(
+                record["outcome"],
+                if outcome.is_ok() { "pass" } else { "fail" }
+            );
+            assert!(record["elapsed_ms"].as_u64().is_some());
+            assert_eq!(record.as_object().unwrap().len(), 3);
+            assert!(!json.contains("private fixture diagnostic"));
+        }
+    }
 }
