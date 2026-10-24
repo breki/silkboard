@@ -2,7 +2,9 @@
 
 Status: milestone 5 design contract for
 [issue #73](https://github.com/breki/silkboard/issues/73).
-The endpoints, payloads and local handoff below are planned, not implemented.
+The storage and private APIs are implemented for [#75](task-plan-api.md) and
+locally verified. CLI reporting, local handoff, Codex integration and the owner
+graph page remain planned; no production rollout is claimed.
 The existing [progress API](progress-ingestion.md) remains unchanged.
 
 ## Agreed behavior and authority
@@ -176,7 +178,7 @@ is a presentation hint, not dependency order.
 
 | Value | Limit |
 | --- | --- |
-| Encoded JSON request, including escapes | 262,144 bytes (256 KiB) |
+| Encoded JSON request, including escapes, and normalized snapshot (each) | 262,144 bytes (256 KiB) |
 | Steps in a snapshot | 1–128 |
 | Directed prerequisite edges in total | 512 |
 | Prerequisites on one step | 32 |
@@ -318,11 +320,13 @@ and recovery policy remains [#52](https://github.com/breki/silkboard/issues/52).
 migration/recovery compatibility; #76 extends the installed publisher; #77
 integrates actual Codex plan reporting; #78 implements the owner view; #79
 exercises reconciliation/freshness; #80 owns combined verification; #81 owns
-an authorized release and real dogfooding. These are future implementations,
-not claims that current turn-summary hooks already expose complete plans.
+an authorized release and real dogfooding. Storage/APIs are locally implemented;
+the later integrations remain future work. Current turn-summary hooks do not
+expose complete plans.
 
 A new data schema needs explicit compatibility and recovery handling before
 release; switching an old binary back cannot undo a migration. This contract
-does not change schema 3, existing publisher requests, hook trust, production
-configuration or release authorization. The mockup's completed steps are
+retains base schema 3 with the additive plan component described in the
+[API guide](task-plan-api.md). It does not change existing progress requests,
+hook trust, production configuration or release authorization. The mockup's completed steps are
 fictional example data.

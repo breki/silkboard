@@ -58,8 +58,9 @@ source or collide with a SQLite sidecar name. Existing destination companions
 (the output filename followed by `-`, including journal/WAL/SHM files) cause
 refusal; do not attach stale recovery files to a restored snapshot. Use a fresh
 private destination directory under exclusive operator control. Schema 3,
-SQLite quick-check and
-foreign-key consistency are checked; unknown/older schemas are refused without
+SQLite quick-check, foreign-key consistency and the optional
+[task-plan component](task-plan-api.md#storage-and-compatibility) version are
+checked; unknown/older base schemas are refused without
 migration. Use trusted Silkboard snapshots, not arbitrary SQLite imports.
 
 For a running configured service, first create a private export directory,

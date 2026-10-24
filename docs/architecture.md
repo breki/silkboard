@@ -119,13 +119,16 @@ It never reads transcript paths, prompts, source files or tool logs. The hook
 returns no instructions or execution permission. Existing validation and Git
 summary hooks remain separate, and user hook trust still requires review.
 
-## Planned task-plan reporting
+## Task-plan storage and planned reporting
 
 Milestone 5 adds an owner-visible graph of an agent's evolving plan. The
 [task-plan contract](task-plan-contract.md), owned by #73, specifies stable
 identity, prerequisite edges, state, bounded full snapshots and received
-history. It is not an implemented API or database migration. Existing progress
-payloads, installed hooks and schema 3 remain unchanged by the contract.
+history. The [private API and storage](task-plan-api.md) are implemented for
+#75 and locally verified. Additive plan tables have component version 1; the
+base schema remains 3 for compatibility with retained v0.6.0. Existing progress
+payloads and installed hooks remain unchanged. No production migration is
+claimed.
 
 The owner selected continuity through an explicit local session handoff,
 multiple active steps and reopening with history. One reporting agent
@@ -135,9 +138,8 @@ an outbound queue. Local task state and counters are not dashboard tasks,
 repository mounts, handoff uploads or execution permission.
 
 Publishers retain their existing project-scoped write authority. The owner
-alone reads current and historical graphs through private authenticated APIs
-once implemented. Reported completion is not verification, approval to merge
-or release eligibility. API/storage, CLI, Codex integration, UI, reconciliation,
+alone reads current and historical snapshots through private authenticated APIs. Reported completion is not verification, approval to merge
+or release eligibility. CLI, Codex integration, UI, reconciliation,
 combined verification and production dogfooding are separate milestone issues.
 
 The [presentation design](task-plan-design.md), owned by #74, keeps Events as
