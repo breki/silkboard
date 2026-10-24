@@ -120,3 +120,25 @@ scoped update once the normal fourteen-day cooldown is satisfied.
 Marked 18.1.0 was published `2026-10-05T15:40:41.608Z` and meets normal
 cooldown. The optional trusted-types declarations retain their normal age and
 license checks. No advisory is ignored and no generic exemption is added.
+
+## Tokio I/O safety fix, 2026-10-24
+
+The final audit for #70 rejects Tokio 1.52.3 with
+[RUSTSEC-2026-0386](https://rustsec.org/advisories/RUSTSEC-2026-0386),
+an informational unsoundness warning denied by the existing audit policy.
+The upstream advisory lists 1.53.3 as patched: AsyncFd constructors can violate
+file-descriptor ownership and permit invalid memory access. No direct
+AsyncFd calls were found in Silkboard; that does not replace dependency audit.
+
+On 2026-10-24 the owner authorized a separate Tokio fix and a narrow security
+exception before resuming #70. Admit only crates.io Tokio 1.53.3 published at
+`2026-10-13T20:51:46.498182Z`, eleven days old at adoption. The gate uses
+whole-second precision and rejects changed/future dates, other packages,
+versions and registries. Regression checks cover those boundaries. The
+lockfile retains the registry checksum; source, license, integrity and advisory
+checks remain required. No advisory is ignored and no general bypass is added.
+Remove the obsolete special case in a later scoped update after normal
+cooldown is satisfied. This dependency repair does not publish or deploy code.
+
+Sources: [upstream fix](https://github.com/tokio-rs/tokio/pull/8587),
+[registry publication](https://crates.io/api/v1/crates/tokio/1.53.3).

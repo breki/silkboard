@@ -216,6 +216,7 @@ fn verify_versions(
         // Exact urgent fixes only; no configurable bypass. See the security
         // exception record for advisories and observed registry timestamps.
         let security_fix_date = match (*npm, name.as_str(), version.as_str()) {
+            (false, "tokio", "1.53.3") => Some("2026-10-13T20:51:46.498182Z"),
             (false, "rustls", "0.23.46") => Some("2026-10-14T09:54:15.075873Z"),
             (false, "rustls-webpki", "0.103.16") => {
                 Some("2026-10-20T08:58:28.008618Z")
@@ -704,8 +705,9 @@ mod tests {
         );
     }
     #[test]
-    fn only_exact_tls_distrust_fixes_can_use_short_cooldown() {
+    fn only_exact_cargo_security_fixes_can_use_short_cooldown() {
         for (name, version, date) in [
+            ("tokio", "1.53.3", "2026-10-13T20:51:46.498182Z"),
             ("rustls-webpki", "0.103.16", "2026-10-20T08:58:28.008618Z"),
             ("webpki-roots", "1.0.10", "2026-10-19T20:11:32.333071Z"),
         ] {
