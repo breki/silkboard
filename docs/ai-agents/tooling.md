@@ -95,7 +95,9 @@ without integrity still bind to the canonical tarball, whose bytes npm ci
 verifies against the required lockfile sha512 digest. Package aliases are not
 supported. Cargo license
 expressions and sources are checked by [cargo-deny](../../deny.toml).
-Unavailable registries fail; there is no offline success claim or date cache.
+Unavailable required live metadata fails. An explicit optional Rust publication-date
+evidence cache reuses immutable facts and reevaluates current policy; npm metadata
+and audits remain live. See [validation optimizations](../ci-validation-optimizations.md).
 Requests run in batches of at most four, with one npm metadata request per
 package across all its locked versions. Each response is verified and discarded
 inside its worker. Every worker in a batch finishes before another batch
@@ -216,9 +218,9 @@ Rust registry downloads and Chromium are not cached. Separate
 [Rust dependency-build caches](../ci-rust-build-cache.md) retain normal,
 instrumented coverage and ARM64 dependencies, with trusted/exact-head PR
 namespaces and verified workspace/profile cleanup before publication.
-Dependency-age/registry checks and advisory audits still contact
-their live sources on every validation; cached tools do not cache pass
-results. ARM64 lint and signed exact-revision release checks remain required.
+Rust publication dates can use separately verified immutable evidence; npm
+registry checks and advisory audits still contact their live sources. No cache
+stores passing validation results. ARM64 lint and signed exact-revision release checks remain required.
 
 The [Rust build-cache investigation](../ci-rust-cache-study.md) preserves the
 temporary-branch measurements behind the subsequently adopted caches above.

@@ -2,8 +2,12 @@
 
 Analysis for [#86](https://github.com/breki/silkboard/issues/86), based on six
 completed full CI runs. No benchmarking reruns were launched. This is a
-small, deliberately selected snapshot of the current workflow, not a random
-sample or an optimization experiment.
+small, deliberately selected snapshot of the pre-optimization workflow, not
+a random sample or an optimization experiment.
+
+The subsequent [optimization report](ci-validation-optimizations.md) records
+implementation and local measurements. The sampled timings and input findings
+below remain historical evidence.
 
 ## What takes the time
 
@@ -135,7 +139,7 @@ separate 4.6–9.6s gate in this sample.
 
 ### Rust build work dominates normal tests and coverage
 
-The [test profile](../Cargo.toml) has `opt-level = 1`.
+The sampled test profile had `opt-level = 1` for workspace code.
 [Validation](../xtask/src/lib.rs) runs normal workspace tests, then a separate
 instrumented coverage build and tests with unchanged 90%/85% thresholds.
 [Cache pruning](../xtask/src/ci_cache.rs) deliberately removes workspace

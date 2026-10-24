@@ -14,6 +14,8 @@ fn main() -> ExitCode {
         };
         let mut command = Command::new(executable);
         command.args(args).current_dir(cwd);
+        // Only the parent admission gate may read/write operator date evidence.
+        command.env_remove("SILKBOARD_RUST_DATES_FILE");
         if program == "cargo" && args.first() == Some(&"doc") {
             let mut flags = std::env::var_os("CARGO_ENCODED_RUSTDOCFLAGS")
                 .unwrap_or_else(|| {
@@ -49,7 +51,14 @@ fn main() -> ExitCode {
             ))
         }
     };
-    match xtask::dispatch(&args, root, &mut runner) {
+    let dates = std::env::var_os("SILKBOARD_RUST_DATES_FILE")
+        .filter(|value| !value.is_empty());
+    match xtask::dispatch_with_publication_cache(
+        &args,
+        root,
+        &mut runner,
+        dates.as_deref().map(Path::new),
+    ) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {
             eprintln!("{error}");

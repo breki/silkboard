@@ -286,3 +286,175 @@ fn canon_checks_both_wrappers_and_reports_broken_links_and_missing_inputs() {
     fs::remove_dir_all(fixture.0.join("docs")).unwrap();
     assert!(run().is_err());
 }
+
+#[test]
+fn parallel_validation_overlaps_two_lanes_only_after_dependency_admission() {
+    use std::sync::{Condvar, atomic::AtomicBool};
+    use std::time::Duration;
+    let fixture = Fixture::new();
+    let pair = (Mutex::new((false, false)), Condvar::new());
+    let admitted = AtomicUsize::new(0);
+    let rust_done = AtomicBool::new(false);
+    let frontend_done = AtomicBool::new(false);
+    dispatch(
+        &args(&["validate", "--check", "--parallel"]),
+        &fixture.0,
+        &mut |program, argv, _| {
+            if program == "curl" {
+                admitted.fetch_add(1, SeqCst);
+            }
+            let rust = program == "cargo" && argv.first() == Some(&"clippy");
+            let web = program == "npm" && argv == ["run", "check:all"];
+            if rust || web {
+                assert_eq!(admitted.load(SeqCst), 2);
+                let mut state = pair.0.lock().unwrap();
+                if rust {
+                    state.0 = true;
+                } else {
+                    state.1 = true;
+                }
+                pair.1.notify_all();
+                let (state, timeout) = pair
+                    .1
+                    .wait_timeout_while(state, Duration::from_secs(2), |s| {
+                        !s.0 || !s.1
+                    })
+                    .unwrap();
+                assert!(
+                    !timeout.timed_out() && state.0 && state.1,
+                    "validation lanes did not overlap"
+                );
+            }
+            if program == "cargo" && argv == ["test", "--locked", "--workspace"]
+            {
+                rust_done.store(true, SeqCst);
+            }
+            if program == "npm" && argv == ["run", "coverage"] {
+                frontend_done.store(true, SeqCst);
+            }
+            if program == "npm" && argv == ["run", "test:browser"] {
+                assert!(rust_done.load(SeqCst) && frontend_done.load(SeqCst));
+            }
+            Ok(successful_output(program, argv))
+        },
+    )
+    .unwrap();
+    let state = pair.0.lock().unwrap();
+    assert!(state.0 && state.1);
+}
+
+#[test]
+fn parallel_validation_propagates_every_gate_failure_and_never_skips_success_checks()
+ {
+    let fixture = Fixture::new();
+    let serial = Mutex::new(Vec::new());
+    dispatch(
+        &args(&["validate", "--check"]),
+        &fixture.0,
+        &mut |p, a, _| {
+            serial.lock().unwrap().push((
+                p.to_owned(),
+                a.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>(),
+            ));
+            Ok(successful_output(p, a))
+        },
+    )
+    .unwrap();
+    let mut expected = serial.into_inner().unwrap();
+    expected.sort();
+    let parallel = Mutex::new(Vec::new());
+    dispatch(
+        &args(&["validate", "--parallel", "--check"]),
+        &fixture.0,
+        &mut |p, a, _| {
+            parallel.lock().unwrap().push((
+                p.to_owned(),
+                a.iter().map(|s| (*s).to_owned()).collect::<Vec<_>>(),
+            ));
+            Ok(successful_output(p, a))
+        },
+    )
+    .unwrap();
+    let mut actual = parallel.into_inner().unwrap();
+    actual.sort();
+    assert_eq!(actual, expected);
+    expected.dedup();
+    for (program, argv) in expected {
+        let error = dispatch(
+            &args(&["validate", "--check", "--parallel"]),
+            &fixture.0,
+            &mut |p, a, _| {
+                if p == program && a == argv {
+                    Err("required parallel gate failure".into())
+                } else {
+                    Ok(successful_output(p, a))
+                }
+            },
+        )
+        .unwrap_err();
+        assert!(
+            error.contains("required parallel gate failure"),
+            "{program} {argv:?}: {error}"
+        );
+    }
+}
+
+#[test]
+fn parallel_validation_drains_inflight_work_on_failure_and_panics_fail_closed()
+{
+    use std::sync::{Condvar, atomic::AtomicBool};
+    use std::time::Duration;
+    let fixture = Fixture::new();
+    let pair = (Mutex::new(false), Condvar::new());
+    let drained = AtomicBool::new(false);
+    let result = dispatch(
+        &args(&["validate", "--parallel"]),
+        &fixture.0,
+        &mut |p, a, _| {
+            if p == "cargo" && a.first() == Some(&"clippy") {
+                let state = pair.0.lock().unwrap();
+                let (_state, timeout) = pair
+                    .1
+                    .wait_timeout_while(state, Duration::from_secs(2), |v| !*v)
+                    .unwrap();
+                assert!(!timeout.timed_out());
+                return Err("rust lane failed".into());
+            }
+            if p == "npm" && a == ["run", "check:all"] {
+                *pair.0.lock().unwrap() = true;
+                pair.1.notify_all();
+                std::thread::sleep(Duration::from_millis(50));
+                drained.store(true, SeqCst);
+            }
+            assert!(!(p == "npm" && a == ["run", "test:browser"]));
+            Ok(successful_output(p, a))
+        },
+    );
+    assert!(result.unwrap_err().contains("rust lane failed"));
+    assert!(drained.load(SeqCst));
+    for fail in ["clippy", "frontend"] {
+        let error = dispatch(
+            &args(&["validate", "--parallel"]),
+            &fixture.0,
+            &mut |p, a, _| {
+                assert!(
+                    !(fail == "clippy"
+                        && p == "npm"
+                        && a == ["run", "test:browser"])
+                );
+                if (fail == "clippy"
+                    && p == "cargo"
+                    && a.first() == Some(&"clippy"))
+                    || (fail == "frontend"
+                        && p == "npm"
+                        && a == ["run", "check:all"])
+                {
+                    panic!("fixture worker failed");
+                }
+                Ok(successful_output(p, a))
+            },
+        )
+        .unwrap_err();
+        assert!(error.contains("worker panicked"));
+    }
+}

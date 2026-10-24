@@ -5,6 +5,8 @@ export default defineConfig({
   plugins: [svelte()],
   resolve: { conditions: ["browser"] },
   test: {
+    // Validation overlaps a Rust lane; bound CI frontend memory/CPU workers.
+    maxWorkers: process.env.CI ? 2 : undefined,
     environment: "jsdom",
     include: ["src/**/*.test.js"],
     coverage: {

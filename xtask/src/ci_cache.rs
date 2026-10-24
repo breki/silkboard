@@ -91,6 +91,16 @@ fn digest(
     if !rustc.contains("release:") || !rustc.contains("host:") {
         return Err("missing Rust compiler identity".into());
     }
+    let payload = serde_json::json!({"config":config,"rustc":rustc,"flags":flags,"dependencies":crate::ci_inputs::inputs(root, runner)?});
+    hash_payload(root, runner, env, &payload)
+}
+
+fn hash_payload(
+    root: &Path,
+    runner: &Runner<'_>,
+    env: &BTreeMap<String, String>,
+    payload: &serde_json::Value,
+) -> Result<String, String> {
     let temp = Path::new(required(env, "RUNNER_TEMP")?);
     if !temp.is_absolute() {
         return Err("RUNNER_TEMP must be absolute".into());
@@ -111,9 +121,7 @@ fn digest(
         .open(&input_path)
         .map_err(|e| format!("cache fingerprint input: {e}"))?;
     let input = InputFile(input_path);
-    let payload =
-        serde_json::json!({"config":config,"rustc":rustc,"flags":flags});
-    file.write_all(&serde_json::to_vec(&payload).map_err(|e| e.to_string())?)
+    file.write_all(&serde_json::to_vec(payload).map_err(|e| e.to_string())?)
         .map_err(|e| e.to_string())?;
     drop(file);
     let output = runner(
@@ -174,8 +182,12 @@ fn plan(
     } else {
         "trusted".into()
     };
+    eprintln!(
+        "CI cache platform: {}",
+        serde_json::json!({"runner_os":identity[0],"runner_arch":identity[1],"image_os":identity[2],"image_version":identity[3]})
+    );
     let fingerprint = digest(root, runner, env)?;
-    let prefix = format!("rust-build-v1-{}-{fingerprint}", identity.join("-"));
+    let prefix = format!("rust-build-v2-{}-{fingerprint}", identity.join("-"));
     let mut outputs = BTreeMap::from([("enabled".into(), "true".into())]);
     for (mode, profile) in MODES {
         for (kind, scope) in [("trusted", "trusted"), ("local", local.as_str())]
@@ -186,6 +198,26 @@ fn plan(
             }
             outputs.insert(format!("{mode}_{kind}"), key);
         }
+    }
+    if let Some(policy) = env.get("DATE_POLICY_HASH") {
+        if !hex(policy, 64) {
+            return Err("invalid publication evidence policy digest".into());
+        }
+        let registry=crate::ci_inputs::registry(root)?.into_iter().map(|((name,version),checksum)|serde_json::json!({"name":name,"version":version,"checksum":checksum})).collect::<Vec<_>>();
+        let payload =
+            serde_json::json!({"schema":1,"policy":policy,"registry":registry});
+        let digest = hash_payload(root, runner, env, &payload)?;
+        outputs.insert("dates_enabled".into(), "true".into());
+        outputs.insert(
+            "dates_trusted".into(),
+            format!("rust-dates-v1-{digest}-trusted"),
+        );
+        outputs.insert(
+            "dates_local".into(),
+            format!("rust-dates-v1-{digest}-{local}"),
+        );
+    } else {
+        outputs.insert("dates_enabled".into(), "false".into());
     }
     Ok(outputs)
 }
@@ -210,6 +242,7 @@ fn environment() -> Result<BTreeMap<String, String>, String> {
         "ImageOS",
         "ImageVersion",
         "CACHE_CONFIG_HASH",
+        "DATE_POLICY_HASH",
         "PR_NUMBER",
         "PR_HEAD_SHA",
     ];
@@ -479,6 +512,12 @@ mod tests {
             let root = home.join("repository");
             let temp = home.join("runner");
             fs::create_dir_all(&root).unwrap();
+            fs::write(
+                root.join("Cargo.toml"),
+                "[workspace]\nmembers=[]\n[profile.test]\nopt-level=1\n",
+            )
+            .unwrap();
+            fs::write(root.join("Cargo.lock"), format!("version=4\n[[package]]\nname=\"external\"\nversion=\"1.0.0\"\nsource=\"registry+https://github.com/rust-lang/crates.io-index\"\nchecksum=\"{}\"\n", "a".repeat(64))).unwrap();
             for (mode, _) in MODES {
                 fs::create_dir_all(temp.join("silkboard-ci-rust").join(mode))
                     .unwrap();
@@ -535,9 +574,9 @@ mod tests {
 
     fn metadata() -> String {
         serde_json::json!({"workspace_members":["member-id"],"packages":[
-            {"id":"member-id","name":"sample-workspace","targets":[{"name":"sample-workspace","kind":["lib"]},{"name":"custom-binary","kind":["bin"]},{"name":"build-script-build","kind":["custom-build"]}]},
-            {"id":"external-id","name":"external","targets":[]}
-        ]}).to_string()
+            {"id":"member-id","name":"sample-workspace","version":"0.1.0","source":null,"targets":[{"name":"sample-workspace","kind":["lib"]},{"name":"custom-binary","kind":["bin"]},{"name":"build-script-build","kind":["custom-build"]}]},
+            {"id":"external-id","name":"external","version":"1.0.0","source":"registry+https://github.com/rust-lang/crates.io-index","targets":[]}
+        ],"resolve":{"nodes":[{"id":"member-id","features":[],"deps":[{"name":"external","pkg":"external-id","dep_kinds":[{"kind":null,"target":null}]}]},{"id":"external-id","features":["default"],"deps":[]}]}}).to_string()
     }
 
     fn fingerprint(
@@ -564,6 +603,205 @@ mod tests {
             } else {
                 String::new()
             }),
+        }
+    }
+
+    #[test]
+    fn build_profiles_invalidate_without_hashing_unrelated_workspace_text() {
+        let fixture = Fixture::new();
+        let env = fixture.env();
+        let baseline = plan(&fixture.root, &fingerprint, &env).unwrap();
+        fs::write(
+            fixture.root.join("Cargo.toml"),
+            "[workspace]\nmembers=[]\n[profile.test]\nopt-level=0\n",
+        )
+        .unwrap();
+        assert_ne!(
+            plan(&fixture.root, &fingerprint, &env).unwrap()["normal_trusted"],
+            baseline["normal_trusted"]
+        );
+    }
+
+    #[test]
+    fn workspace_bookkeeping_reuses_keys_but_external_inputs_do_not() {
+        let f = Fixture::new();
+        let env = f.env();
+        let baseline = plan(&f.root, &fingerprint, &env).unwrap();
+        fs::write(f.root.join("Cargo.toml"),"[workspace]\nmembers=[\"new-local-member\"]\n[workspace.metadata]\nnote=\"local bookkeeping\"\n[profile.test]\nopt-level=1\n").unwrap();
+        let mut lock = fs::read_to_string(f.root.join("Cargo.lock")).unwrap();
+        lock.push_str(
+            "\n[[package]]\nname=\"new-local-member\"\nversion=\"0.1.0\"\n",
+        );
+        fs::write(f.root.join("Cargo.lock"), &lock).unwrap();
+        assert_eq!(plan(&f.root, &fingerprint, &env).unwrap(), baseline);
+        let different_features = |p: &str, a: &[&str], cwd: &Path| {
+            if p == "cargo" && a[0] == "metadata" {
+                let mut m: serde_json::Value =
+                    serde_json::from_str(&metadata()).unwrap();
+                m["resolve"]["nodes"][1]["features"] =
+                    serde_json::json!(["default", "extra"]);
+                Ok(m.to_string())
+            } else {
+                fingerprint(p, a, cwd)
+            }
+        };
+        assert_ne!(
+            plan(&f.root, &different_features, &env).unwrap()["normal_trusted"],
+            baseline["normal_trusted"]
+        );
+        fs::write(
+            f.root.join("Cargo.lock"),
+            lock.replace(&"a".repeat(64), &"b".repeat(64)),
+        )
+        .unwrap();
+        assert_ne!(
+            plan(&f.root, &fingerprint, &env).unwrap()["normal_trusted"],
+            baseline["normal_trusted"]
+        );
+    }
+
+    #[test]
+    fn publication_facts_are_portable_but_isolated_from_pr_writers() {
+        let f = Fixture::new();
+        let mut env = f.env();
+        env.insert("DATE_POLICY_HASH".into(), "c".repeat(64));
+        let baseline = plan(&f.root, &fingerprint, &env).unwrap();
+        assert_eq!(baseline["dates_enabled"], "true");
+        env.insert("ImageVersion".into(), "other.2".into());
+        env.insert("RUSTFLAGS".into(), "-C debuginfo=1".into());
+        let changed = plan(&f.root, &fingerprint, &env).unwrap();
+        assert_eq!(baseline["dates_trusted"], changed["dates_trusted"]);
+        assert_ne!(baseline["normal_trusted"], changed["normal_trusted"]);
+        env.insert("GITHUB_EVENT_NAME".into(), "pull_request".into());
+        env.insert("GITHUB_REF".into(), "refs/pull/88/merge".into());
+        env.insert("PR_NUMBER".into(), "88".into());
+        env.insert("PR_HEAD_SHA".into(), "1".repeat(40));
+        let pr = plan(&f.root, &fingerprint, &env).unwrap();
+        assert_eq!(pr["dates_trusted"], baseline["dates_trusted"]);
+        assert_ne!(pr["dates_local"], pr["dates_trusted"]);
+        env.insert("PR_HEAD_SHA".into(), "2".repeat(40));
+        assert_ne!(
+            plan(&f.root, &fingerprint, &env).unwrap()["dates_local"],
+            pr["dates_local"]
+        );
+        env.insert("DATE_POLICY_HASH".into(), "d".repeat(64));
+        assert_ne!(
+            plan(&f.root, &fingerprint, &env).unwrap()["dates_trusted"],
+            baseline["dates_trusted"]
+        );
+        env.insert("DATE_POLICY_HASH".into(), "bad".into());
+        assert!(plan(&f.root, &fingerprint, &env).is_err());
+    }
+
+    #[test]
+    fn malformed_cargo_evidence_cannot_select_a_build_cache() {
+        for (file, bytes) in [
+            ("Cargo.toml", b"[workspace".to_vec()),
+            ("Cargo.toml", vec![255]),
+            ("Cargo.toml", vec![b' '; 4_194_305]),
+            ("Cargo.lock", b"version=5\npackage=[]".to_vec()),
+            ("Cargo.lock", b"version=4".to_vec()),
+        ] {
+            let f = Fixture::new();
+            fs::write(f.root.join(file), bytes).unwrap();
+            assert!(plan(&f.root, &fingerprint, &f.env()).is_err());
+        }
+        for change in ["source", "checksum", "duplicate", "name", "version"] {
+            let f = Fixture::new();
+            let lock = fs::read_to_string(f.root.join("Cargo.lock")).unwrap();
+            let invalid = match change {
+                "source" => lock.replace(
+                    "registry+https://github.com/rust-lang/crates.io-index",
+                    "git+https://example.invalid/repo",
+                ),
+                "checksum" => lock.replace(&"a".repeat(64), "wrong"),
+                "name" => lock.replace("name=\"external\"", "name=\"\""),
+                "version" => lock.replace("version=\"1.0.0\"", "version=\"\""),
+                _ => format!(
+                    "{lock}\n[[package]]{}",
+                    lock.split_once("[[package]]").unwrap().1
+                ),
+            };
+            fs::write(f.root.join("Cargo.lock"), invalid).unwrap();
+            assert!(plan(&f.root, &fingerprint, &f.env()).is_err(), "{change}");
+        }
+    }
+
+    #[test]
+    fn malformed_resolution_cannot_select_a_build_cache() {
+        for change in [
+            "members",
+            "packages",
+            "id",
+            "duplicate",
+            "source",
+            "lock-mismatch",
+            "resolve",
+            "node",
+            "missing-node",
+            "duplicate-node",
+            "deps",
+            "unknown-dep",
+            "features",
+            "feature-type",
+        ] {
+            let f = Fixture::new();
+            let mut m: serde_json::Value =
+                serde_json::from_str(&metadata()).unwrap();
+            match change {
+                "members" => m["workspace_members"] = serde_json::json!([]),
+                "packages" => m["packages"] = serde_json::json!([]),
+                "id" => m["packages"][1]["id"] = serde_json::Value::Null,
+                "duplicate" => {
+                    let p = m["packages"][0].clone();
+                    m["packages"].as_array_mut().unwrap().push(p);
+                }
+                "source" => {
+                    m["packages"][1]["source"] =
+                        serde_json::json!("git+https://example.invalid/repo");
+                }
+                "lock-mismatch" => {
+                    m["packages"][1]["version"] = serde_json::json!("2.0.0");
+                }
+                "resolve" => m["resolve"] = serde_json::Value::Null,
+                "node" => {
+                    m["resolve"]["nodes"][1]["id"] =
+                        serde_json::json!("unknown");
+                }
+                "missing-node" => {
+                    m["resolve"]["nodes"].as_array_mut().unwrap().pop();
+                }
+                "duplicate-node" => {
+                    let n = m["resolve"]["nodes"][1].clone();
+                    m["resolve"]["nodes"].as_array_mut().unwrap().push(n);
+                }
+                "deps" => {
+                    m["resolve"]["nodes"][1]["deps"] = serde_json::Value::Null;
+                }
+                "unknown-dep" => {
+                    m["resolve"]["nodes"][1]["deps"] = serde_json::json!([{"name":"bad","pkg":"unknown","dep_kinds":[]}]);
+                }
+                "features" => {
+                    m["resolve"]["nodes"][1]["features"] =
+                        serde_json::Value::Null;
+                }
+                _ => {
+                    m["resolve"]["nodes"][1]["features"] =
+                        serde_json::json!([1]);
+                }
+            }
+            let error = plan(
+                &f.root,
+                &|p, a, c| {
+                    if p == "cargo" && a[0] == "metadata" {
+                        Ok(m.to_string())
+                    } else {
+                        fingerprint(p, a, c)
+                    }
+                },
+                &f.env(),
+            );
+            assert!(error.is_err(), "{change}");
         }
     }
 
@@ -605,7 +843,7 @@ mod tests {
         assert!(artifacts.iter().all(|path| !path.exists()));
         assert!(dependencies.iter().all(|path| path.exists()));
         let calls = calls.into_inner().unwrap();
-        assert_eq!(calls.len(), 6);
+        assert_eq!(calls.iter().filter(|(_, a)| a[0] != "metadata").count(), 5);
         assert!(calls.iter().any(|(p, a)| p == "env"
             && a[0].contains("/coverage")
             && a.ends_with(&["clean".into(), "--workspace".into()])));
