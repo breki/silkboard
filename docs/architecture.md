@@ -140,6 +140,10 @@ once implemented. Reported completion is not verification, approval to merge
 or release eligibility. API/storage, CLI, Codex integration, UI, reconciliation,
 combined verification and production dogfooding are separate milestone issues.
 
+The [presentation design](task-plan-design.md), owned by #74, keeps Events as
+the starting view and adds a separate Task plans menu destination. Its tracked
+HTML reference is a fictional prototype, not an installed owner page.
+
 ## Network and untrusted content
 
 Tailscale controls private HTTPS reachability; application authentication

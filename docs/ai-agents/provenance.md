@@ -623,3 +623,19 @@ owner-supplied requirements. Current progress payloads, schema 3, installed
 hooks and production remain unchanged. Implementation and live dogfooding
 follow the linked milestone issues; the contract grants no merge, release or
 new dashboard execution authority.
+
+## Task-plan navigation — 2026-10-24
+
+While preparing #74, the owner selected a separate Task plans page linked
+from the hamburger menu, preserving the existing Events starting view. The
+[presentation design](../task-plan-design.md) records the view and interaction
+rules; the [tracked mockup](../mockups/task-plan.html) preserves the earlier
+offline prototype for implementers. Its one-active-step fixture is illustrative;
+the normative design includes the subsequently agreed multiple-active and
+reopening/session-continuity behavior. No deployed route or API is implied.
+
+During [the contract CI run](https://github.com/breki/silkboard/actions/runs/40114170874),
+the jobs API returned empty step metadata even when the completed log showed
+full validation and ARM64 lint. A premature stall inference caused one retry.
+The [working rule](working-rules.md) now distinguishes missing telemetry from
+evidence of stopped execution; no gate or merge requirement is relaxed.
