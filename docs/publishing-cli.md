@@ -72,7 +72,8 @@ Configuration/token files must be regular mode-0600 files without hardlinks,
 in mode-0700 immediate directories. Their paths and the state directory must
 be absolute and free of symlink directory aliases. The operator controls
 the directories and ancestors. Unknown fields and oversized/invalid input
-are rejected; configuration is limited to 16 KiB and reports to 8 KiB.
+are rejected; configuration is limited to 16 KiB and ordinary reports to 8 KiB. Task-plan
+input has its own 256 KiB bound.
 
 ## Publish
 
@@ -102,6 +103,14 @@ characters remain invalid. Names and identity rules are unchanged. Upgrade
 the server before sending multiline reports, and update older publisher
 binaries that reject line breaks. Existing single-line reports remain valid.
 Automatic Codex reporting retains its first-sentence summary policy.
+
+## Task plans
+
+The [task-plan commands](task-plan-publisher.md) publish complete bounded graphs
+and explicitly hand off the reporting role between native sessions. They use
+the same private configuration and transport, with separate task-local working
+state and counters. Automatic Codex plan reporting remains #77; existing
+summary/lifecycle hooks do not call these commands yet.
 
 ## Counters and integration
 

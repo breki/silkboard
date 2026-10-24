@@ -658,3 +658,22 @@ snapshot/restore worked, new-code reads retained plans, and restored credentials
 were denied. The old binary is compatibility-test evidence, not a clean current
 security-audit result. No live production migration/recovery was performed.
 See the [API guide](../task-plan-api.md) for bounds and remaining integrations.
+
+## Installed task-plan publisher — 2026-10-24
+
+Issue #76 implements explicit plan start/publish/local handoff commands using the
+shared #75 protocol. Automatic sequence/revision allocation and a separate
+local handoff command are implementation choices for the agreed single-writer,
+evolving-plan contract. A separate start operation refuses existing local
+state; ordinary publishing refuses missing state rather than guessing counters.
+Current plan content and high-water marks are private
+working state, not an outbound queue. Endpoint/project configuration and
+credentials remain operator-controlled; no dashboard reads are introduced.
+
+Existing verified transport and private-file operations are shared with
+ordinary progress commands. No registry versions or third-party dependency
+closure are changed. Tests cover real ingestion scope/conflicts/revocation,
+compiled command restarts without runtime helpers, failed sends, concurrent
+allocation, corruption, return handoff and stopped-writer private transfer.
+These are local evidence, not installation, native plan capture or production
+phone dogfooding. See [plan publisher](../task-plan-publisher.md).
