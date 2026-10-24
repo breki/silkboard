@@ -32,6 +32,10 @@ Install the external gates before full validation:
 Missing required tools, registry responses, or advisory checks fail validation.
 No gate silently skips an absent frontend, coverage tool, or audit database.
 Long runs print stage progress; redirect output to a local log when needed.
+Validation also emits a `Validation timing:` JSON record per completed gate
+(`gate`, integer `elapsed_ms`, and `outcome` pass/fail), including failures
+before stopping. The [CI time analysis](../ci-time-analysis.md) records the
+measured baseline, interpretation limits and proposed follow-ups.
 
 | Capability | Entry point |
 | --- | --- |

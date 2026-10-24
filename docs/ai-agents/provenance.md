@@ -677,3 +677,21 @@ compiled command restarts without runtime helpers, failed sends, concurrent
 allocation, corruption, return handoff and stopped-writer private transfer.
 These are local evidence, not installation, native plan capture or production
 phone dogfooding. See [plan publisher](../task-plan-publisher.md).
+
+## Full CI timing analysis — 2026-10-24
+
+Issue #86 examines six completed successful CI runs from 2026-10-24 using
+GitHub job/step metadata, timestamped logs and the source at their recorded
+head revisions. The [report](../ci-time-analysis.md) and extracted CSV data
+retain run links, exact SHAs, cache conditions and measurement limits. All
+registry-version sets are unchanged across the sample; workspace/manifest
+changes, cache namespaces and runner variation remain confounders. Raw logs
+stay outside tracked artifacts. No optional benchmarking reruns were launched.
+
+One older log delayed two gate markers, so it records their combined interval
+instead of claiming zero-time VM tests. The validator now reports monotonic
+per-gate elapsed milliseconds on success/failure. This is observability only,
+not a change in gate order, dependency prerequisites, thresholds, cache trust
+or release eligibility. Ranked optimizations are proposals requiring their
+own implementation decisions. Local instrumentation tests/full validation
+and independent reviews are separate from the pre-instrumentation CI sample.
