@@ -88,6 +88,7 @@ pub(super) fn run(path: &Path, input: impl Read) -> Result<(), Error> {
     };
     let report = Report {
         task_id: None,
+        description: None,
         hostname: settings.hostname.clone(),
         tool: "codex".to_owned(),
         parent_session_id: child.then(|| payload.session_id.clone()),

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Support optional detailed Markdown descriptions alongside concise event
+  summaries, and clarify existing workflow and step descriptions.
+
 ## 0.10.0 - 2026-10-25
 
 - Identify publisher builds with the shared repository version, source commit

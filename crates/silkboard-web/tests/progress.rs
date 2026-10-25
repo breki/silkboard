@@ -112,7 +112,7 @@ async fn validates_payloads_and_keeps_feed_unreadable() {
     for (body, expected) in [
         ("{", StatusCode::BAD_REQUEST),
         (r#"{"unknown":"field"}"#, StatusCode::UNPROCESSABLE_ENTITY),
-        (&"x".repeat(9000), StatusCode::PAYLOAD_TOO_LARGE),
+        (&"x".repeat(65_537), StatusCode::PAYLOAD_TOO_LARGE),
     ] {
         let response = router
             .clone()

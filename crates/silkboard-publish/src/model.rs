@@ -52,6 +52,9 @@ pub(super) struct Report {
     pub parent_session_id: Option<String>,
     pub session_name: Option<String>,
     pub message: String,
+    /// Optional detailed Markdown, at most 8,000 UTF-8 bytes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
 }
@@ -82,6 +85,7 @@ impl Report {
         }
         for (s, limit, multiline) in
             std::iter::once((&self.message, 2000, true))
+                .chain(self.description.as_ref().map(|s| (s, 8000, true)))
                 .chain(self.session_name.as_ref().map(|s| (s, 120, false)))
         {
             if s.trim().is_empty()

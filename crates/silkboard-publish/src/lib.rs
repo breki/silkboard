@@ -77,7 +77,7 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         [command, flag, path] if command == "publish" && flag == "--config" => {
             let config = configuration(Path::new(path))?;
             let report: model::Report =
-                serde_json::from_slice(&model::bounded(input, 8192)?)
+                serde_json::from_slice(&model::bounded(input, 65_536)?)
                     .map_err(|_| Error::Input)?;
             publish(&config, report)?;
         }

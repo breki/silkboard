@@ -93,7 +93,7 @@ Counters are decimal strings on the wire and checked through signed 64-bit
 maximum. Exhaustion and malformed/newer local state fail closed.
 
 Input and normalized wire snapshot each have a 262,144-byte limit, alongside
-all graph/field limits. Ordinary progress retains its 8,192-byte input limit.
+all graph/field limits. Ordinary progress retains its 65,536-byte input limit.
 The existing verified HTTPS policy, disabled redirects/proxies, three-second
 network budget and 1,024-byte acknowledgement cap apply unchanged.
 
@@ -182,3 +182,14 @@ Local tests exercise compiled commands without runtime tools, actual Axum
 scope/revocation/conflict boundaries, failed allocations/delivery, concurrency,
 return handoffs, private transfer and bounded acknowledgement validation.
 They do not establish live phone visibility, installation or tagged upgrades.
+
+## Descriptions alongside titles
+
+Use short workflow and step titles for lists and graph nodes. Supply optional
+`description` on the workflow or individual steps for multi-paragraph Markdown
+context (up to 2,000 UTF-8 bytes each). Step `report` is separate evolving
+progress text, rather than the definition of the step. These existing fields
+are carried by ordinary and explicit Codex plan commands; they are not
+restricted to one line. Changing a description changes the plan definition
+and advances its revision. Owner step selection opens Description and Agent
+report; workflow descriptions appear in the workflow view.

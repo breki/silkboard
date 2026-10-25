@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Detailed progress descriptions, 2026-10-25
+
+The owner authorized implementation of
+[#107](https://github.com/breki/silkboard/issues/107). Events gain optional
+8,000-byte Markdown descriptions alongside existing summaries. Existing
+workflow/step descriptions and separate step reports are reused. Encoded
+event input is bounded to 65,536 bytes; the existing payload JSON stores
+detail without a schema migration. Automatic Codex hooks retain summary-only
+reporting. These are implementation decisions within the captured issue,
+not evidence of a production release or new agent authority.
+
 ## Publisher build identity, 2026-10-25
 
 The owner requested [#110](https://github.com/breki/silkboard/issues/110)

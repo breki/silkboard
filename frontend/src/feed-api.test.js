@@ -92,6 +92,9 @@ test.each([
   { received_at: -1 },
   { received_at: 8640000000000001 },
   { message: "" },
+  { description: 42 },
+  { description: "" },
+  { description: "x".repeat(8001) },
   { event_id: "" },
 ])("rejects malformed history records", async (changes) => {
   vi.stubGlobal(

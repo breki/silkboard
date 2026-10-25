@@ -534,3 +534,37 @@ async fn event_choices_use_all_received_events_and_deduplicate_agents() {
         StatusCode::UNAUTHORIZED
     );
 }
+
+#[tokio::test]
+async fn event_descriptions_reach_every_owner_projection() {
+    let store = ProgressStore::open_memory().unwrap();
+    set_password_from_reader(&store, b"private test owner password".as_slice())
+        .unwrap();
+    let token = store.issue_token("silkboard", "agent").unwrap();
+    let mut value = event("detailed", "native", 1);
+    value.description = Some("Context.\n\n**More detail.**".into());
+    store.publish("silkboard", &token, &value).unwrap();
+    let (app, cookie) = owner(store).await;
+    for path in [
+        "/api/owner/events",
+        "/api/owner/projects/silkboard/sessions/1/events",
+    ] {
+        let (status, page) = read(app.clone(), path, &cookie).await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(
+            page["items"][0]["description"],
+            value.description.as_deref().unwrap()
+        );
+        assert_eq!(page["items"][0]["message"], "Running tests");
+        assert_eq!(
+            read(app.clone(), path, "").await.0,
+            StatusCode::UNAUTHORIZED
+        );
+    }
+    let (_, page) =
+        read(app, "/api/owner/projects/silkboard/sessions", &cookie).await;
+    assert_eq!(
+        page["items"][0]["latest"]["description"],
+        value.description.unwrap()
+    );
+}

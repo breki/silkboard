@@ -122,7 +122,7 @@ pub(super) fn allocate(
         report,
     };
     // Refuse encoded requests exceeding the server limit before advancing state.
-    if serde_json::to_vec(&event).map_err(|_| Error::Input)?.len() > 8192 {
+    if serde_json::to_vec(&event).map_err(|_| Error::Input)?.len() > 65_536 {
         return Err(Error::Input);
     }
     replace(

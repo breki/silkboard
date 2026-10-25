@@ -9,7 +9,7 @@ use std::{
 use support::Fixture;
 const TASK: &str = "11111111-1111-4111-8111-111111111111";
 fn draft() -> Value {
-    json!({"schema_version":1,"task_id":TASK,"reporter":{"hostname":"dev","tool":"codex","session_id":"native-a"},"title":"Task-progress graphs","steps":[{"id":"contract","title":"Define reporting","depends_on":[],"state":"done"},{"id":"publisher","title":"Implement publisher","depends_on":["contract"],"state":"active"}]})
+    json!({"schema_version":1,"task_id":TASK,"reporter":{"hostname":"dev","tool":"codex","session_id":"native-a"},"title":"Task-progress graphs","description":"Workflow context.\n\nMore detail.","steps":[{"id":"contract","title":"Define reporting","depends_on":[],"state":"done"},{"id":"publisher","title":"Implement publisher","description":"Step context.\n\n**More detail.**","depends_on":["contract"],"state":"active"}]})
 }
 fn args(f: &Fixture, command: &str) -> Vec<OsString> {
     let mut args = f.args();
@@ -68,6 +68,11 @@ async fn installed_plan_publisher_resumes_without_runtime_tools() {
         .unwrap();
         assert_eq!(state["snapshot"]["sequence"], "2");
         assert_eq!(state["snapshot"]["plan_revision"], "1");
+        assert_eq!(state["snapshot"]["description"], draft()["description"]);
+        assert_eq!(
+            state["snapshot"]["steps"][1]["description"],
+            draft()["steps"][1]["description"]
+        );
     })
     .await
     .unwrap();

@@ -478,3 +478,47 @@ test("session groups show counts for multiple reports and child-only pages never
     screen.getAllByRole("button", { name: /Event details:/ }),
   ).toHaveLength(2);
 });
+
+test.each([false, true])(
+  "event summary stays compact while optional description opens as safe Markdown (hierarchy=%s)",
+  async (hierarchical) => {
+    const { default: EventFeed } = await import("./EventFeed.svelte");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        routes({
+          "/api/owner/events": response(
+            page([
+              {
+                ...report,
+                message: "Tests complete",
+                description:
+                  "First paragraph.\n\n**Second paragraph.**\n\n<script>alert(1)</script>",
+              },
+            ]),
+          ),
+        }),
+      ),
+    );
+    render(EventFeed, { onexpire: vi.fn() });
+    if (hierarchical) {
+      await screen.findByRole("button", {
+        name: "Event details: Tests complete",
+      });
+      await fireEvent.click(
+        screen.getByRole("button", { name: "Session hierarchy" }),
+      );
+    }
+    const button = await screen.findByRole("button", {
+      name: "Event details: Tests complete",
+    });
+    expect(screen.queryByText("First paragraph.")).toBeNull();
+    await fireEvent.click(button);
+    const detail = screen.getByRole("region", { name: "Event details" });
+    expect(within(detail).getByText("First paragraph.")).toBeTruthy();
+    expect(within(detail).getByText("Second paragraph.").tagName).toBe(
+      "STRONG",
+    );
+    expect(detail.querySelector("script")).toBeNull();
+  },
+);

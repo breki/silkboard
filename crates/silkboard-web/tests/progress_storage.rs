@@ -479,3 +479,60 @@ fn legacy_event_payload_serialization_is_unchanged_for_retries() {
     let event: ProgressEvent = serde_json::from_str(old).unwrap();
     assert_eq!(serde_json::to_string(&event).unwrap(), old);
 }
+
+#[test]
+fn descriptions_are_bounded_persistent_and_immutable_on_retry() {
+    let db = Database::new();
+    let store = ProgressStore::open(&db.0).unwrap();
+    silkboard_web::owner::set_password_from_reader(
+        &store,
+        b"private detail test password".as_slice(),
+    )
+    .unwrap();
+    let token = store.issue_token("silkboard", "details").unwrap();
+    let mut detailed = event("detail", 1);
+    detailed.description = Some(format!("{}\n\nend", "é".repeat(3997)));
+    let ack = store.publish("silkboard", &token, &detailed).unwrap();
+    drop(store);
+    let store = ProgressStore::open(&db.0).unwrap();
+    assert_eq!(
+        store
+            .publish("silkboard", &token, &detailed)
+            .unwrap()
+            .received_at,
+        ack.received_at
+    );
+    let payload: String = db
+        .connection()
+        .query_row(
+            "SELECT payload FROM events WHERE event_id='detail'",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&payload).unwrap()["description"],
+        detailed.description.as_deref().unwrap()
+    );
+    detailed.description = Some("Changed".into());
+    assert!(matches!(
+        store.publish("silkboard", &token, &detailed),
+        Err(ProgressError::Conflict)
+    ));
+    for description in [" ".into(), "é".repeat(4001), "bad\u{0001}".into()] {
+        let mut invalid = event("invalid", 2);
+        invalid.description = Some(description);
+        assert!(matches!(
+            store.publish("silkboard", &token, &invalid),
+            Err(ProgressError::Invalid)
+        ));
+    }
+    let legacy = event("legacy", 2);
+    store.publish("silkboard", &token, &legacy).unwrap();
+    let mut null = serde_json::to_value(&legacy).unwrap();
+    assert!(null.get("description").is_none());
+    null["description"] = serde_json::Value::Null;
+    store
+        .publish("silkboard", &token, &serde_json::from_value(null).unwrap())
+        .unwrap();
+}

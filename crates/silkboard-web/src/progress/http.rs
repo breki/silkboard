@@ -20,7 +20,7 @@ struct Ingestion {
 pub(crate) fn routes(store: ProgressStore) -> Router {
     Router::new()
         .route("/api/projects/{project}/progress", post(publish))
-        .layer(DefaultBodyLimit::max(8192))
+        .layer(DefaultBodyLimit::max(65_536))
         .with_state(Ingestion {
             store,
             slots: Arc::new(Semaphore::new(8)),
