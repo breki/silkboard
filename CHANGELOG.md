@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix intermittent publisher CI failures when a rejected CLI closes stdin
+  before its test helper writes the input.
+
 - Publish explicit Codex task plans with native session identity, separate
   operator opt-in and workflow guidance for revisions and writer handoff.
 

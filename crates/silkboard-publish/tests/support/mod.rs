@@ -13,6 +13,30 @@ use std::{
 };
 
 static NEXT: AtomicUsize = AtomicUsize::new(0);
+pub fn finish_cli(
+    mut child: std::process::Child,
+    input: &[u8],
+) -> std::process::Output {
+    let written = child.stdin.take().unwrap().write_all(input);
+    let output = child.wait_with_output().unwrap();
+    if let Err(error) = written {
+        // Invalid invocations may reject before reading stdin. Keep their
+        // real exit/output available for assertions; never hide other I/O
+        // errors or a successful child that failed to consume its input.
+        assert_eq!(error.kind(), std::io::ErrorKind::BrokenPipe);
+        assert!(
+            !output.status.success(),
+            "successful CLI did not consume input"
+        );
+        assert_eq!(
+            output.status.code(),
+            Some(1),
+            "CLI did not reject normally"
+        );
+    }
+    output
+}
+
 pub struct Fixture {
     pub root: PathBuf,
     pub config: Value,

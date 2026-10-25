@@ -4,7 +4,6 @@ mod support;
 use serde_json::{Value, json};
 use std::{
     ffi::OsString,
-    io::Write,
     process::{Command, Output, Stdio},
 };
 use support::Fixture;
@@ -19,7 +18,7 @@ fn args(f: &Fixture, command: &str) -> Vec<OsString> {
     args
 }
 fn cli(args: &[OsString], value: &Value) -> Output {
-    let mut child = Command::new(env!("CARGO_BIN_EXE_silkboard-publish"))
+    let child = Command::new(env!("CARGO_BIN_EXE_silkboard-publish"))
         .env("PATH", "/nonexistent")
         .args(args)
         .stdin(Stdio::piped())
@@ -27,13 +26,7 @@ fn cli(args: &[OsString], value: &Value) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(&serde_json::to_vec(value).unwrap())
-        .unwrap();
-    child.wait_with_output().unwrap()
+    support::finish_cli(child, &serde_json::to_vec(value).unwrap())
 }
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn installed_plan_publisher_resumes_without_runtime_tools() {
