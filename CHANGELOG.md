@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Clarify task-plan freshness and verify full-snapshot recovery across lost
+  updates, ambiguous acknowledgements, timeouts and interrupted handoffs.
+
 - Add owner-only task-plan graphs with directed prerequisites, step details,
   phone dialogs, received history and pinned revisions alongside the event feed.
 

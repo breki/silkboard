@@ -752,3 +752,16 @@ Local component tests and disposable real-API browser fixtures cover snapshots,
 reopening, revision selection, phone focus and the contract's maximum graph.
 These fixtures are not production reports, installation or phone acceptance;
 combined milestone verification and authorized rollout remain separate work.
+
+## Task-plan reconciliation evidence — 2026-10-25
+
+After authorizing merge #91, the owner asked to continue milestone 5. Issue
+#79 verifies the existing full-snapshot recovery contract through the installed
+CLI and actual authenticated Axum routes, with test-only faults before writes,
+after accepted writes and across the network deadline. Exact sequence/history
+checks cover lost revisions, duplicate/delayed/conflicting reports, removed
+steps and interrupted writer handoff. Component and real-API browser checks
+verify aging, retained states/selection and read-failure warnings. The owner
+copy now explicitly distinguishes reported states from connection status.
+[Recovery evidence](../task-plan-recovery.md) records the scenarios and limits;
+it does not claim #80 combined acceptance or #81 production installation.

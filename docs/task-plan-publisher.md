@@ -27,7 +27,9 @@ publisher package version alone does not identify the server release.
 Older servers cannot ingest plans; rejection is not success.
 Existing single-line/multiline progress and Codex lifecycle reports remain
 compatible and use their existing separate counters. Publishing plans does
-not enable the future graph page, Codex's separate plan opt-in or hook trust.
+not install the owner graph page, enable Codex's separate plan opt-in or change
+hook trust. The graph is locally implemented in #78 and needs an authorized
+server release. [Recovery evidence](task-plan-recovery.md) verifies #79.
 
 ## Publish a complete current plan
 

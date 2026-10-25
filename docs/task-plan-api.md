@@ -2,9 +2,11 @@
 
 Implemented for [#75](https://github.com/breki/silkboard/issues/75), with local
 verification only. This does not install a production migration. The installed
-publisher now has [explicit plan commands](task-plan-publisher.md) in #76;
-Codex hooks and owner pages do not yet send or display plans. Those are separate
-milestone 5 issues. The [wire contract](task-plan-contract.md)
+publisher has [explicit plan commands](task-plan-publisher.md) in #76,
+the explicit Codex adapter is implemented in #77, and the owner graph in #78.
+Local [recovery and freshness evidence](task-plan-recovery.md) covers #79;
+combined verification and production rollout remain #80–#81.
+The [wire contract](task-plan-contract.md)
 defines fields, graph validation, ordering and writer handoff.
 
 ## Publishing
