@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Workflows UI terminology, 2026-10-25
+
+The owner selected [#98](https://github.com/breki/silkboard/issues/98): use
+Workflow/Workflows for the existing evolving graph feature throughout current
+navigation, headings, controls, feedback and accessible labels. The current
+[presentation guide](../task-plan-design.md) adopts the name; earlier rollout
+records, mockups and received fixture content remain historical evidence.
+Existing `/plans` links, API fields, publisher commands, storage and graph
+behavior retain their contracts. The name adds no fixed templates or task
+execution and changes no owner/publisher permissions or Events starting view.
+
 ## Native Codex task titles, 2026-10-25
 
 The owner requested native Codex title updates at Silkboard lifecycle moments

@@ -86,8 +86,8 @@
       {#if !page.items.length}<p>No received history on this page.</p>{/if}
       <ul
         aria-label={kind === "history"
-          ? "Received plan reports"
-          : "Received plan revisions"}
+          ? "Received workflow reports"
+          : "Received workflow revisions"}
       >
         {#each page.items as item (kind === "history" ? item.sequence : item.plan_revision)}
           <li>

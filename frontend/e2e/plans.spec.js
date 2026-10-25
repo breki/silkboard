@@ -67,7 +67,7 @@ test("real owner login, direct snapshots, reopening, revision pinning and safe d
     page.getByRole("button", { name: "Build graph page, Done" }),
   ).toBeVisible();
   expect(new URL(page.url()).search).toBe("?sequence=1");
-  await page.getByRole("link", { name: "Return to Current plan" }).click();
+  await page.getByRole("link", { name: "Return to Current workflow" }).click();
   await expect(
     page.getByText("new-development-vm", { exact: false }).first(),
   ).toBeVisible();
@@ -161,12 +161,12 @@ test("list pagination and browser Back restore the earlier list page", async ({
 }) => {
   await openPlan(page);
   const table = page.getByRole("table", {
-    name: "Task plans from all projects",
+    name: "Workflows from all projects",
   });
   await expect(table.locator("tbody tr")).toHaveCount(20);
-  await page.getByRole("button", { name: "Older task plans" }).click();
+  await page.getByRole("button", { name: "Older workflows" }).click();
   await expect(
-    page.getByRole("button", { name: "Latest task plans" }),
+    page.getByRole("button", { name: "Latest workflows" }),
   ).toBeVisible();
   const title = await table.getByRole("link").first().textContent();
   await table.getByRole("link").first().click();
@@ -175,7 +175,7 @@ test("list pagination and browser Back restore the earlier list page", async ({
   ).toBeVisible();
   await page.goBack();
   await expect(
-    page.getByRole("button", { name: "Latest task plans" }),
+    page.getByRole("button", { name: "Latest workflows" }),
   ).toBeVisible();
   await expect(table.getByRole("link").first()).toHaveText(title);
   await checkFilters(page, true);
@@ -300,7 +300,7 @@ test("an invalid plan link still expires an idle credential manager", async ({
   await page.clock.install();
   await openPlan(page, "/plans?bad=1");
   await expect(
-    page.getByRole("heading", { name: "Invalid task-plan link" }),
+    page.getByRole("heading", { name: "Invalid workflow link" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Navigation menu" }).click();
   await page
@@ -363,7 +363,7 @@ test("the next full snapshot repairs a lost revision while preserving selected w
   await page
     .getByRole("button", { name: "Received history and revisions" })
     .click();
-  const history = page.getByRole("list", { name: "Received plan reports" });
+  const history = page.getByRole("list", { name: "Received workflow reports" });
   await expect(history.locator(":scope > li")).toHaveCount(2);
   await page
     .getByRole("button", { name: "Compare with previous received report" })

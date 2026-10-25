@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Rename the owner-facing Task plans feature to Workflows while preserving
+  graph behavior, existing links, publishing contracts and received data.
+
 - Name native Codex sessions after the current Silkboard task through a bounded
   local metadata helper and task-start/title-change workflow guidance.
 

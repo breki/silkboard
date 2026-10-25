@@ -73,17 +73,17 @@
       if (snapshot) return "That received snapshot was not found.";
       try {
         await listPlans(null, signal);
-        return "That task plan was not found.";
+        return "That workflow was not found.";
       } catch (probe) {
         if (probe instanceof ApiError && probe.status === 401) {
           onexpire();
           return "";
         }
         if (probe instanceof ApiError && probe.status === 404)
-          return "Task plans are not available on this server.";
+          return "Workflows are not available on this server.";
       }
     }
-    return "Unable to update this plan. Displayed reports may be out of date.";
+    return "Unable to update this workflow. Displayed reports may be out of date.";
   }
   $effect(() => {
     const selected = sequence;
@@ -218,14 +218,14 @@
   });
 </script>
 
-<section class="task-plan" aria-label="Task plan">
-  <nav aria-label="Task breadcrumbs">
-    <a href="/plans" onclick={(event) => onopen(event, "/plans")}>Task plans</a>
+<section class="task-plan" aria-label="Workflow">
+  <nav aria-label="Workflow breadcrumbs">
+    <a href="/plans" onclick={(event) => onopen(event, "/plans")}>Workflows</a>
     / {project}
   </nav>
   {#if failed}<div class="notice">
       <p role="alert">{failed}</p>
-      <button disabled={loading} onclick={() => retry++}>Retry plan</button>
+      <button disabled={loading} onclick={() => retry++}>Retry workflow</button>
     </div>{/if}
   {#if shown}
     <h2>{shown.snapshot.title}</h2>
@@ -241,7 +241,7 @@
         Newer reports are available. <a
           href={routeFor(project, task)}
           onclick={(event) => onopen(event, routeFor(project, task))}
-          >Return to Current plan</a
+          >Return to Current workflow</a
         >
       </p>{/if}
     {#if shown.snapshot.description}<div
@@ -293,7 +293,7 @@
           · <a
             href={routeFor(project, task)}
             onclick={(event) => onopen(event, routeFor(project, task))}
-            >Current plan</a
+            >Current workflow</a
           >{/if}
       </p>
       {#if shown.summary.history_incomplete}<p class="notice">
@@ -354,5 +354,5 @@
         >
       {/if}
     </section>
-  {:else if !failed}<p role="status">Loading task plan…</p>{/if}
+  {:else if !failed}<p role="status">Loading workflow…</p>{/if}
 </section>

@@ -340,7 +340,7 @@ test("installed Codex adapter, owner graph and existing data survive a real back
   await page
     .getByRole("button", { name: "Received history and revisions" })
     .click();
-  const history = page.getByRole("list", { name: "Received plan reports" });
+  const history = page.getByRole("list", { name: "Received workflow reports" });
   await expect(history.locator(":scope > li")).toHaveCount(3);
   await history.getByRole("link").last().click();
   await expect(page).toHaveURL(`${origin}${path}?sequence=1`);
@@ -351,7 +351,7 @@ test("installed Codex adapter, owner graph and existing data survive a real back
   await expect(
     page.getByText("Awaiting the fixture review gate"),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Return to Current plan" }).click();
+  await page.getByRole("link", { name: "Return to Current workflow" }).click();
   await expect(
     page.getByRole("button", { name: "Verify combined feature, Active" }),
   ).toBeVisible();

@@ -40,7 +40,7 @@
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
       <a href="/">Events</a>
-      <a href="/plans">Task plans</a>
+      <a href="/plans">Workflows</a>
     </nav>
     <div class="navigation" bind:this={container}>
       <button
