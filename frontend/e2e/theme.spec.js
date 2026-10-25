@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { publish } from "./plans-fixture.mjs";
 import { detail } from "../test/plans.js";
 
+test.use({ baseURL: "https://127.0.0.1:38132" });
+
 const appearance = async (page, mode) =>
   expect
     .poll(() =>

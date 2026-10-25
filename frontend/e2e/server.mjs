@@ -27,7 +27,7 @@ if (
 )
   throw new Error("Expected a private browser-test directory");
 // Refuse an occupied backend port before starting or seeding any service.
-for (const port of [38125, 38126, 38127, 38128, 38129])
+for (const port of [38125, 38126, 38127, 38128, 38129, 38132, 38133])
   await new Promise((done, reject) => {
     const probe = createServer();
     probe.once("error", reject);
@@ -145,10 +145,33 @@ execFileSync(
   ["publisher", "issue", "silkboard", "plan-browser", join(dir, "plans.token")],
   { env: plansEnv },
 );
+// Theme logins must not consume the feed tests' five-attempt/minute budget.
+const themeEnv = {
+  ...env,
+  SILKBOARD_DATABASE: join(dir, "themes.sqlite"),
+  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38132",
+  SILKBOARD_LISTEN: "127.0.0.1:38133",
+};
+execFileSync(binary, ["owner", "set-password"], {
+  env: themeEnv,
+  input: password,
+});
+execFileSync(
+  binary,
+  [
+    "publisher",
+    "issue",
+    "silkboard",
+    "theme-browser",
+    join(dir, "theme.token"),
+  ],
+  { env: themeEnv },
+);
+const themeApp = spawn(binary, [], { env: themeEnv, stdio: "inherit" });
 const plansApp = spawn(binary, [], { env: plansEnv, stdio: "inherit" });
 const app = spawn(binary, [], { env, stdio: "inherit" });
 const setupApp = spawn(binary, [], { env: setupEnv, stdio: "inherit" });
-const apps = [app, setupApp, plansApp],
+const apps = [app, setupApp, plansApp, themeApp],
   proxies = [];
 let stopping = false;
 function stop(code) {
@@ -180,7 +203,7 @@ for (const child of apps)
     if (!stopping) stop(1);
   });
 try {
-  for (const backendPort of [38125, 38127, 38129]) {
+  for (const backendPort of [38125, 38127, 38129, 38133]) {
     let ready = false;
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
@@ -258,7 +281,28 @@ try {
     },
   );
   if (!other.ok) throw new Error("Other-project fixture publish failed");
+  const themeToken = readFileSync(join(dir, "theme.token"), "utf8").trim();
+  const themeEvent = await fetch(
+    "http://127.0.0.1:38133/api/projects/silkboard/progress",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${themeToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        event_id: "theme-fixture",
+        hostname: "theme-vm",
+        tool: "codex",
+        session_id: "theme-session",
+        sequence: 1,
+        message: "Checking theme contrast",
+      }),
+    },
+  );
+  if (!themeEvent.ok) throw new Error("Theme fixture publish failed");
   for (const [httpsPort, backendPort] of [
+    [38132, 38133],
     [38128, 38129],
     [38126, 38127],
     [38124, 38125],
