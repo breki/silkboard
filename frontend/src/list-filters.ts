@@ -20,3 +20,6 @@ export function filterQuery(
 
 // eslint-disable-next-line no-unused-vars -- Parameter describes the callback type.
 export type ApplyFilters = (filters: ListFilters) => void;
+
+// eslint-disable-next-line no-unused-vars -- Parameter describes the callback type.
+export type SelectChoice = (value: string) => void;

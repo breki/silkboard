@@ -22,6 +22,16 @@ filters and pagination survive view switching. These routine presentation
 decisions preserve publish-only agents and owner-only reads; mockups remain
 illustrative rather than rollout evidence.
 
+## Immediate searchable view filters, 2026-10-25
+
+For [#103](https://github.com/breki/silkboard/issues/103), the owner selected
+searchable Project/Agent pickers and visible single-select workflow status
+buttons, then expanded Project/Agent pickers to Events too. The owner required
+immediate filtering without Apply. Clear remains available; event time changes
+apply when valid. The [owner feed](../owner-feed.md) and
+[workflow design](../task-plan-design.md) record the interaction and owner-only
+choice API. Local checks do not establish production rollout.
+
 ## Explicit event workflow links, 2026-10-25
 
 For [#104](https://github.com/breki/silkboard/issues/104), the owner selected

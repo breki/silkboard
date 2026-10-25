@@ -911,3 +911,80 @@ async fn event_workflow_links_follow_each_event_across_global_pages() {
         }
     }
 }
+
+#[tokio::test]
+async fn filter_choices_are_bounded_searchable_and_owner_only() {
+    let (_store, app, token, cookie) = fixture().await;
+    for n in 1..=23 {
+        let mut plan = snapshot("1");
+        plan["task_id"] = json!(format!("{n:08x}-1111-4111-8111-111111111111"));
+        plan["reporter"]["hostname"] = json!(format!("host-{n:02}"));
+        assert_eq!(
+            request(
+                &app,
+                "POST",
+                "/api/projects/silkboard/plans",
+                &token,
+                Some(plan)
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+    }
+    let path = "/api/owner/filter-options?view=workflows&kind=agent";
+    let (status, page) = request(&app, "GET", path, &cookie, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(page["items"].as_array().unwrap().len(), 20);
+    assert_eq!(page["next_cursor"], "codex host-20");
+    let (_, older) = request(
+        &app,
+        "GET",
+        &format!("{path}&after=codex%20host-20"),
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(
+        older["items"],
+        json!(["codex host-21", "codex host-22", "codex host-23"])
+    );
+    assert!(older["next_cursor"].is_null());
+    let (_, found) =
+        request(&app, "GET", &format!("{path}&q=HOST-23"), &cookie, None).await;
+    assert_eq!(found["items"], json!(["codex host-23"]));
+    let (_, projects) = request(
+        &app,
+        "GET",
+        "/api/owner/filter-options?view=workflows&kind=project",
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(projects["items"], json!(["silkboard"]));
+    assert_eq!(
+        request(&app, "GET", path, &token, None).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    for query in [
+        "view=bad&kind=agent",
+        "view=events&kind=bad",
+        "view=workflows&kind=project&after=BAD",
+        "view=workflows&kind=agent&after=bad",
+        "view=workflows&kind=agent&q=%0A",
+        "view=workflows&kind=agent&extra=1",
+    ] {
+        assert_eq!(
+            request(
+                &app,
+                "GET",
+                &format!("/api/owner/filter-options?{query}"),
+                &cookie,
+                None
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}

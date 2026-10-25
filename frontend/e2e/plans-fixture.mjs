@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { detail, task } from "../test/plans.js";
 import { markdownReport } from "./fixture.mjs";
 export { task };
@@ -49,7 +50,7 @@ export function maximum() {
 }
 export async function publish(snapshot, token) {
   const response = await fetch(
-    "http://127.0.0.1:38129/api/projects/silkboard/plans",
+    `http://127.0.0.1:${fixturePort(38129)}/api/projects/silkboard/plans`,
     {
       method: "POST",
       headers: {

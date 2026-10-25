@@ -32,7 +32,10 @@ Install the external gates before full validation:
 - OpenSSL for the disposable HTTPS browser fixtures; loopback ports 38124–38131
   must be free (feed, first-owner setup, plans and combined acceptance use
   separate proxy/backend pairs).
-  No production credentials are used.
+  No production credentials are used. For concurrent worktrees, set
+  `SILKBOARD_E2E_PORT_BASE` to a distinct eight-port loopback block (for
+  example `38940` uses 38940–38947). The default remains 38124–38131.
+  Invalid bases are rejected; occupied services are never reused.
 
 Missing required tools, registry responses, or advisory checks fail validation.
 No gate silently skips an absent frontend, coverage tool, or audit database.

@@ -31,6 +31,7 @@ pub(crate) fn routes(auth: OwnerAuth) -> Router {
     // Owner APIs, including credential mutations, MUST stay in this guarded router.
     let protected = Router::new()
         .merge(super::feed::routes())
+        .merge(super::filter_options::routes())
         .merge(super::plans::routes())
         .merge(super::publishers::routes())
         .route("/session", get(session))

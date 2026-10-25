@@ -54,7 +54,9 @@ test("starting view is one compact cross-project event table with inline details
   const table = await screen.findByRole("table", {
     name: "Events from all projects",
   });
-  expect(screen.getByLabelText("Project")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  ).toBeTruthy();
   expect(
     within(table)
       .getAllByRole("columnheader")
@@ -321,31 +323,47 @@ test("hierarchy switch retains filters and current cursor; page navigation reset
   const fetch = vi.fn(
     routes({
       "/api/owner/events": response(page([report])),
-      "/api/owner/events?project=alpha&agent=codex": response(
+      "/api/owner/filter-options?view=events&kind=project&q=": response(
+        page(["alpha"]),
+      ),
+      "/api/owner/filter-options?view=events&kind=agent&q=": response(
+        page(["codex dev-alpha"]),
+      ),
+      "/api/owner/events?project=alpha": response(page([report])),
+      "/api/owner/events?project=alpha&agent=codex%20dev-alpha": response(
         page([report], "cursor"),
       ),
-      "/api/owner/events?before=cursor&project=alpha&agent=codex": response(
-        page([
-          {
-            ...report,
-            session_name: null,
-            subagent_id: "unknown",
-            parent_session_id: null,
-          },
-        ]),
-      ),
+      "/api/owner/events?before=cursor&project=alpha&agent=codex%20dev-alpha":
+        response(
+          page([
+            {
+              ...report,
+              session_name: null,
+              subagent_id: "unknown",
+              parent_session_id: null,
+            },
+          ]),
+        ),
     }),
   );
   vi.stubGlobal("fetch", fetch);
   render(EventFeed, { onexpire: vi.fn() });
   await screen.findByRole("button", { name: /Event details:/ });
-  await fireEvent.input(screen.getByLabelText("Project"), {
-    target: { value: "alpha" },
-  });
-  await fireEvent.input(screen.getByLabelText("Agent"), {
-    target: { value: "codex" },
-  });
-  await fireEvent.click(screen.getByRole("button", { name: "Apply filters" }));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", { name: "alpha", exact: true }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Agent: All agents" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", {
+      name: "codex · dev-alpha",
+      exact: true,
+    }),
+  );
   await screen.findByRole("button", { name: "Earlier events" });
   await fireEvent.click(
     screen.getByRole("button", { name: "Session hierarchy" }),
@@ -359,7 +377,7 @@ test("hierarchy switch retains filters and current cursor; page navigation reset
   const calls = fetch.mock.calls.length;
   await fireEvent.click(screen.getByRole("button", { name: "Flat list" }));
   expect(screen.getByRole("button", { name: "Latest events" })).toBeTruthy();
-  expect(screen.getByLabelText("Project").value).toBe("alpha");
+  expect(screen.getByRole("button", { name: "Project: alpha" })).toBeTruthy();
   expect(fetch.mock.calls.length).toBe(calls);
 });
 

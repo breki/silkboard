@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { execFileSync, spawn } from "node:child_process";
 import {
   readFileSync,
@@ -27,7 +28,13 @@ if (
 )
   throw new Error("Expected a private browser-test directory");
 // Refuse an occupied backend port before starting or seeding any service.
-for (const port of [38125, 38126, 38127, 38128, 38129])
+for (const port of [
+  fixturePort(38125),
+  fixturePort(38126),
+  fixturePort(38127),
+  fixturePort(38128),
+  fixturePort(38129),
+])
   await new Promise((done, reject) => {
     const probe = createServer();
     probe.once("error", reject);
@@ -37,8 +44,8 @@ const repo = resolve("..");
 const env = {
   ...process.env,
   SILKBOARD_DATABASE: join(dir, "progress.sqlite"),
-  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38124",
-  SILKBOARD_LISTEN: "127.0.0.1:38125",
+  SILKBOARD_OWNER_ORIGIN: `https://127.0.0.1:${fixturePort(38124)}`,
+  SILKBOARD_LISTEN: `127.0.0.1:${fixturePort(38125)}`,
   SILKBOARD_FRONTEND: join(repo, "frontend/dist"),
 };
 // Use the same profile as the fresh normal test binaries. Build both tools
@@ -84,8 +91,8 @@ mkdirSync(setupDir, { mode: 0o700 });
 const setupEnv = {
   ...env,
   SILKBOARD_DATABASE: join(setupDir, "progress.sqlite"),
-  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38126",
-  SILKBOARD_LISTEN: "127.0.0.1:38127",
+  SILKBOARD_OWNER_ORIGIN: `https://127.0.0.1:${fixturePort(38126)}`,
+  SILKBOARD_LISTEN: `127.0.0.1:${fixturePort(38127)}`,
 };
 writeFileSync(
   join(setupDir, "link"),
@@ -133,8 +140,8 @@ writeFileSync(
 const plansEnv = {
   ...env,
   SILKBOARD_DATABASE: join(dir, "plans.sqlite"),
-  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38128",
-  SILKBOARD_LISTEN: "127.0.0.1:38129",
+  SILKBOARD_OWNER_ORIGIN: `https://127.0.0.1:${fixturePort(38128)}`,
+  SILKBOARD_LISTEN: `127.0.0.1:${fixturePort(38129)}`,
 };
 execFileSync(binary, ["owner", "set-password"], {
   env: plansEnv,
@@ -180,7 +187,11 @@ for (const child of apps)
     if (!stopping) stop(1);
   });
 try {
-  for (const backendPort of [38125, 38127, 38129]) {
+  for (const backendPort of [
+    fixturePort(38125),
+    fixturePort(38127),
+    fixturePort(38129),
+  ]) {
     let ready = false;
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
@@ -201,7 +212,7 @@ try {
   ]) {
     for (let sequence = 1; sequence <= count; sequence++) {
       const response = await fetch(
-        "http://127.0.0.1:38125/api/projects/silkboard/progress",
+        `http://127.0.0.1:${fixturePort(38125)}/api/projects/silkboard/progress`,
         {
           method: "POST",
           headers: {
@@ -240,7 +251,7 @@ try {
   await seedPlans(readFileSync(join(dir, "plans.token"), "utf8").trim());
   const otherToken = readFileSync(join(dir, "other.token"), "utf8").trim();
   const other = await fetch(
-    "http://127.0.0.1:38125/api/projects/bombyx/progress",
+    `http://127.0.0.1:${fixturePort(38125)}/api/projects/bombyx/progress`,
     {
       method: "POST",
       headers: {
@@ -259,9 +270,9 @@ try {
   );
   if (!other.ok) throw new Error("Other-project fixture publish failed");
   for (const [httpsPort, backendPort] of [
-    [38128, 38129],
-    [38126, 38127],
-    [38124, 38125],
+    [fixturePort(38128), fixturePort(38129)],
+    [fixturePort(38126), fixturePort(38127)],
+    [fixturePort(38124), fixturePort(38125)],
   ]) {
     const proxy = httpsServer(
       {

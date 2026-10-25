@@ -11,6 +11,9 @@
   and subagent sessions, independent collapse controls and explicit missing
   parent labels while preserving filters, pagination and event details.
 
+- Add searchable Project/Agent pickers in Events and Workflows and visible
+  workflow status buttons, with immediate filtering and no Apply button.
+
 ## 0.9.0 - 2026-10-25
 
 - Link explicitly associated Events to their existing Workflows, preserving
