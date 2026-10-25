@@ -13,6 +13,11 @@ an option. Use one interactive question at a time for requirements. A failed
 question tool is a limitation to explain, not a reason to repeat plain-text
 questions without context. Existing approval remains valid within its scope.
 
+For UI acceptance, use the visible labels and explain where to find the
+controls or information. Record the observations actually confirmed; a narrow
+answer about history or timestamps does not confirm every interaction in a
+larger checklist. Ask only for the checks still unresolved.
+
 ## Canon and memory
 
 Shared rules belong in this repository. Personal memory can retain private,
@@ -27,6 +32,10 @@ work. Prefer targeted searches and reads over dumping large files. Use the
 configured working directory and safe argument arrays or proper shell quoting.
 Never use JSON encoding as shell escaping. Keep secrets out of command output,
 reports, prompts, and tracked files.
+
+When sharing Cargo output across worktrees, verify that repository helpers
+operate on the current worktree. A reused executable can retain another
+worktree's build-time root even when invoked from the correct directory.
 
 Validate invariants at the boundary that owns the value. Check sibling fields
 and other instances of a bug pattern. After removing a capability, search its

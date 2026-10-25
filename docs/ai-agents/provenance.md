@@ -802,3 +802,17 @@ all three final checks: 7 of 7 steps done, step details opening/closing, and
 received Blocked-to-Active-to-Done history. Those owner observations establish
 live phone acceptance; they are separate from fixture identities/states and
 local tests. Reported completion grants no execution or merge authority.
+
+## Rollout retrospective clarifications — 2026-10-25
+
+The owner requested a retrospective after #81's evidence PR merged. A targeted
+browser run in a fresh worktree failed before testing because built frontend
+assets were absent despite shared dependencies; the test workflow now points
+to that prerequisite explicitly. During phone acceptance, the owner asked
+where history and receipt age were shown. Working rules now clarify using
+visible labels/locations and recording each answer's actual scope. These are
+narrow clarifications of existing testing and communication requirements.
+Shared Cargo output also reused an xtask executable built for another worktree;
+rebuilding it restored the intended validation root. Working rules now call
+out checking that root before relying on shared helpers. These clarifications
+introduce no release, external-write or execution authority.
