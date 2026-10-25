@@ -28,10 +28,8 @@
   {stateLabel[step.state]}
 </p>
 {#if pinned}<p class="historical-label">Earlier snapshot · Pinned</p>{/if}
-{#if step.description}<div
-    class="event-message"
-    use:renderMarkdown={step.description}
-  ></div>{/if}
+{#if step.description}<h4>Description</h4>
+  <div class="event-message" use:renderMarkdown={step.description}></div>{/if}
 <h4>Prerequisites</h4>
 {#if step.depends_on.length}
   <ul>

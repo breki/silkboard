@@ -238,3 +238,34 @@ test("explicit workflow links stay separate from message expansion and validate 
   );
   expect(screen.getByRole("region", { name: "Event details" })).toBeTruthy();
 });
+
+test("event summary stays compact while optional description opens as safe Markdown", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      routes({
+        "/api/owner/events": response(
+          page([
+            {
+              ...report,
+              message: "Tests complete",
+              description:
+                "First paragraph.\n\n**Second paragraph.**\n\n<script>alert(1)</script>",
+            },
+          ]),
+        ),
+      }),
+    ),
+  );
+  render(EventFeed, { onexpire: vi.fn() });
+  const button = await screen.findByRole("button", {
+    name: "Event details: Tests complete",
+  });
+  expect(screen.queryByText("First paragraph.")).toBeNull();
+  await fireEvent.click(button);
+  const detail = screen.getByRole("region", { name: "Event details" });
+  expect(within(detail).getByText("First paragraph.")).toBeTruthy();
+  expect(within(detail).getByText("Second paragraph.").tagName).toBe("STRONG");
+  expect(detail.querySelector("script")).toBeNull();
+});

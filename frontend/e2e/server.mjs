@@ -224,6 +224,13 @@ try {
                     : `${tool} implementation`,
                 }
               : {}),
+            ...(sequence === 24
+              ? {
+                  description:
+                    "Detailed event context.\n\nA second paragraph with a-long-unbroken-detail-" +
+                    "x".repeat(300),
+                }
+              : {}),
             message:
               sequence === 25
                 ? hostile

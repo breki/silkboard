@@ -92,8 +92,9 @@ graph. Recover trusted handoff state or start a distinct task attempt.
 
 Reserve `POST /api/projects/{project}/plans` for authenticated full snapshots.
 Use JSON, the existing bearer-token placement and verified HTTPS transport.
-Do not overload the 2,000-byte message field or change the existing progress
-request's 8,192-byte limit. Plan payloads have their own limits below.
+Do not overload the 2,000-byte event summary or optional 8,000-byte event
+description with plan snapshots. Events have a separate 65,536-byte encoded
+request limit; plan payloads have their own limits below.
 
 Example: two implementation branches are active after agreeing the contract.
 

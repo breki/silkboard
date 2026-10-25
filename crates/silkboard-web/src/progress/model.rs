@@ -26,6 +26,9 @@ pub struct ProgressEvent {
     pub sequence: i64,
     /// Markdown text, at most 2,000 UTF-8 bytes; LF, CR and tabs are allowed.
     pub message: String,
+    /// Optional detailed Markdown, at most 8,000 UTF-8 bytes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     /// Explicit workflow task ID in this event's project, when known.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
@@ -63,6 +66,9 @@ impl ProgressEvent {
             return Err(ProgressError::Invalid);
         }
         text(&self.message, 2000, true)?;
+        if let Some(description) = &self.description {
+            text(description, 8000, true)?;
+        }
         if let Some(name) = &self.session_name {
             text(name, 120, false)?;
         }

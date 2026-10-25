@@ -152,6 +152,13 @@
                     class="event-message"
                     use:renderMarkdown={event.message}
                   ></div>
+                  {#if event.description}
+                    <h4>Description</h4>
+                    <div
+                      class="event-message"
+                      use:renderMarkdown={event.description}
+                    ></div>
+                  {/if}
                   <dl class="identity">
                     <dt>Project</dt>
                     <dd>{event.project}</dd>

@@ -361,3 +361,15 @@ test("a requested historical snapshot retains and labels the previous display wh
     ),
   ).toBeNull();
 });
+
+test("step titles stay concise and selected details show multi-paragraph description and report", async () => {
+  current.snapshot.steps[1].description =
+    "First context paragraph.\n\n**Second context paragraph.**";
+  render(TaskPlan, props());
+  await settle();
+  expect(screen.queryByText("First context paragraph.")).toBeNull();
+  await fireEvent.click(button("Build graph page, Active"));
+  expect(screen.getByText("First context paragraph.")).toBeTruthy();
+  expect(screen.getByText("Second context paragraph.").tagName).toBe("STRONG");
+  expect(screen.getByText("Implementing the owner view.")).toBeTruthy();
+});

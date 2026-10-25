@@ -72,7 +72,7 @@ Configuration/token files must be regular mode-0600 files without hardlinks,
 in mode-0700 immediate directories. Their paths and the state directory must
 be absolute and free of symlink directory aliases. The operator controls
 the directories and ancestors. Unknown fields and oversized/invalid input
-are rejected; configuration is limited to 16 KiB and ordinary reports to 8 KiB. Task-plan
+are rejected; configuration is limited to 16 KiB and ordinary reports to 64 KiB. Task-plan
 input has its own 256 KiB bound.
 
 ## Publish
@@ -83,7 +83,8 @@ silkboard-publish publish --config "$HOME/.config/silkboard-publish/config.json"
 JSON
 ```
 
-Optional fields are `subagent_id`, `parent_session_id` and `session_name`.
+Optional fields are `subagent_id`, `parent_session_id`, `session_name`,
+`task_id` and `description`.
 Use actual native identities, with separate child identity for subagents;
 names never replace identity. Parent metadata must remain consistent. The
 [ingestion contract](progress-ingestion.md#http-contract) defines field limits.
@@ -152,3 +153,21 @@ be upgraded first; see [the ingestion contract](progress-ingestion.md).
 Native `codex-hook` summaries have no explicit task context and remain
 unlinked. This change does not inspect local plan files or infer a current
 workflow for those summaries.
+
+## Event summaries and descriptions
+
+Keep `message` concise; supply optional `description` for extra context,
+reasoning or results. Both render as safe Markdown. For example:
+
+```json
+{"hostname":"dev","tool":"codex","session_id":"native-session","message":"Validation passed","description":"All checks passed.\n\n**Coverage:** detail and legacy reports were verified."}
+```
+
+Descriptions may contain multiple paragraphs, up to 8,000 UTF-8 bytes;
+blank/control-containing or oversized values are rejected rather than
+truncated. Omit the field or use null when no detail is needed. LF, CR and tab
+are allowed, as in messages. The entire encoded publishing input and ingestion
+request are limited to 65,536 bytes. Upgrade the server before using the field,
+then upgrade the standalone publisher. Older summary-only inputs remain valid.
+Automatic Codex hooks continue to publish only their short summary; they do
+not upload the rest of the assistant message as detail.

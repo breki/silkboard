@@ -13,21 +13,25 @@ async fn multiline_reports_survive_restarts_and_server_revocation() {
     let token = store.issue_token("silkboard", "client-test").unwrap();
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let origin = format!("http://{}", listener.local_addr().unwrap());
-    let app = silkboard_web::create_progress_router(
+    let app = silkboard_web::create_owner_router(
         std::path::Path::new("missing"),
         store.clone(),
-    );
+        "https://silkboard.example",
+    )
+    .unwrap();
     let server = tokio::spawn(async move {
         axum::serve(listener, app).await.unwrap();
     });
     let mut fixture = support::Fixture::new();
-    fixture.config["endpoint"] = serde_json::json!(origin);
+    fixture.config["endpoint"] = serde_json::json!(&origin);
     support::private(&fixture.root.join("token"), token.as_bytes());
     let args = fixture.args();
     let mut input = support::report();
     input["message"] = serde_json::json!(
         "## Report\r\n\r\n- First\n\t- Nested\n\n```rust\nfn main() {}\n```"
     );
+    input["description"] =
+        serde_json::json!(format!("{}\n\n**Detail.**", "\t".repeat(7985)));
     let report = serde_json::to_vec(&input).unwrap();
     for attempt in 0..3 {
         if attempt == 2 {
@@ -68,10 +72,49 @@ async fn multiline_reports_survive_restarts_and_server_revocation() {
             );
         }
     }
+    let expected = input["description"].clone();
+    tokio::task::spawn_blocking(move || {
+        verify_owner_detail(&origin, &expected);
+    })
+    .await
+    .unwrap();
     let counter: serde_json::Value = serde_json::from_slice(
         &std::fs::read(&fixture.state_files("json")[0]).unwrap(),
     )
     .unwrap();
     assert_eq!(counter["sequence"], 3);
     server.abort();
+}
+
+fn verify_owner_detail(origin: &str, expected: &serde_json::Value) {
+    let login = ureq::post(&format!("{origin}/api/auth/login"))
+        .header("origin", "https://silkboard.example")
+        .header("content-type", "application/json")
+        .send(br#"{"password":"private ingestion test password"}"#.as_slice())
+        .unwrap();
+    let cookie = login
+        .headers()
+        .get("set-cookie")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .split(';')
+        .next()
+        .unwrap()
+        .to_owned();
+    for path in [
+        "/api/owner/events",
+        "/api/owner/projects/silkboard/sessions/1/events",
+    ] {
+        let text = ureq::get(&format!("{origin}{path}"))
+            .header("cookie", &cookie)
+            .call()
+            .unwrap()
+            .body_mut()
+            .read_to_string()
+            .unwrap();
+        let page: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(page["items"][0]["description"], *expected);
+        assert_eq!(page["items"].as_array().unwrap().len(), 2);
+    }
 }

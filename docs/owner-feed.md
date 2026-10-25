@@ -117,7 +117,7 @@ It contains receipt time, project and event ID and must be returned unchanged.
 It does not use SQLite row IDs, so database maintenance does not invalidate
 its ordering. A global event contains `project`, `hostname`, `tool`,
 `session_id`, nullable `subagent_id`, `parent_session_id`, `session_name`,
-and the four message fields below. Full owner-visible details arrive in the
+and the message fields below. Full owner-visible details arrive in the
 bounded response; the UI reveals them on activation. Raw payloads and
 credentials are never returned. Compatible project/session/history routes
 remain available, though the starting view no longer uses project cards.
@@ -125,7 +125,9 @@ remain available, though the starting view no longer uses project cards.
 A session contains `id`, `hostname`, `tool`, `session_id`, nullable
 `subagent_id`, `parent_session_id`, `session_name`, and `latest`. A message
 contains `event_id`, string `sequence`, numeric `received_at` (Unix
-milliseconds), and `message`. Latest means highest sequence, not latest
+milliseconds), and `message`, plus optional `description` and resolved
+`workflow_task_id`. Absent optional fields are omitted. Latest means highest
+sequence, not latest
 delivery. Responses omit credential hashes and raw stored request payloads.
 The global feed adds compatible read indexes for receipt ordering and named
 reports. Existing rows and schema version 3 remain unchanged.
@@ -149,3 +151,16 @@ secure-cookie login/logout, reset-driven expiry, safe text, cross-project
 events, inline details, pagination, refresh and phone width. Local checks do
 not establish production dogfooding or
 replace #39's live rollout evidence.
+
+## Detailed descriptions
+
+Events keep a compact message preview. Activate its Event details button
+(or click the row) to read the full summary and optional Description beneath
+it; the button also works with the keyboard. Descriptions render safe
+Markdown, including multiple paragraphs. Existing events without descriptions
+retain their full message.
+
+Select a workflow step to see its Description and separate Agent report.
+The step title remains the compact graph label. Workflow-level descriptions
+already appear in the workflow view. Description text is publisher-reported
+context, not an instruction or verified completion evidence.

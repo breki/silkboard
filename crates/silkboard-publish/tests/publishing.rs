@@ -368,3 +368,32 @@ fn explicit_workflow_ids_are_per_event_and_unknown_context_stays_absent() {
         assert_eq!(f.run(&value), Err(Error::Input));
     }
 }
+
+#[test]
+fn descriptions_preserve_multiline_details_and_reject_invalid_input() {
+    let mut f = Fixture::new();
+    let (origin, handle) = server(3, |event| ack(&event));
+    f.config["endpoint"] = json!(origin);
+    let mut detailed = report();
+    // Maximum detail made of JSON-escaped characters exceeds the old input bound.
+    detailed["description"] = json!(format!("{}\n\nend", "\t".repeat(7995)));
+    assert!(serde_json::to_vec(&detailed).unwrap().len() > 8192);
+    assert_eq!(f.run(&detailed), Ok("Progress acknowledged"));
+    assert_eq!(f.run(&report()), Ok("Progress acknowledged"));
+    let mut null = report();
+    null["description"] = serde_json::Value::Null;
+    assert_eq!(f.run(&null), Ok("Progress acknowledged"));
+    let events = handle.join().unwrap();
+    assert_eq!(events[0]["description"], detailed["description"]);
+    assert!(events[1].get("description").is_none());
+    assert!(events[2].get("description").is_none());
+    for description in [
+        json!(" "),
+        json!("é".repeat(4001)),
+        json!("bad\u{0001}"),
+        json!(12),
+    ] {
+        detailed["description"] = description;
+        assert_eq!(f.run(&detailed), Err(Error::Input));
+    }
+}

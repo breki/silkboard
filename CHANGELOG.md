@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Support optional detailed Markdown descriptions alongside concise event
+  summaries, and clarify existing workflow and step descriptions.
+
 - Link explicitly associated Events to their existing Workflows, preserving
   per-event identity across sessions and leaving unknown associations unlinked.
 

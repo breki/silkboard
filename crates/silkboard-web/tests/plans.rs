@@ -484,7 +484,7 @@ async fn maximum_counter_is_visible_in_history_without_a_cursor() {
 }
 
 #[tokio::test]
-async fn invalid_requests_are_atomic_and_large_plans_do_not_expand_progress() {
+async fn invalid_requests_are_atomic_and_event_summaries_remain_bounded() {
     let (_store, app, token, cookie) = fixture().await;
     let publish = "/api/projects/silkboard/plans";
     let mut large = snapshot("1");
@@ -520,7 +520,7 @@ async fn invalid_requests_are_atomic_and_large_plans_do_not_expand_progress() {
         )
         .await
         .0,
-        StatusCode::PAYLOAD_TOO_LARGE
+        StatusCode::BAD_REQUEST
     );
     for path in [
         format!("{base}?sequence=01"),

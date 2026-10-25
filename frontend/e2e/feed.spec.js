@@ -108,7 +108,16 @@ test("one phone table shows all projects, opens safe event details, pages and re
   const markdownButton = page.getByRole("button", {
     name: /^Event details: Markdown report Ready/,
   });
-  await markdownButton.click();
+  await expect(page.getByText("Detailed event context.")).toHaveCount(0);
+  await markdownButton.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    details.getByRole("heading", { name: "Description", exact: true }),
+  ).toBeVisible();
+  await expect(details.getByText("Detailed event context.")).toBeVisible();
+  await expect(
+    details.getByText(/A second paragraph with a-long-unbroken-detail/),
+  ).toBeVisible();
   await expect(details.locator("strong")).toHaveText("Ready");
   await expect(details.locator("em")).toHaveText("reviewed");
   await expect(details.locator("li")).toHaveCount(2);

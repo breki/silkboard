@@ -31,7 +31,7 @@ content or credentials. Responses use `Cache-Control: no-store`.
 
 Both encoded request and normalized snapshot must fit 262,144 bytes. All
 individual field, node and edge limits still apply. Existing progress requests
-retain their separate 8,192-byte limit. Eight plan requests may be admitted at
+retain their separate 65,536-byte limit. Eight plan requests may be admitted at
 once; database work runs off the async executor. Delivery retries and local
 writer-state management are described in the publisher command guide.
 

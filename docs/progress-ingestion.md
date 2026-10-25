@@ -88,7 +88,7 @@ query parameter or JSON field. No CORS permission is granted.
 ```
 
 Optional fields are `subagent_id`, `parent_session_id`, `session_name` and
-`task_id`.
+`task_id` and `description`.
 Omitted optional fields and explicit null are equivalent. A parent ID is
 allowed only with a subagent ID. Native tools that report the parent's
 session ID for child hooks must include the separate native child ID.
@@ -98,7 +98,17 @@ Messages are nonblank Markdown text up to 2,000 UTF-8 bytes. LF, CR and tab
 characters are allowed for multiline Markdown; all other control characters
 are rejected. Names remain nonblank single-line text with a 120-byte limit
 and no control characters. Unknown fields and invalid types are rejected. The entire encoded JSON request
-is limited to 8,192 bytes, including escapes and whitespace.
+is limited to 65,536 bytes, including escapes and whitespace.
+
+Keep `message` as the concise event summary. Optional `description` adds
+nonblank detailed Markdown up to 8,000 UTF-8 bytes, allowing multiple
+paragraphs with the same control-character rules as messages. Omitted/null
+detail is equivalent and is omitted from serialized events. Detail is part
+of the immutable event payload: changing it on a retry conflicts. It is
+stored in existing payload JSON without a database schema migration and
+returned on private owner event, session-history and latest-message reads.
+Upgrade the server before publishers send this additive field; older servers
+reject unknown fields. Existing reports without details remain valid.
 
 An optional `task_id` explicitly associates this individual event with a
 workflow in the same project. It must be a canonical lowercase UUID v4, as in

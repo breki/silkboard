@@ -37,6 +37,8 @@ struct ProgressMessage {
     received_at: i64,
     message: String,
     #[serde(skip_serializing_if = "Option::is_none")]
+    description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     workflow_task_id: Option<String>,
 }
 
@@ -79,6 +81,7 @@ impl ProgressMessage {
             received_at: row.get(start + 2)?,
             message: row.get(start + 3)?,
             workflow_task_id: row.get(start + 4)?,
+            description: row.get(start + 5)?,
         })
     }
 }
@@ -198,7 +201,8 @@ fn list_events(
             ORDER BY named.sequence DESC LIMIT 1),
            e.event_id,e.sequence,e.received_at,e.message,
            (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
-            AND p.task_id=json_extract(e.payload,'$.task_id'))
+            AND p.task_id=json_extract(e.payload,'$.task_id')),
+           json_extract(e.payload,'$.description')
          FROM events e JOIN sessions s ON s.id=e.session
          WHERE (e.received_at,e.project,e.event_id)<(?1,?2,?3)
            AND (?4 IS NULL OR e.project=?4)
@@ -304,7 +308,8 @@ fn list_sessions(
             ORDER BY sequence DESC LIMIT 1),
            e.event_id,e.sequence,e.received_at,e.message,
            (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
-            AND p.task_id=json_extract(e.payload,'$.task_id'))
+            AND p.task_id=json_extract(e.payload,'$.task_id')),
+           json_extract(e.payload,'$.description')
          FROM sessions s JOIN events e ON e.session=s.id
            AND e.sequence=(SELECT MAX(sequence) FROM events
                            WHERE session=s.id)
@@ -347,7 +352,8 @@ async fn history(
             let mut statement = conn.prepare(
                 "SELECT e.event_id,e.sequence,e.received_at,e.message,
                    (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
-                    AND p.task_id=json_extract(e.payload,'$.task_id'))
+                    AND p.task_id=json_extract(e.payload,'$.task_id')),
+                   json_extract(e.payload,'$.description')
                  FROM events e WHERE e.project=?1 AND e.session=?2
                    AND (?3 IS NULL OR e.sequence < ?3)
                  ORDER BY e.sequence DESC LIMIT 21",
