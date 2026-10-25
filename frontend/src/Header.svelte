@@ -37,6 +37,10 @@
 <header class="masthead">
   <h1>Silkboard</h1>
   {#if showMenu}
+    <nav class="primary-navigation" aria-label="Primary navigation">
+      <a href="/">Events</a>
+      <a href="/plans">Task plans</a>
+    </nav>
     <div class="navigation" bind:this={container}>
       <button
         class="menu-trigger"
@@ -58,8 +62,6 @@
       </button>
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
-          <a href="/">Events</a>
-          <a href="/plans">Task plans</a>
           <a href="/status">Application status</a>
           {#if owner}
             <button
