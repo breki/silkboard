@@ -36,8 +36,7 @@ async fn multiline_reports_survive_restarts_and_server_revocation() {
         let args = args.clone();
         let report = report.clone();
         let output = tokio::task::spawn_blocking(move || {
-            use std::io::Write;
-            let mut child = std::process::Command::new(env!(
+            let child = std::process::Command::new(env!(
                 "CARGO_BIN_EXE_silkboard-publish"
             ))
             .env("PATH", "/nonexistent")
@@ -47,8 +46,7 @@ async fn multiline_reports_survive_restarts_and_server_revocation() {
             .stderr(std::process::Stdio::piped())
             .spawn()
             .unwrap();
-            child.stdin.take().unwrap().write_all(&report).unwrap();
-            child.wait_with_output().unwrap()
+            support::finish_cli(child, &report)
         })
         .await
         .unwrap();

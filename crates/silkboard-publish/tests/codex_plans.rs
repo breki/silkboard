@@ -2,10 +2,7 @@
 #![cfg(unix)]
 mod support;
 use serde_json::{Value, json};
-use std::{
-    io::Write,
-    process::{Command, Output, Stdio},
-};
+use std::process::{Command, Output, Stdio};
 use support::{Fixture, server_at};
 
 fn draft() -> Value {
@@ -32,14 +29,30 @@ fn cli(
     if let Some(native) = native {
         process.env("CODEX_THREAD_ID", native);
     }
-    let mut child = process.spawn().unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(&serde_json::to_vec(input).unwrap())
+    support::finish_cli(
+        process.spawn().unwrap(),
+        &serde_json::to_vec(input).unwrap(),
+    )
+}
+
+#[test]
+fn rejected_cli_can_exit_before_the_test_writes_stdin() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_silkboard-publish"))
+        .arg("unsupported-fixture-command")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
         .unwrap();
-    child.wait_with_output().unwrap()
+    // Keep the writer open while forcing the receiver to exit. Child::wait
+    // otherwise closes its owned stdin handle before waiting.
+    let stdin = child.stdin.take().unwrap();
+    assert!(!child.wait().unwrap().success());
+    child.stdin = Some(stdin);
+    let output =
+        support::finish_cli(child, &serde_json::to_vec(&draft()).unwrap());
+    assert_eq!(output.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("usage:"));
 }
 #[test]
 fn codex_reports_initial_plan_and_transitions_with_operator_native_identity() {
@@ -290,4 +303,20 @@ fn exercise_evolving_workflow(f: &Fixture) {
     assert_eq!(snapshot()["plan_revision"], "2");
     assert_eq!(snapshot()["writer_generation"], "2");
     assert_eq!(snapshot()["reporter"]["session_id"], "native-next");
+}
+
+#[test]
+#[should_panic(expected = "successful CLI did not consume input")]
+fn broken_pipe_does_not_hide_an_unexpected_successful_exit() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_silkboard-publish"))
+        .arg("--help")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let stdin = child.stdin.take().unwrap();
+    assert!(child.wait().unwrap().success());
+    child.stdin = Some(stdin);
+    support::finish_cli(child, b"unread fixture input");
 }
