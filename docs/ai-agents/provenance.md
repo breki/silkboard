@@ -827,3 +827,15 @@ hamburger actions remain unchanged. Setup retains its navigation-free header.
 Local component and browser checks verify direct links, menu boundaries,
 keyboard operation and compact phone/desktop layout; they do not establish a
 new production release or owner phone acceptance of this navigation change.
+
+## Browser appearance preferences — 2026-10-25
+
+The owner requested #99 in the UI milestone and authorized implementation of
+Light, Dark and System themes, with System as the default. The selector uses
+the existing menu and remains available on setup without adding navigation.
+A browser-local preference is applied before application mount; CSS used color
+schemes follow OS changes in System mode. Shared semantic colors cover both
+base pages and task graphs, preserving text and symbols for graph states.
+Storage failure does not block current-page switching or authentication.
+[Appearance guidance](../appearance.md) describes the behavior and its local
+preference scope. The #98 terminology change and any release remain separate.

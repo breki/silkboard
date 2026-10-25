@@ -311,7 +311,7 @@
   .secret {
     margin: 1.5rem 0;
     padding: 1rem;
-    border: 1px solid #a9d8c8;
+    border: 1px solid var(--secret-border);
     border-radius: 0.4rem;
   }
   textarea {

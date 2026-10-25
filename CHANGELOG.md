@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add Light, Dark and System themes with browser-local preferences and shared
+  colors for reports, graphs, dialogs and account controls.
+
 ## 0.7.1 - 2026-10-25
 
 - Show Events and Task plans directly in the compact header instead of hiding

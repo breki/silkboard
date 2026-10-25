@@ -1,0 +1,47 @@
+:root {
+  color-scheme: light dark;
+  --text: light-dark(#172b36, #e7edf2);
+  --page: light-dark(#f4f7fa, #0c171e);
+  --panel: light-dark(#ffffff, #14242e);
+  --line: light-dark(#ced9e0, #2a424f);
+  --border: light-dark(#617580, #78929f);
+  --control-text: light-dark(#163d36, #d5f2e6);
+  --control: light-dark(#e4eeed, #1a343b);
+  --control-hover: light-dark(#d4e5e2, #244751);
+  --primary: light-dark(#146a52, #afe0ca);
+  --primary-text: light-dark(#ffffff, #102921);
+  --primary-hover: light-dark(#105840, #c0edda);
+  --input: light-dark(#ffffff, #0b1820);
+  --input-text: light-dark(#172b36, #eef6fb);
+  --focus: light-dark(#125fa4, #c0e9dc);
+  --muted: light-dark(#4c626e, #a9bfcb);
+  --alert: light-dark(#a33121, #ffbbad);
+  --healthy: light-dark(#14633a, #9fe4bc);
+  --link: light-dark(#065b81, #afe0ca);
+  --shadow: light-dark(#15263126, #0008);
+  --secret-border: light-dark(#39745f, #a9d8c8);
+  --selected: light-dark(#28596d, #d7e9ef);
+  --track: light-dark(#d8e3e9, #293d48);
+  --progress: light-dark(#217455, #91ceb7);
+  --historical-border: light-dark(#956000, #d5b575);
+  --historical-text: light-dark(#775000, #f0d9a8);
+  --graph-border: light-dark(#718994, #385363);
+  --graph: light-dark(#edf3f6, #101e27);
+  --arrow: light-dark(#516d7d, #9bb3bf);
+  --edge: light-dark(#496674, #829aa7);
+  --node: light-dark(#ffffff, #192e3a);
+  --node-border: light-dark(#607d8b, #6b8797);
+  --active-border: light-dark(#8a5b00, #d7b56f);
+  --done-text: light-dark(#176344, #a9ddc7);
+  --done-border: light-dark(#367b59, #77aa96);
+  --blocked-border: light-dark(#a43651, #df9baa);
+  --selection: light-dark(#0d536e, #edf4f7);
+  --graph-focus: light-dark(#145e9c, #9bd9eb);
+  --backdrop: light-dark(#172b3677, #000a);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
