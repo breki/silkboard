@@ -356,6 +356,10 @@ test("installed Codex adapter, owner graph and existing data survive a real back
     page.getByRole("button", { name: "Verify combined feature, Active" }),
   ).toBeVisible();
   await page.setViewportSize({ width: 320, height: 720 });
+  // Wait for the application breakpoint handler before sending keyboard input.
+  await expect(
+    page.getByRole("complementary", { name: "Step details" }),
+  ).toHaveCount(0);
   const active = page.getByRole("button", {
     name: "Verify combined feature, Active",
   });
