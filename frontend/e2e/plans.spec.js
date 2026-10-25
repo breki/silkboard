@@ -394,3 +394,49 @@ test("the next full snapshot repairs a lost revision while preserving selected w
     ),
   ).toBeVisible();
 });
+
+test("explicit event workflow links open the existing graph by keyboard on a phone", async ({
+  page,
+  context,
+}) => {
+  const token = readFileSync(
+    join(process.env.SILKBOARD_E2E_DIR, "plans.token"),
+    "utf8",
+  ).trim();
+  const result = await context.request.post(
+    "/api/projects/silkboard/progress",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        event_id: "linked-workflow-event",
+        hostname: "link-fixture",
+        tool: "codex",
+        session_id: "explicit-workflow",
+        sequence: 1,
+        message: "Continue this workflow",
+        task_id: task,
+      },
+    },
+  );
+  expect(result.ok()).toBe(true);
+  await page.setViewportSize({ width: 320, height: 720 });
+  await openPlan(page, "/");
+  const entry = page
+    .locator("tr.event-row")
+    .filter({ hasText: "Continue this workflow" });
+  const workflow = entry.getByRole("link", { name: "Open workflow" });
+  await expect(workflow).toHaveAttribute("href", link(task));
+  await entry
+    .getByRole("button", { name: "Event details: Continue this workflow" })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Event details" }),
+  ).toBeVisible();
+  await noOverflow(page);
+  await workflow.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("region", { name: "Task prerequisite graph" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`${link(task)}$`));
+});

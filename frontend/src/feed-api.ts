@@ -1,3 +1,4 @@
+import { taskId } from "./plan-model";
 import { filterQuery, type ListFilters } from "./list-filters";
 export interface Page<T> {
   items: T[];
@@ -15,6 +16,7 @@ export interface Message {
   sequence: string;
   received_at: number;
   message: string;
+  workflow_task_id?: string | null;
 }
 export interface AgentIdentity {
   hostname: string;
@@ -92,7 +94,10 @@ const message = (value: unknown): value is Message =>
   Number.isSafeInteger(value.received_at) &&
   value.received_at >= 0 &&
   value.received_at <= 8640000000000000 &&
-  text(value.message, 2000);
+  text(value.message, 2000) &&
+  (value.workflow_task_id === undefined ||
+    value.workflow_task_id === null ||
+    taskId(value.workflow_task_id));
 export const identity = (value: Record<string, unknown>) =>
   text(value.hostname, 256) &&
   text(value.tool, 256) &&

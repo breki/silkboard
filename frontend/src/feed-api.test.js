@@ -196,3 +196,27 @@ test.each(["", 123, "x".repeat(2049)])(
     await expect(events(null, signal())).rejects.toBeInstanceOf(ApiError);
   },
 );
+
+test.each([undefined, null, "11111111-1111-4111-8111-111111111111"])(
+  "accepts optional workflow association %s on owner messages",
+  async (workflow_task_id) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => response(page([{ ...message, workflow_task_id }]))),
+    );
+    const result = await history("silkboard", "1", null, signal());
+    expect(result.items[0].workflow_task_id).toBe(workflow_task_id);
+  },
+);
+test.each(["", "../bad", 123, "11111111-1111-1111-1111-111111111111"])(
+  "rejects an unsafe owner workflow association %s",
+  async (workflow_task_id) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => response(page([{ ...message, workflow_task_id }]))),
+    );
+    await expect(
+      history("silkboard", "1", null, signal()),
+    ).rejects.toBeInstanceOf(ApiError);
+  },
+);

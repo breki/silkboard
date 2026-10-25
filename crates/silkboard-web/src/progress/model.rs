@@ -26,6 +26,9 @@ pub struct ProgressEvent {
     pub sequence: i64,
     /// Markdown text, at most 2,000 UTF-8 bytes; LF, CR and tabs are allowed.
     pub message: String,
+    /// Explicit workflow task ID in this event's project, when known.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
 }
 
 /// Delivery acknowledgement, never dashboard content or instructions.
@@ -49,6 +52,13 @@ impl ProgressEvent {
         }
         if self.sequence <= 0
             || (self.parent_session_id.is_some() && self.subagent_id.is_none())
+        {
+            return Err(ProgressError::Invalid);
+        }
+        if self
+            .task_id
+            .as_deref()
+            .is_some_and(|id| !silkboard_plan::valid_task_id(id))
         {
             return Err(ProgressError::Invalid);
         }

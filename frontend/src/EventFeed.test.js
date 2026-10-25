@@ -210,3 +210,31 @@ test.each([
     expect(within(details).queryByText("Sequence")).toBeNull();
   },
 );
+
+test("explicit workflow links stay separate from message expansion and validate targets", async () => {
+  const task = "11111111-1111-4111-8111-111111111111";
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () =>
+      response(
+        page([
+          { ...report, event_id: "linked", workflow_task_id: task },
+          { ...report, event_id: "legacy", message: "Older report" },
+        ]),
+      ),
+    ),
+  );
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  render(EventFeed, { onexpire: vi.fn() });
+  const link = await screen.findByRole("link", { name: "Open workflow" });
+  expect(link.getAttribute("href")).toBe(`/plans/alpha/${task}`);
+  expect(screen.getAllByRole("link", { name: "Open workflow" })).toHaveLength(
+    1,
+  );
+  await fireEvent.click(link);
+  expect(screen.queryByRole("region", { name: "Event details" })).toBeNull();
+  await fireEvent.click(
+    screen.getAllByRole("button", { name: /Event details:/ })[0],
+  );
+  expect(screen.getByRole("region", { name: "Event details" })).toBeTruthy();
+});

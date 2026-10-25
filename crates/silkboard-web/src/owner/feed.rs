@@ -36,6 +36,8 @@ struct ProgressMessage {
     sequence: String,
     received_at: i64,
     message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    workflow_task_id: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -76,6 +78,7 @@ impl ProgressMessage {
             sequence: row.get::<_, i64>(start + 1)?.to_string(),
             received_at: row.get(start + 2)?,
             message: row.get(start + 3)?,
+            workflow_task_id: row.get(start + 4)?,
         })
     }
 }
@@ -193,7 +196,9 @@ fn list_events(
             WHERE named.session=s.id AND named.session_name IS NOT NULL
               AND named.sequence<=e.sequence
             ORDER BY named.sequence DESC LIMIT 1),
-           e.event_id,e.sequence,e.received_at,e.message
+           e.event_id,e.sequence,e.received_at,e.message,
+           (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
+            AND p.task_id=json_extract(e.payload,'$.task_id'))
          FROM events e JOIN sessions s ON s.id=e.session
          WHERE (e.received_at,e.project,e.event_id)<(?1,?2,?3)
            AND (?4 IS NULL OR e.project=?4)
@@ -297,7 +302,9 @@ fn list_sessions(
            (SELECT session_name FROM events named
             WHERE named.session=s.id AND session_name IS NOT NULL
             ORDER BY sequence DESC LIMIT 1),
-           e.event_id,e.sequence,e.received_at,e.message
+           e.event_id,e.sequence,e.received_at,e.message,
+           (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
+            AND p.task_id=json_extract(e.payload,'$.task_id'))
          FROM sessions s JOIN events e ON e.session=s.id
            AND e.sequence=(SELECT MAX(sequence) FROM events
                            WHERE session=s.id)
@@ -338,10 +345,12 @@ async fn history(
                 return Err(AuthError::NotFound);
             }
             let mut statement = conn.prepare(
-                "SELECT event_id,sequence,received_at,message FROM events
-                 WHERE project=?1 AND session=?2
-                   AND (?3 IS NULL OR sequence < ?3)
-                 ORDER BY sequence DESC LIMIT 21",
+                "SELECT e.event_id,e.sequence,e.received_at,e.message,
+                   (SELECT p.task_id FROM task_plans p WHERE p.project=e.project
+                    AND p.task_id=json_extract(e.payload,'$.task_id'))
+                 FROM events e WHERE e.project=?1 AND e.session=?2
+                   AND (?3 IS NULL OR e.sequence < ?3)
+                 ORDER BY e.sequence DESC LIMIT 21",
             )?;
             let items = statement
                 .query_map(params![project, session, before], |r| {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { routeFor } from "./plan-model";
   import ListFilters from "./ListFilters.svelte";
   import type { ListFilters as Filters } from "./list-filters";
   let filters = $state<Filters>({});
@@ -56,7 +57,7 @@
   // The button retains normal keyboard behavior and table row semantics.
   function clickableRow(node: HTMLTableRowElement, activate: () => void) {
     const click = (event: MouseEvent) => {
-      if (event.target instanceof Element && !event.target.closest("button"))
+      if (event.target instanceof Element && !event.target.closest("button, a"))
         activate();
     };
     node.addEventListener("click", click);
@@ -132,7 +133,11 @@
                 aria-expanded={expanded === key(event)}
                 aria-controls={`event-details-${index}`}
                 onclick={() => toggle(event)}>{summary}</button
-              ></td
+              >{#if event.workflow_task_id}<a
+                  class="workflow-link"
+                  href={routeFor(event.project, event.workflow_task_id)}
+                  >Open workflow</a
+                >{/if}</td
             >
           </tr>
           {#if expanded === key(event)}
@@ -185,3 +190,10 @@
       >{/if}
   </div>
 {:else if !failed}<p role="status">Loading events…</p>{/if}
+
+<style>
+  .workflow-link {
+    display: inline-block;
+    padding-block: 0.5rem;
+  }
+</style>

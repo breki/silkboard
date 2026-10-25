@@ -688,3 +688,226 @@ async fn workflow_filters_use_current_report_and_validate() {
         );
     }
 }
+
+fn associated_event(id: &str, sequence: i64, task: Option<&str>) -> Value {
+    json!({"event_id":id,"hostname":"dev","tool":"codex","session_id":"native-a","sequence":sequence,"message":"Workflow progress","task_id":task})
+}
+
+async fn linked_event_fixture() -> (ProgressStore, Router, String, String) {
+    let (store, app, token, cookie) = fixture().await;
+    for (id, seq, task) in [("legacy", 1, None), ("linked", 2, Some(TASK))] {
+        assert_eq!(
+            request(
+                &app,
+                "POST",
+                "/api/projects/silkboard/progress",
+                &token,
+                Some(associated_event(id, seq, task))
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+    }
+    let (_, feed) =
+        request(&app, "GET", "/api/owner/events", &cookie, None).await;
+    assert!(feed["items"][0]["workflow_task_id"].is_null());
+    request(
+        &app,
+        "POST",
+        "/api/projects/silkboard/plans",
+        &token,
+        Some(snapshot("1")),
+    )
+    .await;
+    let other = "22222222-2222-4222-8222-222222222222";
+    let mut second = snapshot("1");
+    second["task_id"] = json!(other);
+    request(
+        &app,
+        "POST",
+        "/api/projects/silkboard/plans",
+        &token,
+        Some(second),
+    )
+    .await;
+    (store, app, token, cookie)
+}
+
+#[tokio::test]
+async fn event_workflow_links_are_explicit_project_scoped_and_survive_handoff()
+{
+    let (store, app, token, cookie) = linked_event_fixture().await;
+    let other_token = store.issue_token("other", "agent").unwrap();
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/other/progress",
+            &other_token,
+            Some(associated_event("cross", 1, Some(TASK)))
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let mut handoff = snapshot("2");
+    handoff["writer_generation"] = json!("2");
+    handoff["reporter"]["session_id"] = json!("native-b");
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/silkboard/plans",
+            &token,
+            Some(handoff)
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let (_, feed) =
+        request(&app, "GET", "/api/owner/events", &cookie, None).await;
+    for item in feed["items"].as_array().unwrap() {
+        if item["event_id"] == "linked" {
+            assert_eq!(item["workflow_task_id"], TASK);
+        } else {
+            assert!(item["workflow_task_id"].is_null());
+        }
+    }
+    let (_, sessions) = request(
+        &app,
+        "GET",
+        "/api/owner/projects/silkboard/sessions",
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(sessions["items"][0]["latest"]["workflow_task_id"], TASK);
+    let session = sessions["items"][0]["id"].as_str().unwrap();
+    let (_, history) = request(
+        &app,
+        "GET",
+        &format!("/api/owner/projects/silkboard/sessions/{session}/events"),
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(history["items"][0]["workflow_task_id"], TASK);
+    assert!(history["items"][1]["workflow_task_id"].is_null());
+    let (_, older) = request(
+        &app,
+        "GET",
+        &format!(
+            "/api/owner/projects/silkboard/sessions/{session}/events?before=2"
+        ),
+        &cookie,
+        None,
+    )
+    .await;
+    assert!(older["items"][0]["workflow_task_id"].is_null());
+}
+
+#[tokio::test]
+async fn event_workflow_associations_reject_invalid_ids_and_rewrites() {
+    let (_store, app, token, _cookie) = linked_event_fixture().await;
+    let other = "22222222-2222-4222-8222-222222222222";
+    assert_eq!(
+        request(&app, "GET", "/api/owner/events", &token, None)
+            .await
+            .0,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/silkboard/progress",
+            &token,
+            Some(associated_event("linked", 2, Some(other)))
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    for invalid in ["", "../bad", "11111111-1111-1111-1111-111111111111"] {
+        assert_eq!(
+            request(
+                &app,
+                "POST",
+                "/api/projects/silkboard/progress",
+                &token,
+                Some(associated_event("invalid", 3, Some(invalid)))
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}
+
+#[tokio::test]
+async fn event_workflow_links_follow_each_event_across_global_pages() {
+    let (_store, app, token, cookie) = fixture().await;
+    let second = "22222222-2222-4222-8222-222222222222";
+    for task in [TASK, second] {
+        let mut plan = snapshot("1");
+        plan["task_id"] = json!(task);
+        assert_eq!(
+            request(
+                &app,
+                "POST",
+                "/api/projects/silkboard/plans",
+                &token,
+                Some(plan)
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+    }
+    for sequence in 1..=24 {
+        let task = match sequence {
+            1 => Some(TASK),
+            2 => Some(second),
+            _ => None,
+        };
+        let event = json!({"event_id":format!("event-{sequence}"),"hostname":"dev","tool":"codex","session_id":"one-session","sequence":sequence,"message":"Report","task_id":task});
+        assert_eq!(
+            request(
+                &app,
+                "POST",
+                "/api/projects/silkboard/progress",
+                &token,
+                Some(event)
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+    }
+    let (_, page) =
+        request(&app, "GET", "/api/owner/events", &cookie, None).await;
+    assert_eq!(page["items"].as_array().unwrap().len(), 20);
+    let mut encoded = String::new();
+    for byte in page["next_cursor"].as_str().unwrap().bytes() {
+        write!(encoded, "%{byte:02X}").unwrap();
+    }
+    let (_, older) = request(
+        &app,
+        "GET",
+        &format!("/api/owner/events?before={encoded}"),
+        &cookie,
+        None,
+    )
+    .await;
+    let events = older["items"].as_array().unwrap();
+    assert_eq!(events.len(), 4);
+    for item in events {
+        match item["event_id"].as_str().unwrap() {
+            "event-1" => assert_eq!(item["workflow_task_id"], TASK),
+            "event-2" => assert_eq!(item["workflow_task_id"], second),
+            _ => assert!(item["workflow_task_id"].is_null()),
+        }
+    }
+}

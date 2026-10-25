@@ -472,3 +472,10 @@ fn operator_rejects_database_and_sidecar_output_collisions() {
     );
     assert_eq!(db.count("publishers"), 0);
 }
+
+#[test]
+fn legacy_event_payload_serialization_is_unchanged_for_retries() {
+    let old = r#"{"event_id":"legacy","hostname":"dev","tool":"codex","session_id":"native","subagent_id":null,"parent_session_id":null,"session_name":null,"sequence":1,"message":"Existing report"}"#;
+    let event: ProgressEvent = serde_json::from_str(old).unwrap();
+    assert_eq!(serde_json::to_string(&event).unwrap(), old);
+}
