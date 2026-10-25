@@ -390,30 +390,50 @@ fn stopped_writer_state_can_be_transferred_without_resetting_counters() {
 #[test]
 fn concurrent_local_publishers_reserve_unique_sequences() {
     use silkboard_publish::Error;
+    use std::sync::{Arc, Barrier};
     let (origin, server) = support::server_at(7, "plans", |s| plan_ack(&s));
     let mut f = Fixture::new();
     f.config["endpoint"] = json!(origin);
     assert_eq!(run(&f, "start", &draft()), Ok("Task plan acknowledged"));
     let a = args(&f, "publish");
     let bytes = serde_json::to_vec(&draft()).unwrap();
+    let lock = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(f.state_files("lock").pop().unwrap())
+        .unwrap();
+    lock.lock().unwrap();
+    let ready = Arc::new(Barrier::new(7));
     let handles: Vec<_> = (0..6)
         .map(|_| {
             let a = a.clone();
             let bytes = bytes.clone();
+            let ready = Arc::clone(&ready);
             std::thread::spawn(move || {
-                for _ in 0..100 {
+                ready.wait();
+                let started = std::time::Instant::now();
+                loop {
                     let result = silkboard_publish::run(&a, bytes.as_slice());
                     if result == Err(Error::Busy) {
+                        assert!(
+                            started.elapsed()
+                                < std::time::Duration::from_secs(5),
+                            "test caller never acquired local task lock"
+                        );
                         std::thread::sleep(std::time::Duration::from_millis(5));
                         continue;
                     }
                     assert_eq!(result, Ok("Task plan acknowledged"));
                     return;
                 }
-                panic!("test caller never acquired local task lock");
             })
         })
         .collect();
+    ready.wait();
+    // Hold the actual allocation lock beyond the old half-second retry
+    // budget, independent of HTTP delivery (which happens after unlock).
+    std::thread::sleep(std::time::Duration::from_millis(750));
+    drop(lock);
     for h in handles {
         h.join().unwrap();
     }
