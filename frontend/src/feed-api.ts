@@ -1,3 +1,4 @@
+import { filterQuery, type ListFilters } from "./list-filters";
 export interface Page<T> {
   items: T[];
   next_cursor: string | null;
@@ -305,10 +306,11 @@ export async function history(
 export async function events(
   before: string | null,
   signal: AbortSignal,
+  filters: ListFilters = {},
 ): Promise<Page<FeedEvent>> {
   return page(
     await request(
-      `/api/owner/events${before === null ? "" : `?before=${encodeURIComponent(before)}`}`,
+      `/api/owner/events${filterQuery(before, filters)}`,
       {},
       signal,
     ),

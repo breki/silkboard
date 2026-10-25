@@ -5,7 +5,9 @@ pub(crate) mod schema;
 mod store;
 
 pub(crate) use http::routes;
-pub(crate) use read::{Cursor, Detail, Page, Summary, current, history, list};
+pub(crate) use read::{
+    Cursor, Detail, ListQuery, Page, Summary, current, history, list,
+};
 pub use silkboard_plan::{Acknowledgement, Snapshot};
 pub use store::publish;
 

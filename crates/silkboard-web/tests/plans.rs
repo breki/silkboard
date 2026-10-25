@@ -397,6 +397,9 @@ async fn pages_and_revision_summaries_are_bounded_and_exact() {
     for i in 2..=22 {
         let mut v = snapshot("1");
         v["task_id"] = json!(format!("{i:08x}-1111-4111-8111-111111111111"));
+        if i == 2 {
+            v["reporter"]["hostname"] = json!("older-filter-match");
+        }
         assert_eq!(
             request(
                 &app,
@@ -410,6 +413,10 @@ async fn pages_and_revision_summaries_are_bounded_and_exact() {
             StatusCode::OK
         );
     }
+    let (status, filtered) = request(&app, "GET", "/api/owner/plans?project=silkboard&agent=older-filter-match&state=active", &cookie, None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(filtered["items"].as_array().unwrap().len(), 1);
+    assert!(filtered["next_cursor"].is_null());
     let (_, page) =
         request(&app, "GET", "/api/owner/plans", &cookie, None).await;
     assert_eq!(page["items"].as_array().unwrap().len(), 20);
@@ -608,4 +615,76 @@ async fn removed_and_reintroduced_steps_retain_only_received_completions() {
         request(&app, "GET", &format!("{base}?revision=2"), &cookie, None)
             .await;
     assert_eq!(removed["snapshot"]["steps"].as_array().unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn workflow_filters_use_current_report_and_validate() {
+    let (_store, app, token, cookie) = fixture().await;
+    request(
+        &app,
+        "POST",
+        "/api/projects/silkboard/plans",
+        &token,
+        Some(snapshot("1")),
+    )
+    .await;
+    let (status, result) = request(
+        &app,
+        "GET",
+        "/api/owner/plans?project=silkboard&agent=CODEX&state=active",
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(result["items"].as_array().unwrap().len(), 1);
+    for query in ["state=completed", "project=other", "agent=%25"] {
+        let (status, result) = request(
+            &app,
+            "GET",
+            &format!("/api/owner/plans?{query}"),
+            &cookie,
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(result["items"], json!([]));
+    }
+    let mut completed = snapshot("2");
+    completed["steps"][1]["state"] = json!("done");
+    request(
+        &app,
+        "POST",
+        "/api/projects/silkboard/plans",
+        &token,
+        Some(completed),
+    )
+    .await;
+    let (_, active) =
+        request(&app, "GET", "/api/owner/plans?state=active", &cookie, None)
+            .await;
+    assert_eq!(active["items"], json!([]));
+    let (_, done) = request(
+        &app,
+        "GET",
+        "/api/owner/plans?state=completed&agent=dev",
+        &cookie,
+        None,
+    )
+    .await;
+    assert_eq!(done["items"].as_array().unwrap().len(), 1);
+    for query in ["state=done", "project=BAD", "agent=%0A", "from=0"] {
+        assert_eq!(
+            request(
+                &app,
+                "GET",
+                &format!("/api/owner/plans?{query}"),
+                &cookie,
+                None
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
 }

@@ -1,3 +1,4 @@
+import { filterQuery, type ListFilters } from "./list-filters";
 import {
   ApiError,
   request,
@@ -233,10 +234,11 @@ function root(project: string, task: string) {
 export async function listPlans(
   before: string | null,
   signal: AbortSignal,
+  filters: ListFilters = {},
 ): Promise<Page<PlanSummary>> {
   const result = page(
     await request(
-      `/api/owner/plans${before === null ? "" : `?before=${encodeURIComponent(before)}`}`,
+      `/api/owner/plans${filterQuery(before, filters)}`,
       {},
       signal,
     ),

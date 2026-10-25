@@ -109,3 +109,61 @@ test("aborts an in-flight read on unmount and ignores its eventual result", asyn
   done(response(page([])));
   await settle();
 });
+
+test("applying filters resets the cursor and preserves filters across paging and polling", async () => {
+  const fetch = vi.fn(async () => response(page([detail().summary], "older")));
+  vi.stubGlobal("fetch", fetch);
+  render(PlanList, { active: true, onexpire: vi.fn(), onopen: vi.fn() });
+  await settle();
+  await fireEvent.click(screen.getByText("Older task plans"));
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toContain("before=older");
+  await fireEvent.input(screen.getByLabelText("Project"), {
+    target: { value: "silkboard" },
+  });
+  await fireEvent.change(screen.getByLabelText("Workflow status"), {
+    target: { value: "active" },
+  });
+  await fireEvent.submit(screen.getByRole("form"));
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toBe(
+    "/api/owner/plans?project=silkboard&state=active",
+  );
+  await fireEvent.click(screen.getByText("Older task plans"));
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toBe(
+    "/api/owner/plans?before=older&project=silkboard&state=active",
+  );
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(fetch.mock.calls.at(-1)[0]).toContain(
+    "project=silkboard&state=active",
+  );
+  await fireEvent.click(screen.getByText("Clear filters"));
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toBe("/api/owner/plans");
+});
+
+test("empty workflows distinguish unfiltered history from matching filters", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response(page([]))),
+  );
+  render(PlanList, { active: true, onexpire: vi.fn(), onopen: vi.fn() });
+  await settle();
+  expect(
+    screen.getByText("No task-plan reports have arrived yet."),
+  ).toBeTruthy();
+  await fireEvent.submit(screen.getByRole("form"));
+  await settle();
+  expect(
+    screen.getByText("No task-plan reports have arrived yet."),
+  ).toBeTruthy();
+  await fireEvent.input(screen.getByLabelText("Project"), {
+    target: { value: "alpha" },
+  });
+  await fireEvent.submit(screen.getByRole("form"));
+  await settle();
+  expect(
+    screen.getByText("No workflows match these filters on this page."),
+  ).toBeTruthy();
+});

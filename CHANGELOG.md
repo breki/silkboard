@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add project and agent filters to Events and Workflows, received-time bounds
+  for Events, and reported-status filtering for Workflows across paginated history.
+
 - Add opt-in local Cargo build reuse across worktrees with isolated coverage
   and ARM64 output, whole-command locking and runtime xtask workspace selection.
 

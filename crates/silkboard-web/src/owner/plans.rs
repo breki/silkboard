@@ -28,12 +28,16 @@ pub(super) fn routes() -> Router<OwnerAuth> {
 }
 async fn list(
     State(auth): State<OwnerAuth>,
-    query: Result<Query<Before>, axum::extract::rejection::QueryRejection>,
+    query: Result<
+        Query<plans::ListQuery>,
+        axum::extract::rejection::QueryRejection,
+    >,
 ) -> Result<Json<Page<Summary>>, AuthError> {
     let Query(q) = query.map_err(|_| AuthError::Invalid)?;
+    q.validate()?;
     let cursor = q.before.as_deref().map(Cursor::parse).transpose()?;
     Ok(Json(
-        auth.query(move |store| plans::list(store, cursor.as_ref()))
+        auth.query(move |store| plans::list(store, cursor.as_ref(), &q))
             .await?,
     ))
 }

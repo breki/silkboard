@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { checkFilters } from "./filters.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -90,7 +91,7 @@ test("one phone table shows all projects, opens safe event details, pages and re
     "Agent",
     "Message",
   ]);
-  await expect(page.getByLabel("Project", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Project", { exact: true })).toBeVisible();
   await expect(table.getByText("bombyx", { exact: true })).toBeVisible();
   expect(
     await table.getByText("silkboard", { exact: true }).count(),
@@ -217,6 +218,7 @@ test("one phone table shows all projects, opens safe event details, pages and re
     { timeout: 15000 },
   );
   await expect(details.getByText(hostile, { exact: true })).toBeVisible();
+  await checkFilters(page, false);
 });
 
 test("revocation clears events and a status-page token in the same owner session", async ({

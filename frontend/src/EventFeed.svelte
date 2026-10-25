@@ -1,4 +1,11 @@
 <script lang="ts">
+  import ListFilters from "./ListFilters.svelte";
+  import type { ListFilters as Filters } from "./list-filters";
+  let filters = $state<Filters>({});
+  function applyFilters(value: Filters) {
+    navigate(null);
+    filters = value;
+  }
   import { ApiError, events, type Page, type FeedEvent } from "./feed-api";
   import { poll } from "./poll";
   import { eventTimestamp } from "./event-format";
@@ -14,11 +21,12 @@
     JSON.stringify([event.project, event.event_id]);
   $effect(() => {
     const cursor = before;
+    const selected = filters;
     void retry;
     return poll(async (signal) => {
       busy = true;
       try {
-        const value = await events(cursor, signal);
+        const value = await events(cursor, signal, selected);
         if (signal.aborted) return;
         page = value;
         failed = false;
@@ -69,6 +77,7 @@
     All projects · Updates every 10 seconds while this page is visible.
   </p>
 </div>
+<ListFilters onapply={applyFilters} />
 {#if failed}
   <div class="notice">
     <p role="alert">
@@ -80,7 +89,11 @@
 {#if page}
   {#if !page.items.length}
     <p class="empty">
-      No events on this page. New reports appear on the latest page.
+      {Object.values(filters).some(
+        (value) => value !== undefined && value !== "",
+      )
+        ? "No events match these filters on this page."
+        : "No events on this page. New reports appear on the latest page."}
     </p>
   {:else}
     <table class="events-table" aria-label="Events from all projects">

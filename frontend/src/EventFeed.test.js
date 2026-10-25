@@ -54,7 +54,7 @@ test("starting view is one compact cross-project event table with inline details
   const table = await screen.findByRole("table", {
     name: "Events from all projects",
   });
-  expect(screen.queryByLabelText("Project")).toBeNull();
+  expect(screen.getByLabelText("Project")).toBeTruthy();
   expect(
     within(table)
       .getAllByRole("columnheader")

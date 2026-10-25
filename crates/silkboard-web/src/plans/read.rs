@@ -75,12 +75,44 @@ fn collect(
         .collect::<Result<Vec<_>, _>>()?;
     strings.iter().map(|v| summary(v)).collect()
 }
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(crate) struct ListQuery {
+    pub(crate) before: Option<String>,
+    project: Option<String>,
+    agent: Option<String>,
+    state: Option<String>,
+}
+impl ListQuery {
+    pub(crate) fn validate(&self) -> Result<(), AuthError> {
+        crate::owner::filters::validate(
+            self.project.as_deref(),
+            self.agent.as_deref(),
+        )?;
+        if self.state.as_deref().is_some_and(|s| {
+            !["pending", "active", "blocked", "completed"].contains(&s)
+        }) {
+            return Err(AuthError::Invalid);
+        }
+        Ok(())
+    }
+}
+
 pub(crate) fn list(
     store: &ProgressStore,
     before: Option<&Cursor>,
+    filters: &ListQuery,
 ) -> Result<Page<Summary>, AuthError> {
     let conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
-    let items=collect(&mut conn.prepare("SELECT summary FROM task_plans WHERE (received_at,project,task_id)<(?1,?2,?3) ORDER BY received_at DESC,project DESC,task_id DESC LIMIT 21")?,params![before.map_or(i64::MAX,|c|c.received_at),before.map_or("",|c|c.project.as_str()),before.map_or("",|c|c.task_id.as_str())])?;
+    let items = collect(
+        &mut conn.prepare("SELECT summary FROM task_plans
+            WHERE (received_at,project,task_id)<(?1,?2,?3)
+            AND (?4 IS NULL OR project=?4)
+            AND (?5 IS NULL OR instr(lower(json_extract(summary,'$.reporter.tool') || ' ' || json_extract(summary,'$.reporter.hostname')),lower(?5))>0)
+            AND (?6 IS NULL OR json_extract(summary,'$.state')=?6)
+            ORDER BY received_at DESC,project DESC,task_id DESC LIMIT 21")?,
+        params![before.map_or(i64::MAX, |c| c.received_at), before.map_or("", |c| c.project.as_str()), before.map_or("", |c| c.task_id.as_str()), filters.project, filters.agent, filters.state],
+    )?;
     Ok(page(items, |s| {
         serde_json::json!({"received_at":s.received_at,"project":s.project,"task_id":s.task_id}).to_string()
     }))

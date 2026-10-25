@@ -438,3 +438,37 @@ async fn global_cursor_validation_and_private_response_headers() {
         StatusCode::BAD_REQUEST
     );
 }
+
+#[tokio::test]
+async fn event_filters_combine_and_validate() {
+    let store = ProgressStore::open_memory().unwrap();
+    let (app, cookie) = owner(store.clone()).await;
+    let token = store.issue_token("alpha", "agent").unwrap();
+    store
+        .publish("alpha", &token, &event("one", "native", 1))
+        .unwrap();
+    let (status, result) = read(app.clone(), "/api/owner/events?project=alpha&agent=CODEX&from=0&to=8640000000000000", &cookie).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(result["items"].as_array().unwrap().len(), 1);
+    for query in ["project=other", "agent=%25", "to=0"] {
+        let (status, result) =
+            read(app.clone(), &format!("/api/owner/events?{query}"), &cookie)
+                .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(result["items"], json!([]));
+    }
+    for query in [
+        "from=-1",
+        "from=2&to=1",
+        "to=invalid",
+        "project=BAD",
+        "agent=%0A",
+    ] {
+        assert_eq!(
+            read(app.clone(), &format!("/api/owner/events?{query}"), &cookie)
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}

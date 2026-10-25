@@ -124,6 +124,34 @@ struct Before {
     before: Option<String>,
 }
 
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EventQuery {
+    before: Option<String>,
+    project: Option<String>,
+    agent: Option<String>,
+    from: Option<i64>,
+    to: Option<i64>,
+}
+impl EventQuery {
+    fn validate(&self) -> Result<(), AuthError> {
+        super::filters::validate(
+            self.project.as_deref(),
+            self.agent.as_deref(),
+        )?;
+        if self
+            .from
+            .into_iter()
+            .chain(self.to)
+            .any(|v| !(0..=8_640_000_000_000_000).contains(&v))
+            || matches!((self.from, self.to), (Some(a), Some(b)) if a > b)
+        {
+            return Err(AuthError::Invalid);
+        }
+        Ok(())
+    }
+}
+
 pub(super) fn routes() -> Router<OwnerAuth> {
     Router::new()
         .route("/projects", get(projects))
@@ -137,15 +165,17 @@ pub(super) fn routes() -> Router<OwnerAuth> {
 
 async fn events(
     State(auth): State<OwnerAuth>,
-    Query(query): Query<Before>,
+    query: Result<Query<EventQuery>, axum::extract::rejection::QueryRejection>,
 ) -> Result<Json<Page<FeedEvent>>, AuthError> {
+    let Query(query) = query.map_err(|_| AuthError::Invalid)?;
+    query.validate()?;
     let cursor = query
         .before
         .as_deref()
         .map(EventCursor::parse)
         .transpose()?;
     let result = auth
-        .query(move |store| list_events(store, cursor.as_ref()))
+        .query(move |store| list_events(store, cursor.as_ref(), &query))
         .await?;
     Ok(Json(result))
 }
@@ -153,6 +183,7 @@ async fn events(
 fn list_events(
     store: &ProgressStore,
     before: Option<&EventCursor>,
+    filters: &EventQuery,
 ) -> Result<Page<FeedEvent>, AuthError> {
     let conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
     let mut statement = conn.prepare(
@@ -165,6 +196,10 @@ fn list_events(
            e.event_id,e.sequence,e.received_at,e.message
          FROM events e JOIN sessions s ON s.id=e.session
          WHERE (e.received_at,e.project,e.event_id)<(?1,?2,?3)
+           AND (?4 IS NULL OR e.project=?4)
+           AND (?5 IS NULL OR instr(lower(s.tool || ' ' || s.hostname),lower(?5))>0)
+           AND (?6 IS NULL OR e.received_at>=?6)
+           AND (?7 IS NULL OR e.received_at<=?7)
          ORDER BY e.received_at DESC,e.project DESC,e.event_id DESC
          LIMIT 21",
     )?;
@@ -174,6 +209,10 @@ fn list_events(
                 before.map_or(i64::MAX, |c| c.received_at),
                 before.map_or("", |c| c.project.as_str()),
                 before.map_or("", |c| c.event_id.as_str()),
+                filters.project,
+                filters.agent,
+                filters.from,
+                filters.to,
             ],
             |row| {
                 Ok(FeedEvent {
@@ -337,7 +376,21 @@ mod tests {
                  UPDATE events SET session_name='Later name' WHERE sequence=10",
             ).unwrap();
         }
-        let first = list_events(&store, None).unwrap();
+        let filtered = list_events(
+            &store,
+            None,
+            &EventQuery {
+                project: Some("alpha".into()),
+                agent: Some("CODEX dev".into()),
+                from: Some(1000),
+                to: Some(1000),
+                ..EventQuery::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(filtered.items.len(), 13);
+        assert!(filtered.next_cursor.is_none());
+        let first = list_events(&store, None, &EventQuery::default()).unwrap();
         assert_eq!(first.items.len(), 20);
         assert_eq!(first.items[0].project, "bravo");
         assert_eq!(
@@ -358,7 +411,8 @@ mod tests {
         let cursor =
             EventCursor::parse(first.next_cursor.as_deref().unwrap()).unwrap();
         store.0.lock().unwrap().execute_batch("VACUUM").unwrap();
-        let last = list_events(&store, Some(&cursor)).unwrap();
+        let last =
+            list_events(&store, Some(&cursor), &EventQuery::default()).unwrap();
         assert_eq!(last.items.len(), 6);
         assert_eq!(last.items.last().unwrap().message.event_id, "01");
         assert_eq!(last.items.last().unwrap().project, "alpha");

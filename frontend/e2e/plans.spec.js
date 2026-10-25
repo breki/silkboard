@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { checkFilters } from "./filters.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { password } from "./fixture.mjs";
@@ -177,6 +178,7 @@ test("list pagination and browser Back restore the earlier list page", async ({
     page.getByRole("button", { name: "Latest task plans" }),
   ).toBeVisible();
   await expect(table.getByRole("link").first()).toHaveText(title);
+  await checkFilters(page, true);
 });
 test("live polling preserves selection and graph positions, history stays pinned", async ({
   page,

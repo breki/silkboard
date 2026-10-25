@@ -1,4 +1,11 @@
 <script lang="ts">
+  import ListFilters from "./ListFilters.svelte";
+  import type { ListFilters as Filters } from "./list-filters";
+  let filters = $state<Filters>({});
+  function applyFilters(value: Filters) {
+    navigate(null);
+    filters = value;
+  }
   import type { PlanLinkHandler } from "./plan-model";
   import { ApiError, type Page } from "./feed-api";
   import { listPlans, type PlanSummary } from "./plan-api";
@@ -23,11 +30,12 @@
   $effect(() => {
     if (!active) return;
     const cursor = before;
+    const selected = filters;
     void retry;
     return poll(async (signal) => {
       busy = true;
       try {
-        const result = await listPlans(cursor, signal);
+        const result = await listPlans(cursor, signal, selected);
         if (signal.aborted) return;
         page = result;
         failed = false;
@@ -55,6 +63,7 @@
   <p class="muted">
     All projects · Last reported states · Updates while this page is visible.
   </p>
+  <ListFilters workflows onapply={applyFilters} />
   {#if failed}
     <div class="notice">
       <p role="alert">
@@ -68,9 +77,13 @@
   {#if page}
     {#if !page.items.length}
       <p>
-        {before === null
-          ? "No task-plan reports have arrived yet."
-          : "No task plans on this page. Return to the latest reports."}
+        {Object.values(filters).some(
+          (value) => value !== undefined && value !== "",
+        )
+          ? "No workflows match these filters on this page."
+          : before === null
+            ? "No task-plan reports have arrived yet."
+            : "No task plans on this page. Return to the latest reports."}
       </p>
     {:else}
       <table class="plan-table" aria-label="Task plans from all projects">
