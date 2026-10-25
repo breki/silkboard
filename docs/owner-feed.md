@@ -55,6 +55,19 @@ is not enough. Associations stay with each event across pagination and
 workflow session handoffs. A missing workflow can become linked after its
 first report arrives. See [the ingestion contract](progress-ingestion.md).
 
+Project and Agent open searchable selection lists. Search narrows available
+choices without changing the active filter; selecting a choice applies it
+immediately. All projects and All agents remove that filter. Choices come
+from the complete Events dataset, with More projects/agents for longer lists,
+not just the displayed page. Agent labels show tool and host. Escape closes
+a picker and returns focus to its button; Tab and Enter reach and choose items.
+
+From and To apply valid received-time changes immediately in the browser's
+local timezone. An invalid range shows a warning and retains the last valid
+time bounds; Project and Agent can still change independently. Clear filters
+resets all controls and returns to the latest page. There is no Apply button.
+Failed choice loading offers Retry; existing selections remain active.
+
 Flat list displays events newest-received first. Time is server receipt time, displayed
 in the browser's local timezone, rather than agent event time. The table shows
 zero-padded 24-hour `HH:mm` above `MM-DD`, without seconds or year. Expanded

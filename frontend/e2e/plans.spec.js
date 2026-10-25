@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { expect, test } from "@playwright/test";
 import { checkFilters } from "./filters.mjs";
 import { readFileSync } from "node:fs";
@@ -5,12 +6,12 @@ import { join } from "node:path";
 import { password } from "./fixture.mjs";
 import { task, maximumTask, liveTask, publish } from "./plans-fixture.mjs";
 import { detail } from "../test/plans.js";
-test.use({ baseURL: "https://127.0.0.1:38128" });
+test.use({ baseURL: `https://127.0.0.1:${fixturePort(38128)}` });
 let cookies;
 test.beforeAll(async ({ browser }) => {
   const context = await browser.newContext({
     ignoreHTTPSErrors: true,
-    baseURL: "https://127.0.0.1:38128",
+    baseURL: `https://127.0.0.1:${fixturePort(38128)}`,
   });
   const page = await context.newPage();
   await login(page);

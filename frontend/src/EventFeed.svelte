@@ -93,7 +93,7 @@
     >Session hierarchy</button
   >
 </div>
-<ListFilters onapply={applyFilters} />
+<ListFilters onapply={applyFilters} {onexpire} />
 {#if hierarchical}<p class="muted">
     Relationships use this page only. Parent-session groups come first, ordered
     by their newest visible family event; unmatched subagents follow. Events

@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { expect, test } from "@playwright/test";
 import { password } from "./fixture.mjs";
 import { readFileSync } from "node:fs";
@@ -143,7 +144,7 @@ test("blocked preference storage does not prevent current-tab switching", async 
 });
 
 test.describe("authenticated themes", () => {
-  test.use({ baseURL: "https://127.0.0.1:38128" });
+  test.use({ baseURL: `https://127.0.0.1:${fixturePort(38128)}` });
   test("both themes cover authenticated events, credentials and status", async ({
     page,
     context,

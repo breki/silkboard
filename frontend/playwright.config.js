@@ -1,3 +1,4 @@
+import { fixturePort } from "./e2e/ports.mjs";
 import { defineConfig } from "@playwright/test";
 import { mkdtempSync } from "node:fs";
 import { join } from "node:path";
@@ -7,15 +8,18 @@ process.env.SILKBOARD_E2E_DIR ??= mkdtempSync(
   join(tmpdir(), "silkboard-browser-"),
 );
 
-// Fixed dedicated loopback ports; refuse to reuse a developer's running app.
+// Dedicated configurable port block; refuse to reuse a running app.
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  use: { baseURL: "https://127.0.0.1:38124", ignoreHTTPSErrors: true },
+  use: {
+    baseURL: `https://127.0.0.1:${fixturePort(38124)}`,
+    ignoreHTTPSErrors: true,
+  },
   webServer: {
     command: "node e2e/server.mjs",
-    url: "https://127.0.0.1:38124/health",
+    url: `https://127.0.0.1:${fixturePort(38124)}/health`,
     ignoreHTTPSErrors: true,
     reuseExistingServer: false,
     gracefulShutdown: { signal: "SIGTERM", timeout: 10000 },

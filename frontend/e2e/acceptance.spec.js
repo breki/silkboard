@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { expect, test } from "@playwright/test";
 import { execFileSync, spawn } from "node:child_process";
 import {
@@ -17,7 +18,7 @@ import { request as upstreamRequest } from "node:http";
 import { password, markdownReport } from "./fixture.mjs";
 
 // This fixture owns its processes and files; it adds no application test API.
-const origin = "https://127.0.0.1:38130";
+const origin = `https://127.0.0.1:${fixturePort(38130)}`;
 test.use({ baseURL: origin });
 const task = "80808080-8080-4080-8080-808080808080";
 const path = `/plans/silkboard/${task}`;
@@ -46,7 +47,8 @@ async function startApp() {
     if (app.exitCode !== null || app.signalCode !== null)
       throw new Error("Owned backend exited");
     try {
-      if ((await fetch("http://127.0.0.1:38131/health")).ok) return;
+      if ((await fetch(`http://127.0.0.1:${fixturePort(38131)}/health`)).ok)
+        return;
     } catch {
       /* Wait for this child only. */
     }
@@ -117,7 +119,7 @@ function draft() {
   };
 }
 test.beforeAll(async () => {
-  for (const port of [38130, 38131])
+  for (const port of [fixturePort(38130), fixturePort(38131)])
     await new Promise((done, reject) => {
       const probe = netServer();
       probe.once("error", reject);
@@ -146,7 +148,7 @@ test.beforeAll(async () => {
     ...process.env,
     SILKBOARD_DATABASE: join(root, "data.sqlite"),
     SILKBOARD_OWNER_ORIGIN: origin,
-    SILKBOARD_LISTEN: "127.0.0.1:38131",
+    SILKBOARD_LISTEN: `127.0.0.1:${fixturePort(38131)}`,
     SILKBOARD_FRONTEND: join(repo, "frontend", "dist"),
   };
   execFileSync(binary, ["owner", "set-password"], {
@@ -164,7 +166,7 @@ test.beforeAll(async () => {
   writeFileSync(
     config,
     JSON.stringify({
-      endpoint: "http://127.0.0.1:38131",
+      endpoint: `http://127.0.0.1:${fixturePort(38131)}`,
       project: "silkboard",
       token_file: tokenFile,
       state_dir: join(root, "state"),
@@ -194,7 +196,7 @@ test.beforeAll(async () => {
       const upstream = upstreamRequest(
         {
           hostname: "127.0.0.1",
-          port: 38131,
+          port: fixturePort(38131),
           path: incoming.url,
           method: incoming.method,
           headers: incoming.headers,
@@ -214,7 +216,7 @@ test.beforeAll(async () => {
   );
   await new Promise((done, reject) => {
     proxy.once("error", reject);
-    proxy.listen(38130, "127.0.0.1", done);
+    proxy.listen(fixturePort(38130), "127.0.0.1", done);
   });
 });
 test.afterAll(async () => {

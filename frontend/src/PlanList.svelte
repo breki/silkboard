@@ -63,7 +63,7 @@
   <p class="muted">
     All projects · Last reported states · Updates while this page is visible.
   </p>
-  <ListFilters workflows onapply={applyFilters} />
+  <ListFilters workflows onapply={applyFilters} {onexpire} />
   {#if failed}
     <div class="notice">
       <p role="alert">

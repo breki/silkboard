@@ -472,3 +472,65 @@ async fn event_filters_combine_and_validate() {
         );
     }
 }
+
+#[tokio::test]
+async fn event_choices_use_all_received_events_and_deduplicate_agents() {
+    let store = ProgressStore::open_memory().unwrap();
+    let (app, cookie) = owner(store.clone()).await;
+    let token = store.issue_token("alpha", "agent").unwrap();
+    store.issue_token("empty", "agent").unwrap();
+    for n in 1..=24 {
+        let mut value = event(&format!("choice-{n}"), "native", n);
+        value.hostname = format!("host-{:02}", n.min(23));
+        store.publish("alpha", &token, &value).unwrap();
+    }
+    let (status, choices) = read(
+        app.clone(),
+        "/api/owner/filter-options?view=events&kind=agent&q=HOST-23",
+        &cookie,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(choices["items"], json!(["codex host-23"]));
+    let (_, projects) = read(
+        app.clone(),
+        "/api/owner/filter-options?view=events&kind=project",
+        &cookie,
+    )
+    .await;
+    assert_eq!(projects["items"], json!(["alpha"]));
+    for query in ["view=workflows&kind=agent", "view=events&kind=agent&q=%25"] {
+        let (_, empty) = read(
+            app.clone(),
+            &format!("/api/owner/filter-options?{query}"),
+            &cookie,
+        )
+        .await;
+        assert_eq!(empty["items"], json!([]));
+    }
+    for query in [
+        format!("view=events&kind=agent&q={}", "x".repeat(514)),
+        "view=events&kind=agent&after=codex%20bad%20host".into(),
+    ] {
+        assert_eq!(
+            read(
+                app.clone(),
+                &format!("/api/owner/filter-options?{query}"),
+                &cookie
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+    assert_eq!(
+        read(
+            app,
+            "/api/owner/filter-options?view=events&kind=project",
+            ""
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+}

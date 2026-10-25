@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { checkFilters } from "./filters.mjs";
+import { checkFilters, chooseFilter } from "./filters.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -91,7 +91,9 @@ test("one phone table shows all projects, opens safe event details, pages and re
     "Agent",
     "Message",
   ]);
-  await expect(page.getByLabel("Project", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Project: All projects" }),
+  ).toBeVisible();
   await expect(table.getByText("bombyx", { exact: true })).toBeVisible();
   expect(
     await table.getByText("silkboard", { exact: true }).count(),
@@ -283,9 +285,8 @@ test("revocation clears events and a status-page token in the same owner session
 async function checkHierarchy(page) {
   await page.setViewportSize({ width: 320, height: 812 });
   await expect(page.locator("tr.event-row")).toHaveCount(20);
-  await page.getByLabel("Project", { exact: true }).fill("silkboard");
-  await page.getByLabel("Agent", { exact: true }).fill("codex");
-  await page.getByRole("button", { name: "Apply filters" }).click();
+  await chooseFilter(page, "Project", "silk", "silkboard");
+  await chooseFilter(page, "Agent", "codex", "codex · development-vm");
   await expect(page.locator("tr.event-row")).toHaveCount(20);
   const switcher = page.getByRole("button", {
     name: "Session hierarchy",
@@ -336,10 +337,12 @@ async function checkHierarchy(page) {
   expect(olderCount).toBeGreaterThan(0);
   expect(olderCount).toBeLessThan(20);
   await page.getByRole("button", { name: "Flat list", exact: true }).click();
-  await expect(page.getByLabel("Project", { exact: true })).toHaveValue(
-    "silkboard",
-  );
-  await expect(page.getByLabel("Agent", { exact: true })).toHaveValue("codex");
+  await expect(
+    page.getByRole("button", { name: "Project: silkboard" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Agent: codex · development-vm" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Latest events", exact: true }),
   ).toBeVisible();
@@ -354,11 +357,13 @@ async function checkHierarchy(page) {
     .click();
   await expect(page.locator("tr.event-row")).toHaveCount(20);
   await page.getByLabel("From", { exact: true }).fill("2099-01-01T00:00");
-  await page.getByRole("button", { name: "Apply filters" }).click();
   await expect(
     page.getByText("No events match these filters on this page."),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Session hierarchy", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await page.getByRole("button", { name: "Flat list", exact: true }).click();
+  await expect(page.locator("tr.event-row")).toHaveCount(20);
 }
