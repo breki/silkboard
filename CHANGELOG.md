@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.10.0 - 2026-10-25
+
 - Identify publisher builds with the shared repository version, source commit
   and explicit tagged/development provenance in `--version`.
 
