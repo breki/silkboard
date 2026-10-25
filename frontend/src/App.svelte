@@ -5,10 +5,12 @@
   let {
     setupPage = false,
     statusPage = false,
+    plansPage = false,
     takeSetupCredential = () => "",
   }: {
     setupPage?: boolean;
     statusPage?: boolean;
+    plansPage?: boolean;
     takeSetupCredential?: () => string;
   } = $props();
 </script>
@@ -18,6 +20,6 @@
     <Header showMenu={false} />
     <OwnerSetup takeCredential={takeSetupCredential} />
   {:else}
-    <OwnerFeed {statusPage} />
+    <OwnerFeed {statusPage} {plansPage} />
   {/if}
 </main>

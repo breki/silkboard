@@ -72,6 +72,13 @@ async fn serves_built_assets_without_spa_fallback_or_path_escape() {
     for (path, expected_status, expected_body) in [
         ("/", StatusCode::OK, "<h1>Silkboard</h1>"),
         ("/status", StatusCode::OK, "<h1>Silkboard</h1>"),
+        ("/plans", StatusCode::OK, "<h1>Silkboard</h1>"),
+        (
+            "/plans/silkboard/11111111-1111-4111-8111-111111111111?sequence=1",
+            StatusCode::OK,
+            "<h1>Silkboard</h1>",
+        ),
+        ("/plans/missing", StatusCode::NOT_FOUND, ""),
         ("/app.js", StatusCode::OK, "console.log('status')"),
         ("/missing.js", StatusCode::NOT_FOUND, ""),
         ("/../Cargo.toml", StatusCode::NOT_FOUND, ""),

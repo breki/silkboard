@@ -68,6 +68,10 @@ test("compact menu supports keyboard navigation, history and small phones", asyn
   ).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
+    page.getByRole("link", { name: "Task plans", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
     page.getByRole("link", { name: "Application status" }),
   ).toBeFocused();
   await page.screenshot({

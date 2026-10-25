@@ -15,7 +15,7 @@ export interface Message {
   received_at: number;
   message: string;
 }
-interface AgentIdentity {
+export interface AgentIdentity {
   hostname: string;
   tool: string;
   session_id: string;
@@ -39,7 +39,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request(
+export async function request(
   path: string,
   options: {
     method?: string;
@@ -69,15 +69,15 @@ async function request(
   }
 }
 
-const object = (value: unknown): value is Record<string, unknown> =>
+export const object = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === "object" && !Array.isArray(value);
-const text = (value: unknown, max: number): value is string =>
+export const text = (value: unknown, max: number): value is string =>
   typeof value === "string" && value.length > 0 && value.length <= max;
-const nullable = (value: unknown, max: number) =>
+export const nullable = (value: unknown, max: number) =>
   value === null || text(value, max);
-const projectId = (value: unknown): value is string =>
+export const projectId = (value: unknown): value is string =>
   typeof value === "string" && /^[a-z0-9-]{1,64}$/.test(value);
-const positive = (value: unknown): value is string =>
+export const positive = (value: unknown): value is string =>
   typeof value === "string" &&
   /^[1-9][0-9]{0,18}$/.test(value) &&
   (value.length < 19 || value <= "9223372036854775807");
@@ -92,7 +92,7 @@ const message = (value: unknown): value is Message =>
   value.received_at >= 0 &&
   value.received_at <= 8640000000000000 &&
   text(value.message, 2000);
-const identity = (value: Record<string, unknown>) =>
+export const identity = (value: Record<string, unknown>) =>
   text(value.hostname, 256) &&
   text(value.tool, 256) &&
   text(value.session_id, 256) &&
@@ -110,7 +110,7 @@ const feedEvent = (value: unknown): value is FeedEvent =>
   identity(value) &&
   message(value);
 
-function page<T>(
+export function page<T>(
   value: unknown,
   valid: (item: unknown) => item is T,
   cursor: typeof positive,

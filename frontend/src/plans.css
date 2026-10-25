@@ -1,0 +1,261 @@
+.plans,
+.task-plan {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.plan-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+.plan-table .plan-time {
+  width: 4.2rem;
+}
+.plan-table .plan-project {
+  width: 6rem;
+}
+.plan-table .plan-state-column {
+  width: 9rem;
+}
+.plan-table th,
+.plan-table td {
+  padding: 0.65rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #2a424f;
+  overflow-wrap: anywhere;
+}
+.plan-table td span,
+.plan-table time span,
+.plan-table td strong {
+  display: block;
+}
+.plan-table td a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+}
+.reported-state {
+  text-transform: capitalize;
+}
+.plan-pagination,
+.plan-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+.plan-toolbar button[aria-pressed="true"] {
+  border-color: #d7e9ef;
+  box-shadow: inset 0 0 0 1px #d7e9ef;
+}
+.active-picker {
+  min-width: 0;
+  max-width: 100%;
+}
+.plan-summary {
+  margin: 1rem 0;
+}
+.plan-summary p {
+  margin: 0.55rem 0;
+}
+.count-track {
+  height: 0.4rem;
+  background: #293d48;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+.count-track > div {
+  height: 100%;
+  background: #91ceb7;
+}
+.historical-label {
+  display: inline-block;
+  border: 1px solid #d5b575;
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  color: #f0d9a8;
+}
+.plan-legend {
+  color: #b8c9d2;
+  font-size: 0.9rem;
+}
+.plan-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: 1rem;
+  align-items: start;
+}
+.plan-visual,
+.step-side {
+  min-width: 0;
+}
+.plan-visual > h3:focus {
+  outline: 2px solid #9bd9eb;
+  outline-offset: 3px;
+}
+.graph-scroll {
+  max-width: 100%;
+  max-height: 36rem;
+  max-height: min(65vh, 36rem);
+  overflow: auto;
+  border: 1px solid #385363;
+  border-radius: 0.6rem;
+  background: #101e27;
+}
+.graph-canvas {
+  position: relative;
+}
+.graph-edges {
+  position: absolute;
+  inset: 0;
+  fill: #9bb3bf;
+  pointer-events: none;
+}
+.prerequisite-edge {
+  fill: none;
+  stroke: #829aa7;
+  stroke-width: 1.5;
+}
+.graph-node {
+  position: absolute;
+  width: 208px;
+  height: 112px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  background: #192e3a;
+  border: 1px solid #6b8797;
+}
+.node-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+.node-state {
+  font-size: 0.83rem;
+}
+[data-state="active"] {
+  border-color: #d7b56f;
+}
+[data-state="done"],
+.reported-state[data-state="completed"] {
+  color: #a9ddc7;
+  border-color: #77aa96;
+}
+[data-state="blocked"] {
+  border-color: #df9baa;
+}
+.graph-node[aria-pressed="true"],
+.ordered-steps button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px #edf4f7;
+}
+.graph-node:focus-visible,
+.ordered-steps button:focus-visible {
+  outline: 3px solid #9bd9eb;
+  outline-offset: 3px;
+}
+.ordered-steps {
+  padding-left: 1.5rem;
+}
+.ordered-steps li {
+  padding: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+.ordered-steps button {
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.ordered-steps p {
+  font-size: 0.85rem;
+}
+.step-side {
+  padding: 1rem;
+}
+.step-side h4,
+.step-dialog h4 {
+  margin: 1.25rem 0 0.4rem;
+}
+.step-state {
+  font-weight: 600;
+}
+.step-dialog {
+  max-width: calc(100vw - 1.5rem);
+  width: 36rem;
+  max-height: 82vh;
+  max-height: 82dvh;
+  overflow: auto;
+  background: #14242e;
+  color: #e7edf2;
+  border: 1px solid #6b8797;
+  border-radius: 0.7rem;
+  padding: 1rem;
+}
+.step-dialog::backdrop {
+  background: #000a;
+}
+.close-step {
+  display: block;
+  margin-left: auto;
+  margin-bottom: 1rem;
+}
+.plan-history,
+.received-comparison {
+  border-top: 1px solid #2a424f;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+}
+.plan-history li {
+  padding: 0.6rem 0;
+  overflow-wrap: anywhere;
+}
+.plan-history li p {
+  margin: 0.2rem 0;
+}
+.task-plan .event-message {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.task-plan .identity dd {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 950px) {
+  .plan-workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .plan-table {
+    font-size: 0.82rem;
+  }
+  .plan-table .plan-time {
+    width: 3.2rem;
+  }
+  .plan-table .plan-project {
+    width: 3.7rem;
+  }
+  .plan-table .plan-state-column {
+    width: 5.3rem;
+  }
+  .plan-table td,
+  .plan-table th {
+    padding: 0.5rem 0.25rem;
+  }
+  .plan-table td .muted {
+    font-size: 0.75rem;
+  }
+  .task-plan .panel {
+    padding: 0.8rem;
+  }
+  .graph-scroll {
+    max-height: 60vh;
+  }
+}

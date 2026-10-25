@@ -29,8 +29,8 @@ Install the external gates before full validation:
 - `cargo install --locked cargo-audit@0.22.2`
 - Run `npm exec -- playwright install --with-deps chromium` inside `frontend/`
   for the isolated browser suite. The platform dependencies may require sudo.
-- OpenSSL for the disposable HTTPS browser fixtures; loopback ports 38124–38127
-  must be free (feed and first-owner setup use separate proxy/backend pairs).
+- OpenSSL for the disposable HTTPS browser fixtures; loopback ports 38124–38129
+  must be free (feed, first-owner setup and plans use separate proxy/backend pairs).
   No production credentials are used.
 
 Missing required tools, registry responses, or advisory checks fail validation.

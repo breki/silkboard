@@ -170,5 +170,5 @@ These are local development observations, not production or phone acceptance.
 Compiled CLI/API tests additionally exercise blocked/done/reopened steps,
 revised definitions, multiple active steps, explicit session handoff and
 rejection of the old writer. A Stop observation leaves the task snapshot
-unchanged. Future UI, combined freshness/recovery checks and production
-rollout remain #78–#81.
+unchanged. The [owner graph](task-plan-design.md) is locally implemented in #78;
+combined freshness/recovery checks and production rollout remain #79–#81.

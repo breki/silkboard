@@ -59,6 +59,7 @@
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
           <a href="/">Events</a>
+          <a href="/plans">Task plans</a>
           <a href="/status">Application status</a>
           {#if owner}
             <button

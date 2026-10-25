@@ -5,8 +5,8 @@ Status: milestone 5 design contract for
 The storage and private APIs are implemented for [#75](task-plan-api.md) and
 locally verified. The [installed publisher and local handoff](task-plan-publisher.md)
 are implemented for #76. Explicit [Codex reporting](ai-agents/codex-plans.md)
-is implemented for #77; the owner graph page remains planned. No production
-rollout is claimed.
+is implemented for #77; the [owner graph page](task-plan-design.md) is locally
+implemented for #78. No production rollout is claimed.
 The existing [progress API](progress-ingestion.md) remains unchanged.
 
 ## Agreed behavior and authority
@@ -323,9 +323,9 @@ migration/recovery compatibility; #76 extends the installed publisher; #77
 integrates actual Codex plan reporting; #78 implements the owner view; #79
 exercises reconciliation/freshness; #80 owns combined verification; #81 owns
 an authorized release and real dogfooding. Storage/APIs and installed plan
-commands and explicit Codex reporting are locally implemented; the owner
-view, combined reconciliation/verification and production rollout remain
-future work. Current turn-summary hooks do not expose complete plans.
+commands, explicit Codex reporting and the owner view are locally implemented.
+Combined reconciliation/verification and production rollout remain future
+work in #79–#81. Current turn-summary hooks do not expose complete plans.
 
 A new data schema needs explicit compatibility and recovery handling before
 release; switching an old binary back cannot undo a migration. This contract
