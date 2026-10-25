@@ -51,6 +51,21 @@ test("primary header links and compact menu support keyboards and small phones",
       .locator("header")
       .evaluate((node) => node.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(48);
+  // Exercise a wider fallback font as well as the platform's default face.
+  const widerFont = await page.addStyleTag({
+    content: ".masthead { font-family: monospace; }",
+  });
+  expect(
+    await page
+      .locator("header")
+      .evaluate((node) => node.getBoundingClientRect().height),
+  ).toBeLessThanOrEqual(48);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await widerFont.evaluate((node) => node.parentNode?.removeChild(node));
   const primary = page.getByRole("navigation", { name: "Primary navigation" });
   const events = primary.getByRole("link", { name: "Events", exact: true });
   const plans = primary.getByRole("link", { name: "Task plans", exact: true });
