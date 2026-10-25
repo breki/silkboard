@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.9.0 - 2026-10-25
+
 - Link explicitly associated Events to their existing Workflows, preserving
   per-event identity across sessions and leaving unknown associations unlinked.
 
