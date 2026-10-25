@@ -34,7 +34,7 @@ test("failed status request gives a recovery action", async ({ page }) => {
   await expect(page.getByText("Healthy", { exact: true })).toHaveCount(0);
 });
 
-test("compact menu supports keyboard navigation, history and small phones", async ({
+test("primary header links and compact menu support keyboards and small phones", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 320, height: 720 });
@@ -51,6 +51,19 @@ test("compact menu supports keyboard navigation, history and small phones", asyn
       .locator("header")
       .evaluate((node) => node.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(48);
+  const primary = page.getByRole("navigation", { name: "Primary navigation" });
+  const events = primary.getByRole("link", { name: "Events", exact: true });
+  const plans = primary.getByRole("link", { name: "Task plans", exact: true });
+  await expect(events).toBeVisible();
+  await expect(plans).toBeVisible();
+  await events.focus();
+  await page.keyboard.press("Tab");
+  await expect(plans).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/plans$/);
+  await expect(page.getByLabel("Owner password")).toBeVisible();
+  await page.goBack();
+  await expect(page).toHaveURL(/\/$/);
   const menu = page.getByRole("button", { name: "Navigation menu" });
   await menu.focus();
   await page.keyboard.press("Enter");
@@ -63,14 +76,13 @@ test("compact menu supports keyboard navigation, history and small phones", asyn
   await expect(menu).toHaveAttribute("aria-expanded", "false");
   await page.keyboard.press("Space");
   await page.keyboard.press("Tab");
+  const drawer = page.getByRole("navigation", { name: "Main navigation" });
   await expect(
-    page.getByRole("link", { name: "Events", exact: true }),
-  ).toBeFocused();
-  await page.keyboard.press("Tab");
+    drawer.getByRole("link", { name: "Events", exact: true }),
+  ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Task plans", exact: true }),
-  ).toBeFocused();
-  await page.keyboard.press("Tab");
+    drawer.getByRole("link", { name: "Task plans", exact: true }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Application status" }),
   ).toBeFocused();
@@ -98,10 +110,11 @@ test("compact menu supports keyboard navigation, history and small phones", asyn
   await expect(page.getByLabel("Owner password")).toBeVisible();
   await menu.click();
   await page.getByRole("link", { name: "Application status" }).click();
-  await page.getByRole("button", { name: "Navigation menu" }).click();
-  await page.getByRole("link", { name: "Events", exact: true }).click();
+  await events.click();
   await expect(page.getByLabel("Owner password")).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(events).toBeVisible();
+  await expect(plans).toBeVisible();
   await menu.click();
   await page.screenshot({
     path: info.outputPath("menu-desktop.png"),

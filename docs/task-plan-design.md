@@ -10,10 +10,12 @@ without dependencies or a server. Its simulated statuses are example data.
 
 ## Entry points and navigation
 
-The owner selected a separate **Task plans** page reached from the existing
-hamburger menu. Events remains the starting view and retains the current
-all-project event table. Keep Application status, credential management and
-Sign out in their existing navigation; no task execution controls are added.
+The owner selected a separate **Task plans** page. The later
+[issue #96](https://github.com/breki/silkboard/issues/96) moves **Events** and
+**Task plans** into direct links in the top header row, replacing their
+hamburger-menu entries. Events remains the starting view and retains the
+all-project event table. Application status, credential management and Sign
+out remain in the hamburger menu; no task execution controls are added.
 
 Proposed owner browser paths:
 

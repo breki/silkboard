@@ -816,3 +816,14 @@ Shared Cargo output also reused an xtask executable built for another worktree;
 rebuilding it restored the intended validation root. Working rules now call
 out checking that root before relying on shared helpers. These clarifications
 introduce no release, external-write or execution authority.
+
+## Direct primary navigation — 2026-10-25
+
+The owner requested #96 in the basic UI milestone and authorized its
+implementation: Events and Task plans should be direct top-row links rather
+than hamburger entries. This supersedes only the entry placement in #61/#74.
+The starting Events view, existing paths, owner authentication and the other
+hamburger actions remain unchanged. Setup retains its navigation-free header.
+Local component and browser checks verify direct links, menu boundaries,
+keyboard operation and compact phone/desktop layout; they do not establish a
+new production release or owner phone acceptance of this navigation change.
