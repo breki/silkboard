@@ -1,4 +1,21 @@
 <script lang="ts">
+  import { onMount } from "svelte";
+  import { readSession, clearSessionUrl } from "./event-session";
+  let session = $state(readSession(window.location.search));
+  function clearSession() {
+    if (session.kind === "none") return;
+    window.history.pushState(null, "", clearSessionUrl());
+    session = readSession(window.location.search);
+    navigate(null);
+  }
+  onMount(() => {
+    const changed = () => {
+      session = readSession(window.location.search);
+      navigate(null);
+    };
+    window.addEventListener("popstate", changed);
+    return () => window.removeEventListener("popstate", changed);
+  });
   import type { SessionGroup } from "./event-hierarchy";
   import { SvelteSet } from "svelte/reactivity";
   import EventRows from "./EventRows.svelte";
@@ -41,7 +58,19 @@
   let expanded = $state<string | null>(null);
   $effect(() => {
     const cursor = before;
-    const selected = filters;
+    if (session.kind === "invalid") {
+      page = null;
+      return;
+    }
+    const selected =
+      session.kind === "session"
+        ? {
+            from: filters.from,
+            to: filters.to,
+            ...session.value,
+            subagent_id: session.value.subagent_id ?? "",
+          }
+        : filters;
     void retry;
     return poll(async (signal) => {
       busy = true;
@@ -93,7 +122,36 @@
     >Session hierarchy</button
   >
 </div>
-<ListFilters onapply={applyFilters} {onexpire} />
+{#if session.kind === "invalid"}
+  <p role="alert">
+    This agent session link is invalid. Clear it to choose another filter.
+  </p>
+  <button onclick={clearSession}>Clear session filter</button>
+{:else}
+  {#if session.kind === "session"}<section
+      class="session-filter"
+      aria-label="Selected agent session"
+    >
+      <h4>Exact agent session</h4>
+      <dl class="identity">
+        <dt>Project</dt>
+        <dd>{session.value.project}</dd>
+        <dt>Agent</dt>
+        <dd>{session.value.tool} · {session.value.hostname}</dd>
+        <dt>Native session</dt>
+        <dd>{session.value.session_id}</dd>
+        <dt>Subagent</dt>
+        <dd>{session.value.subagent_id ?? "Primary session"}</dd>
+      </dl>
+      <button onclick={clearSession}>Clear session filter</button>
+    </section>{/if}
+  <ListFilters
+    onapply={applyFilters}
+    {onexpire}
+    sessionScoped={session.kind === "session"}
+    onclear={clearSession}
+  />
+{/if}
 {#if hierarchical}<p class="muted">
     Relationships use this page only. Parent-session groups come first, ordered
     by their newest visible family event; unmatched subagents follow. Events

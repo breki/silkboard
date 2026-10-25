@@ -568,3 +568,45 @@ async fn event_descriptions_reach_every_owner_projection() {
         value.description.unwrap()
     );
 }
+
+#[tokio::test]
+async fn exact_agent_filter_distinguishes_primary_and_children() {
+    let store = ProgressStore::open_memory().unwrap();
+    let (app, cookie) = owner(store.clone()).await;
+    let token = store.issue_token("alpha", "agent").unwrap();
+    for (id, child) in [
+        ("root", None),
+        ("child", Some("child-a")),
+        ("other-child", Some("child-b")),
+    ] {
+        let mut report = event(id, "native", 1);
+        report.subagent_id = child.map(str::to_owned);
+        store.publish("alpha", &token, &report).unwrap();
+    }
+    let base = "/api/owner/events?project=alpha&hostname=dev&tool=codex&session_id=native";
+    for (child, id) in [
+        ("", "root"),
+        ("child-a", "child"),
+        ("child-b", "other-child"),
+    ] {
+        let (status, rows) =
+            read(app.clone(), &format!("{base}&subagent_id={child}"), &cookie)
+                .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(rows["items"].as_array().unwrap().len(), 1);
+        assert_eq!(rows["items"][0]["event_id"], id);
+    }
+    for query in [
+        "session_id=native",
+        "project=alpha&hostname=dev&tool=codex&session_id=native",
+        "hostname=dev&tool=codex&session_id=native&subagent_id=",
+        "project=alpha&hostname=%0A&tool=codex&session_id=native&subagent_id=",
+    ] {
+        assert_eq!(
+            read(app.clone(), &format!("/api/owner/events?{query}"), &cookie)
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}

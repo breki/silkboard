@@ -50,7 +50,7 @@ test("starting view is one compact cross-project event table with inline details
       }),
     ),
   );
-  render(OwnerFeed);
+  render(OwnerFeed, { eventsPage: true });
   const table = await screen.findByRole("table", {
     name: "Events from all projects",
   });
@@ -522,3 +522,87 @@ test.each([false, true])(
     expect(detail.querySelector("script")).toBeNull();
   },
 );
+
+test("exact session scope survives paging and view changes, clears and restores with navigation", async () => {
+  const { sessionEvents } = await import("./event-session");
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  const path = sessionEvents({ ...report, subagent_id: "child" });
+  window.history.replaceState(null, "", path);
+  const fetch = vi.fn(async (path) =>
+    response(
+      path.includes("filter-options")
+        ? page(["claude other-host"])
+        : page([report], path.includes("before=") ? null : "older"),
+    ),
+  );
+  vi.stubGlobal("fetch", fetch);
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByRole("table");
+  expect(
+    screen.getByRole("region", { name: "Selected agent session" }),
+  ).toBeTruthy();
+  expect(
+    screen.queryByRole("button", { name: "Project: All projects" }),
+  ).toBeNull();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Session hierarchy" }),
+  );
+  await fireEvent.click(screen.getByRole("button", { name: "Earlier events" }));
+  await screen.findByRole("button", { name: "Latest events" });
+  for (const [url] of fetch.mock.calls) {
+    const query = new URL(url, location.origin).searchParams;
+    expect(query.get("session_id")).toBe("private-native");
+    expect(query.get("subagent_id")).toBe("child");
+  }
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Clear session filter" }),
+  );
+  await screen.findByRole("button", { name: "Project: All projects" });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Agent: All agents" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", {
+      name: "claude · other-host",
+      exact: true,
+    }),
+  );
+  await screen.findByRole("button", { name: "Agent: claude · other-host" });
+  window.history.replaceState(null, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+  await screen.findByRole("region", { name: "Selected agent session" });
+  expect(fetch.mock.calls.at(-1)[0]).toContain("subagent_id=child");
+  expect(
+    new URL(fetch.mock.calls.at(-1)[0], location.origin).searchParams.has(
+      "agent",
+    ),
+  ).toBe(false);
+  window.history.replaceState(null, "", "/");
+});
+test("incomplete session links fail closed until cleared", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  window.history.replaceState(null, "", "/events?session_id=private");
+  const fetch = vi.fn(async () => response(page([])));
+  vi.stubGlobal("fetch", fetch);
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByRole("alert");
+  expect(fetch).not.toHaveBeenCalled();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Clear session filter" }),
+  );
+  await screen.findByText(/No events on this page/);
+  expect(fetch).toHaveBeenCalledOnce();
+  window.history.replaceState(null, "", "/");
+});
+
+test("clear filters can reset an ordinary feed without adding a session URL", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response(page([]))),
+  );
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByText(/No events on this page/);
+  await fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+  expect(location.search).toBe("");
+});

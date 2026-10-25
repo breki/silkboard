@@ -19,6 +19,7 @@ const app = mount(App, {
   props: {
     setupPage: window.location.pathname === "/setup",
     statusPage: window.location.pathname === "/status",
+    eventsPage: window.location.pathname === "/events",
     plansPage:
       window.location.pathname === "/plans" ||
       window.location.pathname.startsWith("/plans/"),

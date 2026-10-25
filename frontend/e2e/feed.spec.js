@@ -10,7 +10,7 @@ test("owner login uses a secure cookie and logout revokes event access", async (
   context,
 }) => {
   expect((await context.request.get("/api/owner/events")).status()).toBe(401);
-  await page.goto("/");
+  await page.goto("/events");
   await page.getByLabel("Owner password").fill("incorrect fixture password");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Password not accepted");
@@ -52,7 +52,7 @@ test("one phone table shows all projects, opens safe event details, pages and re
   context,
 }, info) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.goto("/");
+  await page.goto("/events");
   await page.getByLabel("Owner password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   const table = page.getByRole("table", { name: "Events from all projects" });
@@ -237,7 +237,7 @@ test("revocation clears events and a status-page token in the same owner session
   page,
   context,
 }) => {
-  await page.goto("/");
+  await page.goto("/events");
   await page.getByLabel("Owner password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.locator("tr.event-row")).toHaveCount(20);

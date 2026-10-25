@@ -1,5 +1,14 @@
 # Canon provenance
 
+## Agents landing page, 2026-10-25
+
+The owner authorized [#114](https://github.com/breki/silkboard/issues/114)
+and selected reported workflow snapshots so each destination matches its row
+after handoffs. Agents becomes home; Events moves to `/events`. The
+[owner guide](../owner-feed.md) records full native identity, complete-history
+receipt ordering, exact event links and moving pagination. These are local
+implementation decisions and checks, separate from production rollout.
+
 ## Detailed progress descriptions, 2026-10-25
 
 The owner authorized implementation of

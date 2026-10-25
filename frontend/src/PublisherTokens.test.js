@@ -41,7 +41,10 @@ function start(overrides = {}, component = PublisherTokens) {
   return {
     fetch,
     onexpire,
-    ...render(component, component === OwnerFeed ? {} : { onexpire }),
+    ...render(
+      component,
+      component === OwnerFeed ? { eventsPage: true } : { onexpire },
+    ),
   };
 }
 async function fields(project = "silkboard", label = "dev-vm") {

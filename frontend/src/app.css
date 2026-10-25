@@ -404,3 +404,16 @@ a {
   gap: 0.25rem;
   padding: 0.55rem 0.8rem;
 }
+
+@media (max-width: 360px) {
+  .masthead h1 {
+    font-size: 0.875rem;
+  }
+  .primary-navigation {
+    gap: 0.125rem;
+  }
+  .primary-navigation a {
+    font-size: 0.75rem;
+    padding-inline: 0;
+  }
+}

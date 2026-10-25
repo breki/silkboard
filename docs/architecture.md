@@ -144,9 +144,12 @@ alone reads current and historical snapshots through private authenticated APIs.
 or release eligibility. Codex integration, UI, reconciliation,
 combined verification and production dogfooding are separate milestone issues.
 
-The [presentation design](task-plan-design.md), owned by #74, keeps Events as
-the starting view and adds a separate Workflows destination (#98). Issue #96 puts
-both primary links in the top header row. Its tracked
+The [presentation design](task-plan-design.md), owned by #74, includes separate
+Events and Workflows destinations (#98). Issue #114 adds Agents as home,
+aggregating complete stored event and snapshot history by native identity.
+All three primary links appear in the top header row. The
+[owner guide](owner-feed.md) defines receipt ordering and snapshot/exact-session
+links. The tracked
 HTML reference remains a fictional prototype. The implemented owner page in
 #78 uses real authenticated plan APIs, native step buttons and SVG arrows.
 It preserves exact received snapshots, selection and bounded history without

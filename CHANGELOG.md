@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Make Agents the home page with latest activity per native identity, reported
+  workflow snapshot links and exact session/subagent links to Events.
+
 - Support optional detailed Markdown descriptions alongside concise event
   summaries, and clarify existing workflow and step descriptions.
 

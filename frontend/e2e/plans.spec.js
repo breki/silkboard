@@ -421,7 +421,7 @@ test("explicit event workflow links open the existing graph by keyboard on a pho
   );
   expect(result.ok()).toBe(true);
   await page.setViewportSize({ width: 320, height: 720 });
-  await openPlan(page, "/");
+  await openPlan(page, "/events");
   const entry = page
     .locator("tr.event-row")
     .filter({ hasText: "Continue this workflow" });
@@ -440,4 +440,100 @@ test("explicit event workflow links open the existing graph by keyboard on a pho
     page.getByRole("region", { name: "Task prerequisite graph" }),
   ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${link(task)}$`));
+});
+
+test("Agents home links exact event sessions and reported workflow snapshots", async ({
+  page,
+  context,
+}, info) => {
+  const token = readFileSync(
+    join(process.env.SILKBOARD_E2E_DIR, "plans.token"),
+    "utf8",
+  ).trim();
+  const agentTask = "abababab-abab-4bab-8bab-abababababab";
+  const first = detail({
+    task_id: agentTask,
+    title: "Agents handoff",
+  }).snapshot;
+  first.reporter.session_id = "agents-writer-one";
+  await publish(first, token);
+  const handoff = structuredClone(first);
+  handoff.sequence = "2";
+  handoff.writer_generation = "2";
+  handoff.reporter.session_id = "agents-writer-two";
+  await publish(handoff, token);
+  for (const child of [null, "child-a", "child-b"]) {
+    const seeded = await context.request.post(
+      "/api/projects/silkboard/progress",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          event_id: `agents-${child ?? "primary"}`,
+          hostname: "agents-host",
+          tool: "codex",
+          session_id: "agents-native",
+          subagent_id: child,
+          sequence: 1,
+          session_name: `Agents ${child ?? "primary"}`,
+          message: `Report ${child ?? "primary"}`,
+        },
+      },
+    );
+    expect(seeded.status()).toBe(200);
+  }
+  await page.setViewportSize({ width: 320, height: 720 });
+  await openPlan(page, "/");
+  const table = page.getByRole("table", { name: "Agents and latest activity" });
+  await expect(table).toBeVisible();
+  await noOverflow(page);
+  await page.getByRole("link", { name: "Agents child-a", exact: true }).focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("region", { name: "Selected agent session" }),
+  ).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("subagent_id")).toBe("child-a");
+  await expect(
+    page.getByRole("button", {
+      name: "Event details: Report child-a",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Event details: Report child-b",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Session hierarchy" }).click();
+  await page.reload();
+  await expect(
+    page.getByRole("region", { name: "Selected agent session" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Clear session filter" }).click();
+  await expect(
+    page.getByRole("button", { name: "Project: All projects" }),
+  ).toBeVisible();
+  await page.goBack();
+  await expect(
+    page.getByRole("region", { name: "Selected agent session" }),
+  ).toBeVisible();
+  await page.goForward();
+  await expect(
+    page.getByRole("button", { name: "Project: All projects" }),
+  ).toBeVisible();
+  await page.getByRole("link", { name: "Agents", exact: true }).click();
+  const links = table.locator(`a[href^="${link(agentTask)}?sequence="]`);
+  await expect(links).toHaveCount(2);
+  const targets = await links.evaluateAll((nodes) =>
+    nodes.map((node) => node.getAttribute("href")),
+  );
+  expect(targets).toContain(`${link(agentTask)}?sequence=1`);
+  expect(targets).toContain(`${link(agentTask)}?sequence=2`);
+  await page.screenshot({
+    path: info.outputPath("agents-phone.png"),
+    fullPage: true,
+  });
+  await table.locator(`a[href="${link(agentTask)}?sequence=1"]`).click();
+  await expect(page).toHaveURL(`${link(agentTask)}?sequence=1`);
+  await expect(page.getByText(/Earlier snapshot/).first()).toBeVisible();
 });

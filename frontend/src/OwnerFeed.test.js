@@ -28,7 +28,7 @@ async function submit() {
 
 test("keeps release status off the starting view and links to its own page", async () => {
   vi.stubGlobal("fetch", vi.fn(routes()));
-  render(App);
+  render(App, { eventsPage: true });
   await screen.findByLabelText("Owner password");
   expect(screen.queryByLabelText("Application status")).toBeNull();
   await fireEvent.click(
@@ -50,7 +50,7 @@ test.each([
     "fetch",
     vi.fn(routes({ "/api/owner/session": () => response({}, code) })),
   );
-  render(OwnerFeed);
+  render(OwnerFeed, { eventsPage: true });
   await screen.findByRole("button", { name: button });
   code = 401;
   await fireEvent.click(screen.getByRole("button", { name: button }));
@@ -67,7 +67,7 @@ test.each([
       "fetch",
       vi.fn(routes({ "/api/auth/login": response({}, code) })),
     );
-    render(OwnerFeed);
+    render(OwnerFeed, { eventsPage: true });
     await submit();
     expect((await screen.findByRole("alert")).textContent).toContain(text);
     expect(screen.getByLabelText("Owner password").value).toBe("");
@@ -95,7 +95,7 @@ test("signs in, clears private content during logout and retries an unconfirmed 
     }),
   );
   vi.stubGlobal("fetch", fetch);
-  render(OwnerFeed);
+  render(OwnerFeed, { eventsPage: true });
   await submit();
   await screen.findByText("Fix the tests");
   await fireEvent.click(
@@ -125,7 +125,7 @@ test("already revoked session is truthfully signed out", async () => {
       }),
     ),
   );
-  render(OwnerFeed);
+  render(OwnerFeed, { eventsPage: true });
   await screen.findByText("Fix the tests");
   revoked = true;
   await fireEvent.click(
@@ -150,7 +150,7 @@ test("a poll detecting expired authentication removes the feed", async () => {
       }),
     ),
   );
-  render(OwnerFeed);
+  render(OwnerFeed, { eventsPage: true });
   await vi.advanceTimersByTimeAsync(0);
   expect(screen.getByText("Fix the tests")).toBeTruthy();
   expired = true;
@@ -176,7 +176,7 @@ test("late data cannot reappear after logout or unmount", async () => {
       }),
     ),
   );
-  const view = render(OwnerFeed);
+  const view = render(OwnerFeed, { eventsPage: true });
   await screen.findByText("Loading events…");
   await waitFor(() => expect(resolve).toBeTypeOf("function"));
   await fireEvent.click(
@@ -198,7 +198,7 @@ test("teardown aborts a stalled initial session check", async () => {
       return new Promise(() => {});
     }),
   );
-  const view = render(OwnerFeed);
+  const view = render(OwnerFeed, { eventsPage: true });
   expect(screen.getByRole("status").textContent).toContain("Checking");
   view.unmount();
   expect(signal.aborted).toBe(true);
@@ -238,7 +238,7 @@ test("signed-out status needs no password and links back to events", async () =>
   );
   expect(
     screen.getByRole("link", { name: "Events" }).getAttribute("href"),
-  ).toBe("/");
+  ).toBe("/events");
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
 });
 
@@ -424,4 +424,34 @@ test("plan deep links survive login and private plan data clears on logout", asy
   await screen.findByLabelText("Owner password");
   expect(screen.queryByText(value.snapshot.title)).toBeNull();
   window.history.replaceState(null, "", "/");
+});
+
+test("ordinary owner entry starts on Agents without replacing explicit views", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      routes({
+        "/api/owner/session": response({
+          authenticated: true,
+          csrf_token: csrf,
+        }),
+        "/api/owner/agents": response(page([])),
+        "/api/owner/events": response(page([])),
+      }),
+    ),
+  );
+  render(OwnerFeed);
+  expect(
+    await screen.findByRole("heading", { name: "Agents", exact: true }),
+  ).toBeTruthy();
+  expect(
+    screen
+      .getByRole("link", { name: "Agents", exact: true })
+      .getAttribute("href"),
+  ).toBe("/");
+  expect(
+    screen
+      .getByRole("link", { name: "Events", exact: true })
+      .getAttribute("href"),
+  ).toBe("/events");
 });

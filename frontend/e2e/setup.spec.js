@@ -78,7 +78,7 @@ test("phone registration consumes a private link before enabling authenticated p
   await page.getByLabel("Owner password").fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByText("Owner registration succeeded", { exact: true }),
+    page.getByText("Event: Owner registration succeeded", { exact: true }),
   ).toBeVisible();
   const cookie = (await context.cookies()).find(
     (cookie) => cookie.name === "__Host-silkboard-owner",

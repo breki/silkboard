@@ -988,3 +988,85 @@ async fn filter_choices_are_bounded_searchable_and_owner_only() {
         );
     }
 }
+
+#[tokio::test]
+async fn agents_include_event_only_and_past_workflow_writers() {
+    let (_store, app, token, cookie) = fixture().await;
+    request(
+        &app,
+        "POST",
+        "/api/projects/silkboard/plans",
+        &token,
+        Some(snapshot("1")),
+    )
+    .await;
+    let mut next = snapshot("2");
+    next["writer_generation"] = json!("2");
+    next["reporter"]["session_id"] = json!("native-b");
+    next["steps"][1]["state"] = json!("done");
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/silkboard/plans",
+            &token,
+            Some(next)
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let report = json!({"event_id":"event-only","hostname":"dev","tool":"codex","session_id":"event-native","sequence":1,"message":"Only an event"});
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/silkboard/progress",
+            &token,
+            Some(report)
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    let (status, agents) =
+        request(&app, "GET", "/api/owner/agents", &cookie, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let rows = agents["items"].as_array().unwrap();
+    assert_eq!(rows.len(), 3);
+    for (session, seq, state) in
+        [("native-a", "1", "active"), ("native-b", "2", "completed")]
+    {
+        let row = rows.iter().find(|r| r["session_id"] == session).unwrap();
+        assert_eq!(row["latest"]["kind"], "workflow");
+        assert_eq!(row["latest"]["task_id"], TASK);
+        assert_eq!(row["latest"]["sequence"], seq);
+        assert_eq!(row["latest"]["state"], state);
+    }
+    let event = rows
+        .iter()
+        .find(|r| r["session_id"] == "event-native")
+        .unwrap();
+    assert_eq!(event["latest"]["kind"], "event");
+    assert_eq!(event["latest"]["message"], "Only an event");
+    assert_eq!(
+        request(&app, "GET", "/api/owner/agents", &token, None)
+            .await
+            .0,
+        StatusCode::UNAUTHORIZED
+    );
+    for query in ["before=bad", "unknown=1"] {
+        assert_eq!(
+            request(
+                &app,
+                "GET",
+                &format!("/api/owner/agents?{query}"),
+                &cookie,
+                None
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}

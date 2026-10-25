@@ -39,7 +39,8 @@
   <h1>Silkboard</h1>
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
-      <a href="/">Events</a>
+      <a href="/">Agents</a>
+      <a href="/events">Events</a>
       <a href="/plans">Workflows</a>
     </nav>
     <div class="navigation" bind:this={container}>
