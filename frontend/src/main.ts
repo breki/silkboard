@@ -1,7 +1,11 @@
+import "./theme.css";
 import "./app.css";
 import { mount } from "svelte";
 import App from "./App.svelte";
 import { takeSetupLink } from "./setup-link";
+import { initializeTheme } from "./theme";
+
+initializeTheme();
 
 let setupCredential = takeSetupLink(window.location, window.history);
 

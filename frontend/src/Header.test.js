@@ -1,15 +1,38 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/svelte";
 import { afterEach, expect, test, vi } from "vitest";
 import Header from "./Header.svelte";
 afterEach(cleanup);
 const menu = () => screen.getByRole("button", { name: "Navigation menu" });
-test("navigation is hidden until opened and owner actions need a session", async () => {
+const drawer = () =>
+  screen.queryByRole("navigation", { name: "Main navigation" });
+test("primary links are visible without opening the owner menu", async () => {
   render(Header);
   expect(screen.getByRole("heading", { name: "Silkboard" })).toBeTruthy();
   expect(menu().getAttribute("aria-expanded")).toBe("false");
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
+  const primary = screen.getByRole("navigation", {
+    name: "Primary navigation",
+  });
+  expect(
+    within(primary).getByRole("link", { name: "Events" }).getAttribute("href"),
+  ).toBe("/");
+  expect(
+    within(primary)
+      .getByRole("link", { name: "Task plans" })
+      .getAttribute("href"),
+  ).toBe("/plans");
   await fireEvent.click(menu());
   expect(menu().getAttribute("aria-expanded")).toBe("true");
+  expect(within(drawer()).queryByRole("link", { name: "Events" })).toBeNull();
+  expect(
+    within(drawer()).queryByRole("link", { name: "Task plans" }),
+  ).toBeNull();
   expect(
     screen.getByRole("link", { name: "Events" }).getAttribute("href"),
   ).toBe("/");
@@ -20,7 +43,7 @@ test("navigation is hidden until opened and owner actions need a session", async
   ).toBe("/status");
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
   await fireEvent.click(menu());
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
 });
 test("owner actions close the menu and return focus", async () => {
   const onmanage = vi.fn(),
@@ -34,7 +57,7 @@ test("owner actions close the menu and return focus", async () => {
   );
   expect(onmanage).toHaveBeenCalledOnce();
   expect(document.activeElement).toBe(menu());
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
   await view.rerender({ owner: { managing: true, onmanage, onlogout } });
   await fireEvent.click(menu());
   expect(
@@ -42,35 +65,40 @@ test("owner actions close the menu and return focus", async () => {
   ).toBeTruthy();
   await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
   expect(onlogout).toHaveBeenCalledOnce();
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
 });
 test("Escape, outside pointer and focus dismiss without capturing other keys", async () => {
   render(Header);
   await fireEvent.keyDown(window, { key: "Escape" });
   await fireEvent.click(menu());
   await fireEvent.keyDown(window, { key: "Tab" });
-  expect(screen.getByRole("navigation")).toBeTruthy();
+  expect(drawer()).toBeTruthy();
   await fireEvent.pointerDown(menu());
-  expect(screen.getByRole("navigation")).toBeTruthy();
+  expect(drawer()).toBeTruthy();
   await fireEvent.keyDown(window, { key: "Escape" });
   expect(document.activeElement).toBe(menu());
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
   await fireEvent.click(menu());
   await fireEvent.pointerDown(document.body);
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
   await fireEvent.click(menu());
   await fireEvent.focusIn(document.body);
-  expect(screen.queryByRole("navigation")).toBeNull();
+  expect(drawer()).toBeNull();
 });
 test("setup header has no navigation", () => {
   render(Header, { showMenu: false });
   expect(screen.queryByRole("button")).toBeNull();
+  expect(screen.queryByRole("link")).toBeNull();
 });
 
-test("task plans have a separate menu destination", async () => {
+test("theme preference can be changed and survives closing the menu", async () => {
   render(Header);
   await fireEvent.click(menu());
-  expect(
-    screen.getByRole("link", { name: "Task plans" }).getAttribute("href"),
-  ).toBe("/plans");
+  const selector = screen.getByRole("combobox", { name: "Theme" });
+  expect(selector.value).toBe("system");
+  await fireEvent.change(selector, { target: { value: "dark" } });
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  await fireEvent.click(menu());
+  await fireEvent.click(menu());
+  expect(screen.getByRole("combobox", { name: "Theme" }).value).toBe("dark");
 });

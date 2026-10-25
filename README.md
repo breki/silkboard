@@ -18,6 +18,7 @@ Silkboard. Bombyx-managed development VMs can use the same installed publisher.
 - No dashboard access to development repositories, files, VM control or agent
   execution. A separate privileged updater verifies Silkboard releases.
 
+See [appearance](docs/appearance.md) for Light, Dark and System preferences.
 See [architecture](docs/architecture.md) for current components and authority,
 and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 

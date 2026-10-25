@@ -22,7 +22,7 @@
   padding: 0.65rem 0.5rem;
   text-align: left;
   vertical-align: top;
-  border-bottom: 1px solid #2a424f;
+  border-bottom: 1px solid var(--line);
   overflow-wrap: anywhere;
 }
 .plan-table td span,
@@ -47,8 +47,8 @@
   margin: 1rem 0;
 }
 .plan-toolbar button[aria-pressed="true"] {
-  border-color: #d7e9ef;
-  box-shadow: inset 0 0 0 1px #d7e9ef;
+  border-color: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--selected);
 }
 .active-picker {
   min-width: 0;
@@ -62,23 +62,23 @@
 }
 .count-track {
   height: 0.4rem;
-  background: #293d48;
+  background: var(--track);
   border-radius: 1rem;
   overflow: hidden;
 }
 .count-track > div {
   height: 100%;
-  background: #91ceb7;
+  background: var(--progress);
 }
 .historical-label {
   display: inline-block;
-  border: 1px solid #d5b575;
+  border: 1px solid var(--historical-border);
   border-radius: 0.4rem;
   padding: 0.3rem 0.6rem;
-  color: #f0d9a8;
+  color: var(--historical-text);
 }
 .plan-legend {
-  color: #b8c9d2;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 .plan-workspace {
@@ -92,7 +92,7 @@
   min-width: 0;
 }
 .plan-visual > h3:focus {
-  outline: 2px solid #9bd9eb;
+  outline: 2px solid var(--graph-focus);
   outline-offset: 3px;
 }
 .graph-scroll {
@@ -100,9 +100,9 @@
   max-height: 36rem;
   max-height: min(65vh, 36rem);
   overflow: auto;
-  border: 1px solid #385363;
+  border: 1px solid var(--graph-border);
   border-radius: 0.6rem;
-  background: #101e27;
+  background: var(--graph);
 }
 .graph-canvas {
   position: relative;
@@ -110,12 +110,12 @@
 .graph-edges {
   position: absolute;
   inset: 0;
-  fill: #9bb3bf;
+  fill: var(--arrow);
   pointer-events: none;
 }
 .prerequisite-edge {
   fill: none;
-  stroke: #829aa7;
+  stroke: var(--edge);
   stroke-width: 1.5;
 }
 .graph-node {
@@ -128,8 +128,8 @@
   justify-content: space-between;
   gap: 0.4rem;
   padding: 0.75rem;
-  background: #192e3a;
-  border: 1px solid #6b8797;
+  background: var(--node);
+  border: 1px solid var(--node-border);
 }
 .node-title {
   display: -webkit-box;
@@ -143,23 +143,23 @@
   font-size: 0.83rem;
 }
 [data-state="active"] {
-  border-color: #d7b56f;
+  border-color: var(--active-border);
 }
 [data-state="done"],
 .reported-state[data-state="completed"] {
-  color: #a9ddc7;
-  border-color: #77aa96;
+  color: var(--done-text);
+  border-color: var(--done-border);
 }
 [data-state="blocked"] {
-  border-color: #df9baa;
+  border-color: var(--blocked-border);
 }
 .graph-node[aria-pressed="true"],
 .ordered-steps button[aria-pressed="true"] {
-  box-shadow: 0 0 0 2px #edf4f7;
+  box-shadow: 0 0 0 2px var(--selection);
 }
 .graph-node:focus-visible,
 .ordered-steps button:focus-visible {
-  outline: 3px solid #9bd9eb;
+  outline: 3px solid var(--graph-focus);
   outline-offset: 3px;
 }
 .ordered-steps {
@@ -193,14 +193,14 @@
   max-height: 82vh;
   max-height: 82dvh;
   overflow: auto;
-  background: #14242e;
-  color: #e7edf2;
-  border: 1px solid #6b8797;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--node-border);
   border-radius: 0.7rem;
   padding: 1rem;
 }
 .step-dialog::backdrop {
-  background: #000a;
+  background: var(--backdrop);
 }
 .close-step {
   display: block;
@@ -209,7 +209,7 @@
 }
 .plan-history,
 .received-comparison {
-  border-top: 1px solid #2a424f;
+  border-top: 1px solid var(--line);
   margin-top: 1.5rem;
   padding-top: 1rem;
 }

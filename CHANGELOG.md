@@ -5,6 +5,14 @@
 - Add opt-in local Cargo build reuse across worktrees with isolated coverage
   and ARM64 output, whole-command locking and runtime xtask workspace selection.
 
+- Add Light, Dark and System themes with browser-local preferences and shared
+  colors for reports, graphs, dialogs and account controls.
+
+## 0.7.1 - 2026-10-25
+
+- Show Events and Task plans directly in the compact header instead of hiding
+  those primary links in the hamburger menu.
+
 ## 0.7.0 - 2026-10-25
 
 - Clarify task-plan freshness and verify full-snapshot recovery across lost

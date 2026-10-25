@@ -145,7 +145,8 @@ or release eligibility. Codex integration, UI, reconciliation,
 combined verification and production dogfooding are separate milestone issues.
 
 The [presentation design](task-plan-design.md), owned by #74, keeps Events as
-the starting view and adds a separate Task plans menu destination. Its tracked
+the starting view and adds a separate Task plans destination. Issue #96 puts
+both primary links in the top header row. Its tracked
 HTML reference remains a fictional prototype. The implemented owner page in
 #78 uses real authenticated plan APIs, native step buttons and SVG arrows.
 It preserves exact received snapshots, selection and bounded history without
