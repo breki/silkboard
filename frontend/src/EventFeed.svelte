@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { routeFor } from "./plan-model";
+  import type { SessionGroup } from "./event-hierarchy";
+  import { SvelteSet } from "svelte/reactivity";
+  import EventRows from "./EventRows.svelte";
+  import SessionRows from "./SessionRows.svelte";
+  import { eventKey as key, groupEvents, sessionKey } from "./event-hierarchy";
+  let hierarchical = $state(false);
+  const collapsed = new SvelteSet<string>();
+  function toggleGroup(id: string) {
+    if (collapsed.has(id)) collapsed.delete(id);
+    else collapsed.add(id);
+  }
   import ListFilters from "./ListFilters.svelte";
   import type { ListFilters as Filters } from "./list-filters";
   let filters = $state<Filters>({});
@@ -9,17 +19,26 @@
   }
   import { ApiError, events, type Page, type FeedEvent } from "./feed-api";
   import { poll } from "./poll";
-  import { eventTimestamp } from "./event-format";
-  import { messagePreview, renderMarkdown } from "./markdown";
   let { onexpire }: { onexpire: () => void } = $props();
   let page = $state<Page<FeedEvent> | null>(null);
+  const hierarchy = $derived(groupEvents(page?.items ?? []));
+  // One keyed sequence retains child controls when a parent enters this page.
+  const sessionGroups = $derived.by(() => {
+    const entries: { group: SessionGroup; parent: SessionGroup | null }[] = [];
+    for (const group of hierarchy.roots) {
+      entries.push({ group, parent: null });
+      for (const child of group.children)
+        entries.push({ group: child, parent: group });
+    }
+    for (const group of hierarchy.unmatched)
+      entries.push({ group, parent: null });
+    return entries;
+  });
   let before = $state<string | null>(null);
   let failed = $state(false);
   let busy = $state(false);
   let retry = $state(0);
   let expanded = $state<string | null>(null);
-  const key = (event: FeedEvent) =>
-    JSON.stringify([event.project, event.event_id]);
   $effect(() => {
     const cursor = before;
     const selected = filters;
@@ -30,6 +49,10 @@
         const value = await events(cursor, signal, selected);
         if (signal.aborted) return;
         page = value;
+        const visible = new Set(value.items.map(sessionKey));
+        for (const id of collapsed) {
+          if (!visible.has(id)) collapsed.delete(id);
+        }
         failed = false;
         if (
           expanded !== null &&
@@ -47,28 +70,12 @@
   });
   function navigate(cursor: string | null) {
     page = null;
+    collapsed.clear();
     expanded = null;
     before = cursor;
   }
   function toggle(event: FeedEvent) {
     expanded = expanded === key(event) ? null : key(event);
-  }
-  // Pointer activation anywhere on the row shares the native button action.
-  // The button retains normal keyboard behavior and table row semantics.
-  function clickableRow(node: HTMLTableRowElement, activate: () => void) {
-    const click = (event: MouseEvent) => {
-      if (event.target instanceof Element && !event.target.closest("button, a"))
-        activate();
-    };
-    node.addEventListener("click", click);
-    return {
-      update(next: () => void) {
-        activate = next;
-      },
-      destroy() {
-        node.removeEventListener("click", click);
-      },
-    };
   }
 </script>
 
@@ -78,7 +85,20 @@
     All projects · Updates every 10 seconds while this page is visible.
   </p>
 </div>
+<div class="event-view-switch" role="group" aria-label="Events view">
+  <button aria-pressed={!hierarchical} onclick={() => (hierarchical = false)}
+    >Flat list</button
+  >
+  <button aria-pressed={hierarchical} onclick={() => (hierarchical = true)}
+    >Session hierarchy</button
+  >
+</div>
 <ListFilters onapply={applyFilters} />
+{#if hierarchical}<p class="muted">
+    Relationships use this page only. Parent-session groups come first, ordered
+    by their newest visible family event; unmatched subagents follow. Events
+    within each session retain receipt order. Missing parents are not loaded.
+  </p>{/if}
 {#if failed}
   <div class="notice">
     <p role="alert">
@@ -111,72 +131,29 @@
         ></thead
       >
       <tbody>
-        {#each page.items as event, index (key(event))}
-          {@const stamp = eventTimestamp(event.received_at)}
-          {@const summary = messagePreview(event.message)}
-          <tr class="event-row" use:clickableRow={() => toggle(event)}>
-            <td
-              ><time datetime={new Date(event.received_at).toISOString()}
-                ><span>{stamp.clock}</span><span>{stamp.day}</span></time
-              ></td
-            >
-            <td><span class="cell-label">{event.project}</span></td>
-            <td
-              ><span class="cell-label">{event.tool}</span><span
-                class="cell-label muted">{event.hostname}</span
-              ></td
-            >
-            <td
-              ><button
-                class="event-preview"
-                aria-label={`Event details: ${summary}`}
-                aria-expanded={expanded === key(event)}
-                aria-controls={`event-details-${index}`}
-                onclick={() => toggle(event)}>{summary}</button
-              >{#if event.workflow_task_id}<a
-                  class="workflow-link"
-                  href={routeFor(event.project, event.workflow_task_id)}
-                  >Open workflow</a
-                >{/if}</td
-            >
-          </tr>
-          {#if expanded === key(event)}
-            <tr class="event-details"
-              ><td colspan="4">
-                <section
-                  id={`event-details-${index}`}
-                  aria-label="Event details"
-                >
-                  {#if event.session_name}<h4>{event.session_name}</h4>{/if}
-                  <div
-                    class="event-message"
-                    use:renderMarkdown={event.message}
-                  ></div>
-                  <dl class="identity">
-                    <dt>Project</dt>
-                    <dd>{event.project}</dd>
-                    <dt>Tool</dt>
-                    <dd>{event.tool}</dd>
-                    <dt>Host</dt>
-                    <dd>{event.hostname}</dd>
-                    <dt>Received</dt>
-                    <dd>
-                      <time datetime={new Date(event.received_at).toISOString()}
-                        >{stamp.full}</time
-                      >
-                    </dd>
-                    <dt>Native session</dt>
-                    <dd>{event.session_id}</dd>
-                    {#if event.subagent_id}<dt>Subagent</dt>
-                      <dd>{event.subagent_id}</dd>{/if}
-                    {#if event.parent_session_id}<dt>Parent session</dt>
-                      <dd>{event.parent_session_id}</dd>{/if}
-                  </dl>
-                </section>
-              </td></tr
-            >
-          {/if}
-        {/each}
+        {#if hierarchical}
+          {#each sessionGroups as { group, parent } (group.key)}
+            {#if parent === null || !collapsed.has(parent.key)}
+              <SessionRows
+                {group}
+                {collapsed}
+                {expanded}
+                nested={parent !== null}
+                parentName={parent?.name ?? ""}
+                unmatched={parent === null &&
+                  group.identity.subagent_id !== null}
+                ontogglegroup={toggleGroup}
+                ontoggleevent={toggle}
+              />
+            {/if}
+          {/each}
+        {:else}
+          <EventRows
+            items={page.items.map((event, index) => ({ event, index }))}
+            {expanded}
+            ontoggle={toggle}
+          />
+        {/if}
       </tbody>
     </table>
   {/if}
@@ -192,8 +169,14 @@
 {:else if !failed}<p role="status">Loading events…</p>{/if}
 
 <style>
-  .workflow-link {
-    display: inline-block;
-    padding-block: 0.5rem;
+  .event-view-switch {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-block: 0.75rem;
+  }
+  .event-view-switch button[aria-pressed="true"] {
+    background: var(--primary);
+    color: var(--primary-text);
   }
 </style>
