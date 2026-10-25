@@ -272,7 +272,10 @@
           style:width={`${(shown.summary.counts.done / shown.summary.counts.total) * 100}%`}
         ></div>
       </div>
-      <p class="muted">States are agent reports, not verification results.</p>
+      <p class="muted">
+        These are reported states, not verified results or a live connection
+        status.
+      </p>
       <p>
         Reported by {shown.snapshot.reporter.tool} on {shown.snapshot.reporter
           .hostname}{#if shown.snapshot.reporter.session_name}

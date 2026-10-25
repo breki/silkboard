@@ -317,3 +317,78 @@ test("an invalid plan link still expires an idle credential manager", async ({
     page.getByRole("button", { name: "Sign out", exact: true }),
   ).toHaveCount(0);
 });
+
+test("the next full snapshot repairs a lost revision while preserving selected work and received history", async ({
+  page,
+}) => {
+  const token = readFileSync(
+    join(process.env.SILKBOARD_E2E_DIR, "plans.token"),
+    "utf8",
+  ).trim();
+  const value = detail({
+    task_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    title: "Recover a missed revision",
+  }).snapshot;
+  await publish(value, token);
+  await page.clock.install();
+  await openPlan(page, link(value.task_id));
+  await page.getByRole("button", { name: "Build graph page, Active" }).click();
+  // Sequences 2 and 3 / definition revision 2 are deliberately never sent.
+  value.sequence = "4";
+  value.plan_revision = "3";
+  value.steps[1].state = "done";
+  value.steps[2].state = "blocked";
+  value.steps[2].blocked_reason = "Awaiting owner review";
+  value.steps[2].depends_on = ["contract"];
+  value.steps.push({
+    id: "review",
+    title: "Review the repaired plan",
+    description: null,
+    depends_on: ["contract"],
+    state: "active",
+    report: "Received after the gap",
+    blocked_reason: null,
+  });
+  await publish(value, token);
+  await page.clock.fastForward(10000);
+  const done = page.getByRole("button", { name: "Build graph page, Done" });
+  await expect(done).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: "Review the repaired plan, Active" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Some reports were not received/)).toBeVisible();
+  await expect(page.getByText("2 of 4 steps marked done")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Received history and revisions" })
+    .click();
+  const history = page.getByRole("list", { name: "Received plan reports" });
+  await expect(history.locator(":scope > li")).toHaveCount(2);
+  await page
+    .getByRole("button", { name: "Compare with previous received report" })
+    .click();
+  await expect(page.getByText("Added: Review the repaired plan")).toBeVisible();
+  await expect(
+    page.getByText("Changed prerequisites: Verify browser behavior"),
+  ).toBeVisible();
+  await page.route(
+    `**/api/owner/projects/silkboard/plans/${value.task_id}`,
+    (route) =>
+      route.fulfill({
+        status: 503,
+        body: "{}",
+        contentType: "application/json",
+      }),
+  );
+  await page.clock.fastForward(10000);
+  await expect(page.getByRole("alert")).toContainText("out of date");
+  await expect(done).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("button", { name: "Verify browser behavior, Blocked" })
+    .click();
+  await expect(page.getByText("Awaiting owner review")).toBeVisible();
+  await expect(
+    page.getByText(
+      "These are reported states, not verified results or a live connection status.",
+    ),
+  ).toBeVisible();
+});

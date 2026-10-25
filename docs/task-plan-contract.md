@@ -324,8 +324,9 @@ integrates actual Codex plan reporting; #78 implements the owner view; #79
 exercises reconciliation/freshness; #80 owns combined verification; #81 owns
 an authorized release and real dogfooding. Storage/APIs and installed plan
 commands, explicit Codex reporting and the owner view are locally implemented.
-Combined reconciliation/verification and production rollout remain future
-work in #79–#81. Current turn-summary hooks do not expose complete plans.
+[Reconciliation and freshness](task-plan-recovery.md) are locally verified in
+#79. Combined verification and production rollout remain future work in
+#80–#81. Current turn-summary hooks do not expose complete plans.
 
 A new data schema needs explicit compatibility and recovery handling before
 release; switching an old binary back cannot undo a migration. This contract
