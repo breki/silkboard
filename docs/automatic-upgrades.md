@@ -1,6 +1,7 @@
 # Automatic upgrades and recovery
 
-The updater is installed and polling in production, now running `v0.2.2`.
+The records below verify updater installation, polling and activation of
+`v0.2.2`. Use the live `/api/status` endpoint for the current running version.
 Live rollback/retry and newer-release acceptance are verified for
 [#17](https://github.com/breki/silkboard/issues/17); updater reboot recovery
 remains in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
@@ -20,8 +21,9 @@ embedded name matches its ref and whose direct target is the exact commit.
 Git verifies against the independently installed
 `/etc/silkboard/release-signers`, not a trust file supplied by the candidate.
 
-The repository now proposes the approved separate VM signer alongside the owner
-signer; production remains owner-only until the operator installs that change.
+Repository/CI admission includes the approved separate VM signer alongside
+the owner signer. The last production trust recorded here was owner-only;
+installation of the VM signer must be verified independently.
 Both fingerprints and VM-only revocation are documented in
 [release trust](releases.md#vm-signer-and-revocation). Removing GitHub deploy-key
 write access alone does not remove installed signature authority.

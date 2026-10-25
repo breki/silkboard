@@ -15,7 +15,9 @@ only the working document created for this completed task; preserve unfinished
 work. Report remaining blockers. Commit, review, and release are separate;
 do not invoke them merely because implementation ended.
 
-For Codex, follow [task-plan reporting](../codex-plans.md) when the operator
-has explicitly enabled it with compatible installed components. Maintain the
-same real plan through revisions and handoff; reporting failures do not block
-the authorized work. Other agents do not inherit this Codex-only integration.
+Before substantive Codex work, check the installed publisher and operator
+opt-in using [task-plan reporting](../codex-plans.md). Start the real plan
+before implementation when its prerequisites are met. Report missing support
+early; do not install or enable reporting without authorization. Maintain the
+same plan through revisions and handoff; reporting failure does not block
+authorized work. Other agents do not inherit this Codex-only integration.

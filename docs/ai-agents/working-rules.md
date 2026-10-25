@@ -28,7 +28,12 @@ repeating them in both agent entry points or every workflow.
 ## Editing and execution
 
 Inspect Git state and applicable instructions before editing. Preserve other
-work. Prefer targeted searches and reads over dumping large files. Use the
+work. Recheck status after long CI/network waits and before switching branches.
+If unrelated edits appeared, leave that checkout and its files in place and
+report the remote operation separately; do not carry the edits to another
+branch, stash or reset them as cleanup.
+
+Prefer targeted searches and reads over dumping large files. Use the
 configured working directory and safe argument arrays or proper shell quoting.
 Never use JSON encoding as shell escaping. Keep secrets out of command output,
 reports, prompts, and tracked files.

@@ -12,8 +12,10 @@ The owner selected the SSH signing key with ED25519 fingerprint
 [The allowed signers file](../.github/release-signers) retains that public key
 and adds the separately approved development-VM key, fingerprint
 `SHA256:s/bOUAzymE3qEqSllzx4fLR+TNtaWMhpvLR1FrbSc9I`. CI and the dashboard
-receive no private signing material. Production currently retains its separately
-installed owner-only trust until the operator explicitly updates it.
+receive no private signing material. The last production trust recorded here
+was owner-only; this record does not verify installation of the VM signer.
+Read the installed trust through an approved operator route before treating
+repository/CI acceptance as evidence that production accepts the same key.
 `git verify-tag` with this file verifies an SSH-signed annotated tag;
 lightweight, unsigned, wrong-key, malformed-version, wrong-commit, and
 renamed signed tags are rejected by `cargo xtask release-check TAG`.
@@ -25,7 +27,7 @@ checkout commit and tag embedded in the backend. A failed or skipped required
 job prevents a successful release run. CI's normal PR run is useful feedback;
 release eligibility requires the tag-triggered release workflow.
 
-The future updater must use an independently installed public trust file,
+The updater must use an independently installed public trust file,
 not a trust file fetched from an unverified candidate. GitHub's workflow API
 registered the active release workflow as ID `387356305`, read back on
 2026-10-17 after PR #8 merged. Bind evidence to repository, registered workflow
@@ -100,8 +102,10 @@ No release has been requested just by implementing these gates.
    create the signed annotated tag with `git tag -s vX.Y.Z -m 'vX.Y.Z'`.
    Confirm `cargo xtask release-check vX.Y.Z` succeeds on the clean checkout.
 5. Report the local commit/tag. Push them only when separately authorized,
-   accounting for the future updater's ability to activate eligible releases.
-   Pushing a tag starts the release suite; publication is not proof it passed.
+   accounting for the updater's ability to activate eligible releases.
+   Follow the workflow's pre-publication signer/access check and post-suite
+   live health/version handoff. Pushing a tag starts the release suite;
+   publication and CI success do not prove production activation.
 
 The release-check command verifies stable version syntax, a clean tree, tag
 direct commit target matching HEAD, the signed tag name matching the

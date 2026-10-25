@@ -26,8 +26,25 @@ stale availability note.
    and use the trusted SSH signer recorded in the roadmap. A failed
    gate leaves visible bookkeeping edits but no release commit or tag.
 6. Report checks and next action. Do not push a tag merely because a local
-   release was requested. If pushing is authorized, account for its ability
-   to trigger deployment and check the agreed eligibility policy first.
+   release was requested. Before authorized publication, check the agreed
+   eligibility policy and its automatic-upgrade effect. Identify the selected
+   signing fingerprint and distinguish repository/CI trust from the updater
+   trust installed in production. Use existing approved read-only access to
+   check that trust when available; dated documentation is not live proof.
+   Surface a documented mismatch or missing verification route before pushing.
+   Preserve existing publication authorization; unavailable production access
+   does not require asking again to push. Changing production trust or
+   installing administration access remains a separate operator action.
+7. After an authorized push, verify the exact tag-triggered release suite.
+   Then read production health and version from `/health` and `/api/status`
+   through an existing approved endpoint when reachable, without using
+   publisher tokens for owner reads. Report the observed running tag/commit
+   separately from publication and CI success. If the old version remains,
+   inspect updater status/logs through an existing approved read-only route.
+   Distinguish a confirmed rejection/build/health failure from an unverified
+   explanation; report missing access and the next diagnostic step plainly.
+   Do not turn an inspection failure into an implicit trust change, retry
+   or manual deployment.
 
 An annotated tag is not proof of trusted signatures or passing GitHub checks.
 Use the signer and release workflow selected in the roadmap; verify the local

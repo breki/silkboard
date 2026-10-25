@@ -1,5 +1,24 @@
 # Canon provenance
 
+## Release handoff retrospective, 2026-10-25
+
+The owner requested a retrospective after v0.8.0 publication passed its exact
+[release suite](https://github.com/breki/silkboard/actions/runs/40199401406),
+but a subsequent production `/api/status` read still returned healthy v0.7.1.
+v0.8.0 used the approved VM signer; v0.7.1 used the owner signer. Installed
+production trust and updater logs were not accessible from this development
+VM, so signer rejection remains a hypothesis, not a confirmed diagnosis.
+
+The release procedure now surfaces signer/access evidence before publication
+and checks live health/version after the suite when existing access permits.
+It preserves publication authorization and requires separate authority for
+trust changes or manual deployment. Historical trust/version statements are
+qualified as recorded evidence. The same session also exposed late publisher
+capability discovery and unrelated edits appearing during a CI wait; the
+implementation and working procedures now check reporting prerequisites early
+and recheck Git state before post-wait branch switches. No new production
+access, publication, commit or review cycle is authorized by this retrospective.
+
 ## Local worktree build reuse, 2026-10-25
 
 The owner selected [#66](https://github.com/breki/silkboard/issues/66) for
