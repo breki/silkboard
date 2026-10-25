@@ -23,8 +23,9 @@ and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 
 ## Status
 
-Production runs `v0.3.0` with private HTTPS, persistent private storage and
-verified first-owner registration/login from the owner's phone.
+Production runs `v0.7.0` with private HTTPS, persistent private storage and
+owner phone access. [Task-plan rollout evidence](docs/task-plan-rollout.md)
+records real native reporting, preserved data and remaining phone acceptance.
 Automatic upgrades and live rollback/retry are verified; updater reboot
 recovery and live pending-check reconsideration remain separate work.
 [Production evidence](docs/production-vm.md) records the original installation.
@@ -34,8 +35,8 @@ Codex integration are implemented and locally verified. The
 [dogfood rollout](docs/dogfood-rollout.md) prepares persistent private storage,
 backup/restore and live acceptance. Frosti now automatically publishes real
 Codex reports from two independent sessions, visible in the owner's feed/history.
-Live read denials and application restart persistence are verified; a tagged
-upgrade with existing data remains [#39](https://github.com/breki/silkboard/issues/39).
+Live read denials, application restart persistence and a tagged upgrade with
+existing data are verified; see the [rollout record](docs/task-plan-rollout.md).
 Backups and recovery are deferred to [#52](https://github.com/breki/silkboard/issues/52).
 Claude integration is
 separate [#43](https://github.com/breki/silkboard/issues/43).

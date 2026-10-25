@@ -1,8 +1,10 @@
 # Publishing evolving task plans
 
 Implemented for [#76](https://github.com/breki/silkboard/issues/76) in the
-standalone Rust publisher. This is locally verified functionality, not a
-production installation. The explicit [Codex workflow](ai-agents/codex-plans.md)
+standalone Rust publisher. The first server release is `v0.7.0`; a compatible
+publisher is now installed on the initial development machine. See the
+[production rollout and its limits](task-plan-rollout.md).
+The explicit [Codex workflow](ai-agents/codex-plans.md)
 and `codex-plan` adapter implement
 [#77](https://github.com/breki/silkboard/issues/77); current turn-summary hooks
 continue independently. The [reporting contract](task-plan-contract.md) defines
@@ -20,7 +22,7 @@ a destination, credential, filesystem path or command to execute.
 
 Upgrade the server to a reviewed release containing #75 before using these
 commands, then install a compatible publisher containing #76 and, for the
-Codex adapter, #77. These features have no dedicated released version yet.
+Codex adapter, #77. The first release containing these features is `v0.7.0`.
 Preserve private client state during
 replacement. Verify that `--help` lists `plan {start|publish|handoff}`; the
 publisher package version alone does not identify the server release.
