@@ -5,6 +5,20 @@
 - Support optional detailed Markdown descriptions alongside concise event
   summaries, and clarify existing workflow and step descriptions.
 
+## 0.10.0 - 2026-10-25
+
+- Identify publisher builds with the shared repository version, source commit
+  and explicit tagged/development provenance in `--version`.
+
+- Add a Flat list / Session hierarchy switch to Events, with grouped parent
+  and subagent sessions, independent collapse controls and explicit missing
+  parent labels while preserving filters, pagination and event details.
+
+- Add searchable Project/Agent pickers in Events and Workflows and visible
+  workflow status buttons, with immediate filtering and no Apply button.
+
+## 0.9.0 - 2026-10-25
+
 - Link explicitly associated Events to their existing Workflows, preserving
   per-event identity across sessions and leaving unknown associations unlinked.
 

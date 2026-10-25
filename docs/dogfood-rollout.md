@@ -155,8 +155,9 @@ and prepare a new label/link as appropriate. Do not bypass first-owner setup.
 
 1. Build/install the reviewed `silkboard-publish` executable for this development
    machine, separately from the ARM64 server build. Record its package version,
-   source commit and checksum. The current publisher package is0.1.0; record
-   the actual release revision rather than assuming it matches server version.
+   source commit and checksum. New publisher builds share the repository
+   release version; check `--version` for the installed build's commit and
+   tagged/development identity. Do not infer it from the running server.
    No target Rust/Cargo dependency, daemon or durable queue is introduced.
 2. Privately install the token, mode 0600 configuration and mode 0700 counter
    directory according to [publishing](publishing-cli.md). Use the fixed

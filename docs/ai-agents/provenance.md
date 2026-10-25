@@ -11,6 +11,38 @@ detail without a schema migration. Automatic Codex hooks retain summary-only
 reporting. These are implementation decisions within the captured issue,
 not evidence of a production release or new agent authority.
 
+## Publisher build identity, 2026-10-25
+
+The owner requested [#110](https://github.com/breki/silkboard/issues/110)
+after the installed CLI still reported `0.1.0` despite feature changes.
+Implementation uses a shared repository version for server and publisher,
+plus explicit source commit and tagged/development identity. The
+[publisher guide](../publishing-cli.md) and [release procedure](../releases.md)
+distinguish build labels from signature and GitHub-check evidence. This does
+not install a new CLI, publish a release or introduce self-updating clients.
+
+## Events session hierarchy, 2026-10-25
+
+The owner authorized [#109](https://github.com/breki/silkboard/issues/109)
+and selected proposal A, grouped event rows, with a switch back to the
+existing flat chronological list. The implementation groups only visible
+page reports using scoped native identities and explicit primary-parent
+references. Missing parents remain separate; no extra history is fetched.
+Flat list remains the initial view, with no stored preference. Current
+filters and pagination survive view switching. These routine presentation
+decisions preserve publish-only agents and owner-only reads; mockups remain
+illustrative rather than rollout evidence.
+
+## Immediate searchable view filters, 2026-10-25
+
+For [#103](https://github.com/breki/silkboard/issues/103), the owner selected
+searchable Project/Agent pickers and visible single-select workflow status
+buttons, then expanded Project/Agent pickers to Events too. The owner required
+immediate filtering without Apply. Clear remains available; event time changes
+apply when valid. The [owner feed](../owner-feed.md) and
+[workflow design](../task-plan-design.md) record the interaction and owner-only
+choice API. Local checks do not establish production rollout.
+
 ## Explicit event workflow links, 2026-10-25
 
 For [#104](https://github.com/breki/silkboard/issues/104), the owner selected

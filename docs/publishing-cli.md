@@ -12,7 +12,9 @@ the owner accepts lost messages during outages for this milestone.
 On a trusted build machine with the pinned Rust toolchain and a C compiler:
 
 ```sh
-cargo build --locked --release -p silkboard-publish
+# Development build with explicit source identity (use a clean checkout).
+SILKBOARD_COMMIT="$(git rev-parse HEAD)" \
+  cargo build --locked --release -p silkboard-publish
 ```
 
 Copy `target/release/silkboard-publish` to a machine with the same architecture
@@ -32,6 +34,29 @@ No service or self-updater is installed. This implementation publishes no
 downloadable release binary. Distribution and production installation still
 follow the normal reviewed release process; a local build is not a release
 or evidence of ARM64 execution.
+
+## Version and source identity
+
+The publisher and server inherit the repository release version from
+`[workspace.package].version` in the root Cargo manifest. They remain separate
+executables and installations. This is a distribution version, not a promise
+that every historical client/server combination supports the same features.
+
+Run `silkboard-publish --version` without credentials or configuration. Tagged
+builds report `silkboard-publish X.Y.Z (tag vX.Y.Z; commit FULL_SHA)`.
+Development builds report `development; commit FULL_SHA` when explicitly
+supplied, otherwise `development; commit unknown`, even with Cargo's optimized
+release profile. Older binaries reporting only `0.1.0` cannot identify their
+source revision; replace them with a reviewed identifiable build when needed.
+
+For a tagged build, first check out a clean signed release and run
+`cargo xtask release-check vX.Y.Z`, then provide both
+`SILKBOARD_RELEASE_TAG=vX.Y.Z` and `SILKBOARD_COMMIT="$(git rev-parse HEAD)"`
+to the build command. The build rejects malformed commits, incomplete tag
+metadata and tags that differ from the package version. These are explicit
+build inputs: version output does not prove a clean checkout, trusted signature
+or passing GitHub checks. Release CI separately verifies admission, builds the
+publisher and checks its exact output. No runtime Git lookup is needed.
 
 ## Private configuration
 

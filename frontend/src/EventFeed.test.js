@@ -54,7 +54,9 @@ test("starting view is one compact cross-project event table with inline details
   const table = await screen.findByRole("table", {
     name: "Events from all projects",
   });
-  expect(screen.getByLabelText("Project")).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  ).toBeTruthy();
   expect(
     within(table)
       .getAllByRole("columnheader")
@@ -239,19 +241,221 @@ test("explicit workflow links stay separate from message expansion and validate 
   expect(screen.getByRole("region", { name: "Event details" })).toBeTruthy();
 });
 
-test("event summary stays compact while optional description opens as safe Markdown", async () => {
+test("hierarchy groups visible sessions, keeps unmatched children and preserves details when switching", async () => {
   const { default: EventFeed } = await import("./EventFeed.svelte");
+  const parent = {
+    ...report,
+    event_id: "parent",
+    message: "Parent report",
+    session_id: "root",
+    session_name: "Implementation",
+  };
+  const child = {
+    ...parent,
+    event_id: "child",
+    subagent_id: "review",
+    parent_session_id: "root",
+    session_name: "Review",
+    message: "Child report",
+    description: "Detailed child context.\n\nSecond paragraph.",
+  };
+  const unmatched = {
+    ...child,
+    event_id: "unmatched",
+    session_id: "unmatched",
+    parent_session_id: "absent",
+    session_name: "Unmatched",
+    message: "Unmatched report",
+  };
+  const fetch = vi.fn(
+    routes({ "/api/owner/events": response(page([child, parent, unmatched])) }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByRole("button", { name: "Event details: Parent report" });
+  expect(
+    screen
+      .getByRole("button", { name: "Flat list" })
+      .getAttribute("aria-pressed"),
+  ).toBe("true");
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Session hierarchy" }),
+  );
+  const group = screen.getByRole("button", {
+    name: "Session group: Implementation",
+  });
+  const review = screen.getByRole("button", {
+    name: "Session group: Review, subagent of Implementation",
+  });
+  expect(group.getAttribute("aria-expanded")).toBe("true");
+  expect(screen.getByText("Parent outside current results")).toBeTruthy();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Event details: Child report" }),
+  );
+  expect(screen.getByText("Detailed child context.")).toBeTruthy();
+  await fireEvent.click(review);
+  expect(
+    screen.queryByRole("button", { name: "Event details: Child report" }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Event details: Parent report" }),
+  ).toBeTruthy();
+  await fireEvent.click(review);
+  await fireEvent.click(group);
+  expect(
+    screen.queryByRole("button", { name: "Event details: Parent report" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: /Session group: Review/ }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Event details: Unmatched report" }),
+  ).toBeTruthy();
+  await fireEvent.click(group);
+  await fireEvent.click(screen.getByRole("button", { name: "Flat list" }));
+  expect(screen.queryByRole("button", { name: /Session group:/ })).toBeNull();
+  expect(screen.getByText("Detailed child context.")).toBeTruthy();
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test("hierarchy switch retains filters and current cursor; page navigation resets groups", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  const fetch = vi.fn(
+    routes({
+      "/api/owner/events": response(page([report])),
+      "/api/owner/filter-options?view=events&kind=project&q=": response(
+        page(["alpha"]),
+      ),
+      "/api/owner/filter-options?view=events&kind=agent&q=": response(
+        page(["codex dev-alpha"]),
+      ),
+      "/api/owner/events?project=alpha": response(page([report])),
+      "/api/owner/events?project=alpha&agent=codex%20dev-alpha": response(
+        page([report], "cursor"),
+      ),
+      "/api/owner/events?before=cursor&project=alpha&agent=codex%20dev-alpha":
+        response(
+          page([
+            {
+              ...report,
+              session_name: null,
+              subagent_id: "unknown",
+              parent_session_id: null,
+            },
+          ]),
+        ),
+    }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByRole("button", { name: /Event details:/ });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", { name: "alpha", exact: true }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Agent: All agents" }),
+  );
+  await fireEvent.click(
+    await screen.findByRole("button", {
+      name: "codex · dev-alpha",
+      exact: true,
+    }),
+  );
+  await screen.findByRole("button", { name: "Earlier events" });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Session hierarchy" }),
+  );
+  const group = await screen.findByRole("button", {
+    name: "Session group: Work on alpha",
+  });
+  await fireEvent.click(group);
+  await fireEvent.click(screen.getByRole("button", { name: "Earlier events" }));
+  await screen.findByText("Parent not reported");
+  const calls = fetch.mock.calls.length;
+  await fireEvent.click(screen.getByRole("button", { name: "Flat list" }));
+  expect(screen.getByRole("button", { name: "Latest events" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Project: alpha" })).toBeTruthy();
+  expect(fetch.mock.calls.length).toBe(calls);
+});
+
+test("polling preserves collapsed sessions while allowing newly received parent links", async () => {
+  vi.useFakeTimers();
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  const child = {
+    ...report,
+    subagent_id: "child",
+    parent_session_id: "root",
+    session_name: "Review",
+  };
+  const independent = {
+    ...report,
+    event_id: "independent",
+    session_id: "other-root",
+    session_name: "Other session",
+  };
+  let reports = [child, independent];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(routes({ "/api/owner/events": () => response(page(reports)) })),
+  );
+  render(EventFeed, { onexpire: vi.fn() });
+  await vi.advanceTimersByTimeAsync(0);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Session hierarchy" }),
+  );
+  const group = screen.getByRole("button", { name: /Session group: Review/ });
+  await fireEvent.click(group);
+  group.focus();
+  reports = [
+    child,
+    {
+      ...report,
+      event_id: "parent",
+      session_id: "root",
+      session_name: "Parent",
+      message: "Parent report",
+    },
+    independent,
+  ];
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(document.activeElement).toBe(group);
+  expect(screen.queryByText("Parent outside current results")).toBeNull();
+  expect(
+    screen
+      .getByRole("button", {
+        name: "Session group: Review, subagent of Parent",
+      })
+      .getAttribute("aria-expanded"),
+  ).toBe("false");
+  expect(
+    screen.getByRole("button", { name: "Event details: Parent report" }),
+  ).toBeTruthy();
+});
+
+test("session groups show counts for multiple reports and child-only pages never lose events", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  const first = {
+    ...report,
+    subagent_id: "review",
+    parent_session_id: null,
+    session_name: null,
+    message: "First child update",
+  };
   vi.stubGlobal(
     "fetch",
     vi.fn(
       routes({
         "/api/owner/events": response(
           page([
+            first,
             {
-              ...report,
-              message: "Tests complete",
-              description:
-                "First paragraph.\n\n**Second paragraph.**\n\n<script>alert(1)</script>",
+              ...first,
+              event_id: "second",
+              sequence: "2",
+              message: "Second child update",
             },
           ]),
         ),
@@ -259,13 +463,62 @@ test("event summary stays compact while optional description opens as safe Markd
     ),
   );
   render(EventFeed, { onexpire: vi.fn() });
-  const button = await screen.findByRole("button", {
-    name: "Event details: Tests complete",
+  await screen.findByRole("button", {
+    name: "Event details: First child update",
   });
-  expect(screen.queryByText("First paragraph.")).toBeNull();
-  await fireEvent.click(button);
-  const detail = screen.getByRole("region", { name: "Event details" });
-  expect(within(detail).getByText("First paragraph.")).toBeTruthy();
-  expect(within(detail).getByText("Second paragraph.").tagName).toBe("STRONG");
-  expect(detail.querySelector("script")).toBeNull();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Session hierarchy" }),
+  );
+  expect(
+    screen.getByRole("button", {
+      name: "Session group: Subagent review, Parent not reported",
+    }).textContent,
+  ).toMatch(/2\s+events on this page/);
+  expect(
+    screen.getAllByRole("button", { name: /Event details:/ }),
+  ).toHaveLength(2);
 });
+
+test.each([false, true])(
+  "event summary stays compact while optional description opens as safe Markdown (hierarchy=%s)",
+  async (hierarchical) => {
+    const { default: EventFeed } = await import("./EventFeed.svelte");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        routes({
+          "/api/owner/events": response(
+            page([
+              {
+                ...report,
+                message: "Tests complete",
+                description:
+                  "First paragraph.\n\n**Second paragraph.**\n\n<script>alert(1)</script>",
+              },
+            ]),
+          ),
+        }),
+      ),
+    );
+    render(EventFeed, { onexpire: vi.fn() });
+    if (hierarchical) {
+      await screen.findByRole("button", {
+        name: "Event details: Tests complete",
+      });
+      await fireEvent.click(
+        screen.getByRole("button", { name: "Session hierarchy" }),
+      );
+    }
+    const button = await screen.findByRole("button", {
+      name: "Event details: Tests complete",
+    });
+    expect(screen.queryByText("First paragraph.")).toBeNull();
+    await fireEvent.click(button);
+    const detail = screen.getByRole("region", { name: "Event details" });
+    expect(within(detail).getByText("First paragraph.")).toBeTruthy();
+    expect(within(detail).getByText("Second paragraph.").tagName).toBe(
+      "STRONG",
+    );
+    expect(detail.querySelector("script")).toBeNull();
+  },
+);

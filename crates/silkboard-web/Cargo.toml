@@ -1,6 +1,6 @@
 [package]
 name = "silkboard-web"
-version = "0.8.0"
+version.workspace = true
 edition = "2024"
 publish = false
 description = "Silkboard status application"

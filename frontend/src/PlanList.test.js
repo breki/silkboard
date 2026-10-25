@@ -111,20 +111,29 @@ test("aborts an in-flight read on unmount and ignores its eventual result", asyn
 });
 
 test("applying filters resets the cursor and preserves filters across paging and polling", async () => {
-  const fetch = vi.fn(async () => response(page([detail().summary], "older")));
+  const fetch = vi.fn(async (path) =>
+    response(
+      path.includes("filter-options")
+        ? page(["silkboard"])
+        : page([detail().summary], "older"),
+    ),
+  );
   vi.stubGlobal("fetch", fetch);
   render(PlanList, { active: true, onexpire: vi.fn(), onopen: vi.fn() });
   await settle();
   await fireEvent.click(screen.getByText("Older workflows"));
   await settle();
   expect(fetch.mock.calls.at(-1)[0]).toContain("before=older");
-  await fireEvent.input(screen.getByLabelText("Project"), {
-    target: { value: "silkboard" },
-  });
-  await fireEvent.change(screen.getByLabelText("Workflow status"), {
-    target: { value: "active" },
-  });
-  await fireEvent.submit(screen.getByRole("form"));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  );
+  await vi.advanceTimersByTimeAsync(200);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "silkboard", exact: true }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Active", exact: true }),
+  );
   await settle();
   expect(fetch.mock.calls.at(-1)[0]).toBe(
     "/api/owner/plans?project=silkboard&state=active",
@@ -158,10 +167,9 @@ test("empty workflows distinguish unfiltered history from matching filters", asy
   expect(
     screen.getByText("No workflow reports have arrived yet."),
   ).toBeTruthy();
-  await fireEvent.input(screen.getByLabelText("Project"), {
-    target: { value: "alpha" },
-  });
-  await fireEvent.submit(screen.getByRole("form"));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Active", exact: true }),
+  );
   await settle();
   expect(
     screen.getByText("No workflows match these filters on this page."),

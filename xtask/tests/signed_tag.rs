@@ -90,7 +90,7 @@ fn verifies_real_ssh_signature_and_rejects_another_signer() {
             &root,
             &mut |program, args, cwd| {
                 if program == "cargo" {
-                    Ok("{\"packages\":[{\"name\":\"silkboard-web\",\"version\":\"0.1.0\"}]}".into())
+                    Ok("{\"packages\":[{\"name\":\"silkboard-web\",\"version\":\"0.1.0\"},{\"name\":\"silkboard-publish\",\"version\":\"0.1.0\"}]}".into())
                 } else {
                     command(cwd, program, args)
                 }

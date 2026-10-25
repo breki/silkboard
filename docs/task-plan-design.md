@@ -206,3 +206,30 @@ It must add meaningful component/real-API browser coverage for login/deep links,
 all states, multi-active selection, revisions/reopening, lost reports, phone
 and keyboard behavior, and maximum-sized graphs. This design changes no
 production route, publisher permission, database schema or release authority.
+
+## Workflow filters
+
+Project and Agent use searchable selection lists populated from all current
+workflow summaries, not just one page. Agent choices identify tool and host;
+selecting one retains the existing literal tool/host filtering semantics.
+Search only narrows choices. Select a choice to apply it immediately, or use
+All projects/All agents to remove it. More projects/agents pages longer lists.
+The choices are independent, so a combination may produce no matching rows.
+
+Workflow status uses visible single-select buttons: All statuses, Pending,
+Active, Blocked and Completed. The pressed state identifies the active filter.
+Every selection updates the list immediately and resets its pagination;
+selections persist through polling and paging. Clear filters restores all
+projects, agents and statuses. There is no Apply button. Pickers support
+keyboard Tab/Enter selection, Escape dismissal and phone layouts. Loading,
+empty and retry states explain choice availability; owner expiry clears the
+private view as with other owner reads.
+
+The owner-only `GET /api/owner/filter-options` endpoint takes `view` (`events`
+or `workflows`), `kind` (`project` or `agent`), optional literal search `q`, and
+optional exclusive `after` cursor. It returns sorted distinct `items` (at most
+20 strings) and `next_cursor`. Agent values are tool, one space, then host.
+Search is case-insensitive for these ASCII identities; `%` and `_` are literal.
+Inputs are bounded and unknown query fields are rejected. Events choices use
+received events; Workflows choices use current summaries. Publisher tokens
+cannot read choices. No storage migration or new dashboard authority is added.

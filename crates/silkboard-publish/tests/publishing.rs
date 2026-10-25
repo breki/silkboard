@@ -300,7 +300,13 @@ fn command_validation_and_secret_free_diagnostics_cover_local_failures() {
     let f = Fixture::new();
     assert_eq!(
         silkboard_publish::run(&["--version".into()], &b""[..]),
-        Ok("silkboard-publish 0.1.0")
+        Ok(concat!(
+            "silkboard-publish ",
+            env!("CARGO_PKG_VERSION"),
+            " (",
+            env!("SILKBOARD_PUBLISH_IDENTITY"),
+            ")"
+        ))
     );
     for args in [
         vec![],

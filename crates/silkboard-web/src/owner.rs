@@ -1,6 +1,7 @@
 //! Single-owner browser authentication, independent of publisher credentials.
 
 mod feed;
+mod filter_options;
 pub(crate) mod filters;
 mod http;
 mod plans;

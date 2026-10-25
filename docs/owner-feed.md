@@ -55,7 +55,20 @@ is not enough. Associations stay with each event across pagination and
 workflow session handoffs. A missing workflow can become linked after its
 first report arrives. See [the ingestion contract](progress-ingestion.md).
 
-Events appear newest-received first. Time is server receipt time, displayed
+Project and Agent open searchable selection lists. Search narrows available
+choices without changing the active filter; selecting a choice applies it
+immediately. All projects and All agents remove that filter. Choices come
+from the complete Events dataset, with More projects/agents for longer lists,
+not just the displayed page. Agent labels show tool and host. Escape closes
+a picker and returns focus to its button; Tab and Enter reach and choose items.
+
+From and To apply valid received-time changes immediately in the browser's
+local timezone. An invalid range shows a warning and retains the last valid
+time bounds; Project and Agent can still change independently. Clear filters
+resets all controls and returns to the latest page. There is no Apply button.
+Failed choice loading offers Retry; existing selections remain active.
+
+Flat list displays events newest-received first. Time is server receipt time, displayed
 in the browser's local timezone, rather than agent event time. The table shows
 zero-padded 24-hour `HH:mm` above `MM-DD`, without seconds or year. Expanded
 details show `yyyy-mm-dd HH:mm:ss`, for example `2026-10-23 15:04:05`. These
@@ -164,3 +177,38 @@ Select a workflow step to see its Description and separate Agent report.
 The step title remains the compact graph label. Workflow-level descriptions
 already appear in the workflow view. Description text is publisher-reported
 context, not an instruction or verified completion evidence.
+
+## Session hierarchy
+
+Events initially opens as **Flat list**, preserving chronological receipt
+order. Use **Session hierarchy** beside it to group the current page into
+session rows, with explicitly linked subagent sessions beneath their primary
+session. The owner selected this grouped-row layout from the #109 proposals.
+The view choice lasts while Events remains mounted; it is not saved as a
+browser preference. Switching views keeps the current filters, page and
+selected event details and does not request additional reports.
+
+All groups initially open. Each session header has its own collapse control,
+separate from event details. Collapsing a parent also hides its nested child
+sessions; expanding it restores the children's own collapse choices. Polling
+preserves choices for sessions still on the page. Changing filters or moving
+to another page resets group expansion.
+
+Primary-session families come first, ordered by their newest visible event,
+including child reports. Unmatched child groups follow in receipt order.
+Within each family, child groups follow receipt order; events within a session
+retain page receipt order. The highest visible
+sequence provides the readable session label. Group counts cover that
+session's events on this page, not its full history or its children's counts.
+
+Only explicit native parent metadata within the same project, hostname and
+tool can link a child to a visible primary session. Names and other subagents
+never select a parent. Children without a matching parent remain accessible
+as **Parent outside current results**, or **Parent not reported** when no
+parent metadata was supplied. Filtering or pagination can therefore change
+which relationships appear. The view never fetches missing parent history
+or implies the page contains a complete session tree.
+
+Existing workflow links and safe Markdown details remain available in both
+views. Optional event descriptions render when supplied by a compatible
+server; the publishing contract for those descriptions is separate #107.

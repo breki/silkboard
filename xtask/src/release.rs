@@ -74,14 +74,23 @@ pub(super) fn check(
     let packages = metadata["packages"]
         .as_array()
         .ok_or("missing packages in release metadata")?;
-    let app = packages
-        .iter()
-        .find(|p| p["name"] == "silkboard-web")
-        .ok_or("missing silkboard-web package")?;
-    if app["version"].as_str() != tag.strip_prefix('v') {
-        return Err("release tag differs from application version".into());
+    versions_match(packages, tag)?;
+    println!(
+        "Signed release tag {tag} matches application/publisher versions and HEAD."
+    );
+    Ok(())
+}
+
+fn versions_match(packages: &[Value], tag: &str) -> Result<(), String> {
+    for name in ["silkboard-web", "silkboard-publish"] {
+        let package = packages
+            .iter()
+            .find(|p| p["name"] == name)
+            .ok_or_else(|| format!("missing {name} package"))?;
+        if package["version"].as_str() != tag.strip_prefix('v') {
+            return Err(format!("release tag differs from {name} version"));
+        }
     }
-    println!("Signed release tag {tag} matches application version and HEAD.");
     Ok(())
 }
 
@@ -128,12 +137,24 @@ mod tests {
                 ("git","rev-parse")=>Ok(if mismatch && args[1]!="HEAD" {"other"}else{"head"}.into()),
                 ("git","cat-file")=>Ok(if signed {"object head\ntype commit\ntag v0.1.0\ntagger Fixture\n\n-----BEGIN SSH SIGNATURE-----\nbody\n-----END SSH SIGNATURE-----\n"}else{"object head\ntype commit\ntag v0.1.0\n\nunsigned"}.into()),
                 ("git","-c")=>if trusted { Ok(String::new()) }else{Err("untrusted key".into())},
-                ("cargo","metadata")=>Ok(json!({"packages":[{"name":"silkboard-web","version":version}]}).to_string()),
+                ("cargo","metadata")=>Ok(json!({"packages":[{"name":"silkboard-web","version":version},{"name":"silkboard-publish","version":version}]}).to_string()),
                 _=>panic!("unexpected {program} {args:?}"),
             }
             },
             tag,
         )
+    }
+    #[test]
+    fn admission_checks_both_shipped_package_versions() {
+        for packages in [
+            json!([]),
+            json!([{"name":"silkboard-web","version":"0.1.0"}]),
+            json!([{"name":"silkboard-web","version":"0.1.0"},{"name":"silkboard-publish","version":"0.0.1"}]),
+        ] {
+            assert!(
+                versions_match(packages.as_array().unwrap(), "v0.1.0").is_err()
+            );
+        }
     }
     #[test]
     fn signed_headers_bind_name_and_direct_commit() {

@@ -1,36 +1,51 @@
 <script lang="ts">
   import type { ApplyFilters } from "./list-filters";
+  import FilterPicker from "./FilterPicker.svelte";
   let {
     workflows = false,
     onapply,
-  }: { workflows?: boolean; onapply: ApplyFilters } = $props();
+    onexpire,
+  }: {
+    workflows?: boolean;
+    onapply: ApplyFilters;
+    onexpire: () => void;
+  } = $props();
   let project = $state("");
   let agent = $state("");
   let from = $state("");
   let to = $state("");
   let workflowState = $state("");
   let error = $state("");
-  function apply(event: SubmitEvent) {
-    event.preventDefault();
-    const start = from ? new Date(from).getTime() : undefined;
-    const end = to ? new Date(to).getTime() : undefined;
-    if (
-      (start !== undefined && !Number.isFinite(start)) ||
-      (end !== undefined && !Number.isFinite(end)) ||
-      (start !== undefined && end !== undefined && start > end)
-    ) {
-      error = "Choose a valid time range with From before To.";
-      return;
+  let validFrom = $state<number | undefined>();
+  let validTo = $state<number | undefined>();
+  function apply(updateTime = false) {
+    if (updateTime) {
+      const start = from ? new Date(from).getTime() : undefined;
+      const end = to ? new Date(to).getTime() : undefined;
+      if (
+        (start !== undefined && (!Number.isFinite(start) || start < 0)) ||
+        (end !== undefined && (!Number.isFinite(end) || end < 0)) ||
+        (start !== undefined && end !== undefined && start > end)
+      ) {
+        error =
+          "Choose a valid time range with From before To. The last valid time range stays active.";
+        return;
+      }
+      error = "";
+      validFrom = start;
+      validTo = end;
     }
-    error = "";
     onapply({
-      project: project.trim(),
-      agent: agent.trim(),
-      ...(workflows ? { state: workflowState } : { from: start, to: end }),
+      project,
+      agent,
+      ...(workflows
+        ? { state: workflowState }
+        : { from: validFrom, to: validTo }),
     });
   }
   function clear() {
     project = agent = from = to = workflowState = error = "";
+    validFrom = validTo = undefined;
     onapply({});
   }
 </script>
@@ -38,50 +53,70 @@
 <form
   class="list-filters"
   aria-label={workflows ? "Workflow filters" : "Event filters"}
-  onsubmit={apply}
+  onsubmit={(event) => event.preventDefault()}
 >
-  <label
-    >Project<input
-      bind:value={project}
-      maxlength="64"
-      pattern="[a-z0-9-]+"
-      placeholder="All projects"
-    /></label
-  >
-  <label
-    >Agent<input
-      bind:value={agent}
-      maxlength="513"
-      placeholder="Tool or host"
-    /></label
-  >
+  <FilterPicker
+    view={workflows ? "workflows" : "events"}
+    kind="project"
+    value={project}
+    onselect={(value) => {
+      project = value;
+      apply();
+    }}
+    {onexpire}
+  />
+  <FilterPicker
+    view={workflows ? "workflows" : "events"}
+    kind="agent"
+    value={agent}
+    onselect={(value) => {
+      agent = value;
+      apply();
+    }}
+    {onexpire}
+  />
   {#if workflows}
-    <label
-      >Workflow status<select bind:value={workflowState}
-        ><option value="">All statuses</option
-        >{#each ["pending", "active", "blocked", "completed"] as status (status)}<option
-            value={status}>{status}</option
-          >{/each}</select
-      ></label
-    >
+    <fieldset>
+      <legend>Workflow status</legend>
+      <div class="status-options">
+        {#each ["", "pending", "active", "blocked", "completed"] as status (status)}<button
+            type="button"
+            aria-pressed={workflowState === status}
+            onclick={() => {
+              workflowState = status;
+              apply();
+            }}
+            >{status
+              ? status[0].toUpperCase() + status.slice(1)
+              : "All statuses"}</button
+          >{/each}
+      </div>
+    </fieldset>
   {:else}
     <label
       >From<input
         type="datetime-local"
-        bind:value={from}
+        value={from}
         min="1970-01-01T00:00"
+        onchange={(event) => {
+          from = event.currentTarget.value;
+          apply(true);
+        }}
       /></label
     >
     <label
       >To<input
         type="datetime-local"
-        bind:value={to}
+        value={to}
         min="1970-01-01T00:00"
+        onchange={(event) => {
+          to = event.currentTarget.value;
+          apply(true);
+        }}
       /></label
     >
     <span class="muted">Received time · local timezone</span>
   {/if}
-  <button type="submit">Apply filters</button>
   <button type="button" onclick={clear}>Clear filters</button>
   {#if error}<p role="alert">{error}</p>{/if}
 </form>
@@ -98,9 +133,24 @@
     display: grid;
     gap: 0.25rem;
   }
-  input,
-  select {
+  input {
     max-width: 100%;
     min-width: 0;
+  }
+  fieldset {
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+  }
+  .status-options {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+  button[aria-pressed="true"] {
+    font-weight: bold;
+    outline: 2px solid var(--selected);
+    outline-offset: -2px;
   }
 </style>

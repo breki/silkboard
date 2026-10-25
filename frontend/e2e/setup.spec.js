@@ -1,3 +1,4 @@
+import { fixturePort } from "./ports.mjs";
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,7 +8,7 @@ test("phone registration consumes a private link before enabling authenticated p
   page,
   context,
 }, info) => {
-  const origin = "https://127.0.0.1:38126";
+  const origin = `https://127.0.0.1:${fixturePort(38126)}`;
   const directory = join(process.env.SILKBOARD_E2E_DIR, "setup");
   const link = readFileSync(join(directory, "link"), "utf8").trim();
   const token = readFileSync(join(directory, "publisher.token"), "utf8").trim();

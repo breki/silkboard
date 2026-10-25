@@ -87,10 +87,12 @@ confirmation, unless the owner explicitly supplies a version or bump.
 Version selection never authorizes publication implicitly.
 No release has been requested just by implementing these gates.
 
-1. Inspect `crates/silkboard-web/Cargo.toml` as the application version source.
+1. Inspect `[workspace.package].version` in `Cargo.toml` as the shared server
+   and publisher version source.
    `xtask` has an independent tooling version; the frontend displays backend
    identity and has no separately shipped application version constant.
-2. Update the application manifest, its exact `silkboard-web` entry in
+2. Update the workspace version, its exact `silkboard-web` and
+   `silkboard-publish` entries in
    `Cargo.lock`, and promote Unreleased changes to a dated changelog section.
    No version/changelog helper exists yet. Preserve other lockfile entries;
    broad dependency updates are not release bookkeeping.
