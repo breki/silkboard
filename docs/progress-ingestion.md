@@ -87,7 +87,8 @@ query parameter or JSON field. No CORS permission is granted.
 }
 ```
 
-Optional fields are `subagent_id`, `parent_session_id` and `session_name`.
+Optional fields are `subagent_id`, `parent_session_id`, `session_name` and
+`task_id`.
 Omitted optional fields and explicit null are equivalent. A parent ID is
 allowed only with a subagent ID. Native tools that report the parent's
 session ID for child hooks must include the separate native child ID.
@@ -98,6 +99,23 @@ characters are allowed for multiline Markdown; all other control characters
 are rejected. Names remain nonblank single-line text with a 120-byte limit
 and no control characters. Unknown fields and invalid types are rejected. The entire encoded JSON request
 is limited to 8,192 bytes, including escapes and whitespace.
+
+An optional `task_id` explicitly associates this individual event with a
+workflow in the same project. It must be a canonical lowercase UUID v4, as in
+[the workflow contract](task-plan-contract.md). It is not part of session
+identity and may differ between successive events in one session. Omit it
+when the publisher cannot establish the association. Neither matching session
+metadata nor a readable name establishes an association. Older events remain
+unlinked; they are not backfilled from current session state.
+
+The owner API exposes `workflow_task_id` only when the referenced workflow
+exists in that project. Missing workflow reports leave the event readable
+without a link; a later accepted workflow report can make the link available.
+This changes no publisher read permissions. The association is descriptive
+publisher input, not attestation that the event belongs to the workflow.
+Install the updated server before publishers send `task_id`; older servers
+reject unknown fields. Existing events and reports without a task ID remain
+compatible, including identical retries. No database schema migration is needed.
 
 The session key is `(project, hostname, tool, session_id, subagent_id)`.
 Names do not change identity. Parent metadata is immutable within that key;

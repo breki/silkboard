@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Link explicitly associated Events to their existing Workflows, preserving
+  per-event identity across sessions and leaving unknown associations unlinked.
+
 - Rename the owner-facing Task plans feature to Workflows while preserving
   graph behavior, existing links, publishing contracts and received data.
 

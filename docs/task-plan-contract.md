@@ -7,7 +7,8 @@ locally verified. The [installed publisher and local handoff](task-plan-publishe
 are implemented for #76. Explicit [Codex reporting](ai-agents/codex-plans.md)
 is implemented for #77; the [owner graph page](task-plan-design.md) is locally
 implemented for #78. No production rollout is claimed.
-The existing [progress API](progress-ingestion.md) remains unchanged.
+The existing [progress API](progress-ingestion.md) accepts an optional explicit
+`task_id` for event-to-workflow links; its session identity remains unchanged.
 
 ## Agreed behavior and authority
 

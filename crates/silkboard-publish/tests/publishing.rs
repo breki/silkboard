@@ -344,3 +344,27 @@ fn command_validation_and_secret_free_diagnostics_cover_local_failures() {
         assert!(!message.contains("Running behavioral tests"));
     }
 }
+
+#[test]
+fn explicit_workflow_ids_are_per_event_and_unknown_context_stays_absent() {
+    let mut f = Fixture::new();
+    let first = "11111111-1111-4111-8111-111111111111";
+    let second = "22222222-2222-4222-8222-222222222222";
+    let (origin, handle) = server(3, |event| ack(&event));
+    f.config["endpoint"] = json!(origin);
+    for task in [Some(first), Some(second), None] {
+        let mut value = report();
+        value["task_id"] = json!(task);
+        assert_eq!(f.run(&value), Ok("Progress acknowledged"));
+    }
+    let events = handle.join().unwrap();
+    assert_eq!(events[0]["task_id"], first);
+    assert_eq!(events[1]["task_id"], second);
+    assert!(events[2].get("task_id").is_none());
+    assert_eq!(events[2]["sequence"], 3);
+    for task in ["", "../bad", "11111111-1111-1111-1111-111111111111"] {
+        let mut value = report();
+        value["task_id"] = json!(task);
+        assert_eq!(f.run(&value), Err(Error::Input));
+    }
+}

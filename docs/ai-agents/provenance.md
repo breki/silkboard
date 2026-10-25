@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Explicit event workflow links, 2026-10-25
+
+For [#104](https://github.com/breki/silkboard/issues/104), the owner selected
+an explicit optional task ID on individual events, leaving older or ambiguous
+events unlinked. Resolve links only to an existing workflow in the event's
+project. Session identity and readable names never select a workflow. The
+[ingestion contract](../progress-ingestion.md), [publisher guide](../publishing-cli.md)
+and [owner feed guide](../owner-feed.md) record this decision. This is local
+implementation scope, not production rollout evidence.
+
 ## Workflows UI terminology, 2026-10-25
 
 The owner selected [#98](https://github.com/breki/silkboard/issues/98): use

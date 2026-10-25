@@ -52,6 +52,8 @@ pub(super) struct Report {
     pub parent_session_id: Option<String>,
     pub session_name: Option<String>,
     pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
 }
 
 impl Report {
@@ -67,6 +69,13 @@ impl Report {
             {
                 return Err(Error::Input);
             }
+        }
+        if self
+            .task_id
+            .as_deref()
+            .is_some_and(|id| !silkboard_plan::valid_task_id(id))
+        {
+            return Err(Error::Input);
         }
         if self.parent_session_id.is_some() && self.subagent_id.is_none() {
             return Err(Error::Input);

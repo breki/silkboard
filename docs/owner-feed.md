@@ -46,6 +46,15 @@ never merge identities. The event uses the most recent non-null name at or
 before its session-local sequence, so a later rename does not relabel an
 earlier event.
 
+When an event explicitly names an existing workflow in its project, an
+Open workflow link appears beside its message preview. Touch it or focus it
+with Tab and press Enter to open the workflow's existing graph view. The
+message button still expands details independently. Events with no explicit
+association, including older events, show no link; sharing a session or name
+is not enough. Associations stay with each event across pagination and
+workflow session handoffs. A missing workflow can become linked after its
+first report arrives. See [the ingestion contract](progress-ingestion.md).
+
 Events appear newest-received first. Time is server receipt time, displayed
 in the browser's local timezone, rather than agent event time. The table shows
 zero-padded 24-hour `HH:mm` above `MM-DD`, without seconds or year. Expanded

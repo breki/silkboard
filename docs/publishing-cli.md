@@ -140,3 +140,15 @@ are verified. Remaining rollout evidence is tracked in
 
 `cargo test -p silkboard-publish` checks real HTTP/ingestion, process restarts,
 concurrency, revocation, malformed responses and private files.
+
+## Explicit event workflow association
+
+The `publish` command accepts an optional `task_id` in the report JSON. Supply
+only a known workflow's canonical lowercase UUID v4 within the configured
+project. The field is per event, so one session can publish for several
+workflows and a workflow can continue across sessions. Omit it when unknown;
+the publisher never guesses from a name, message or session. The server must
+be upgraded first; see [the ingestion contract](progress-ingestion.md).
+Native `codex-hook` summaries have no explicit task context and remain
+unlinked. This change does not inspect local plan files or infer a current
+workflow for those summaries.
