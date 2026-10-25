@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Name native Codex sessions after the current Silkboard task through a bounded
+  local metadata helper and task-start/title-change workflow guidance.
+
 ## 0.8.0 - 2026-10-25
 
 - Add project and agent filters to Events and Workflows, received-time bounds

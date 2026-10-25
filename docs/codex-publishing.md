@@ -27,7 +27,8 @@ is disabled. `hostname` is an operator-chosen stable identity for this machine.
 `session_name` is optional display text, shared by root sessions using this
 configuration; concurrent sessions still have distinct native IDs. Changing
 the name preserves identity/counters. Children use native `agent_type` as an
-optional readable label. Names do not replace IDs.
+optional readable label. Names do not replace IDs. Native Codex titles are
+handled separately by the [task-title lifecycle](ai-agents/codex-plans.md#native-session-titles).
 
 The wrapper defaults to `$HOME/.local/bin/silkboard-publish` and
 `$HOME/.config/silkboard-publish/config.json`. An operator can set
@@ -140,7 +141,8 @@ operator `codex` configuration and native `CODEX_THREAD_ID`; the graph does not
 include `reporter`. This requires an explicit `"plan_reporting": true` member
 inside `codex`. It defaults to false and does not affect existing summaries.
 Install a server supporting #75 and a compatible publisher before enabling it;
-these plan features have not yet been released to production.
+the protocol first shipped in v0.7.0. See the
+[installation order](task-plan-publisher.md#installation-order).
 
 Follow the [Codex plan workflow](ai-agents/codex-plans.md) for stable identities,
 actual step transitions, revisions, failures and explicit session handoff.

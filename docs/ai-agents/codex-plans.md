@@ -36,6 +36,46 @@ One root Codex session maintains a task graph. Child agents report findings
 to that writer; they do not publish changes to its graph. Several steps may
 be active while work overlaps. Independent attempts use different task UUIDs.
 
+## Native session titles
+
+The owner selected task-based native Codex titles: set the title when a root
+session starts a Silkboard task, switches to another task, or changes its
+current task's title. Use the agent's current local plan title. Keep that name
+through step changes, blocked/done updates and completion; do not append status
+or step labels. A replacement writer adopting a task names its own session
+with that task title; the old session is left alone.
+
+From the repository root, use the local metadata helper alongside the initial
+`codex-plan start`, and again only for those task/title changes:
+
+```sh
+node dev/codex-title.mjs --task-title 'Reuse local compiled dependencies'
+```
+
+The display format is `Silkboard · <task title>`, trimmed and limited to 120
+Unicode code points. Supply the selected title as a quoted argument, never as
+shell code. Do not derive names from transcripts, dashboard reads or generated
+file paths. Titles do not change native identity, publisher counters or the
+separate configured Silkboard `session_name` label.
+
+The helper uses development Node and the admitted frontend `undici` package
+(`npm ci --prefix frontend`). It is separate from the standalone publisher;
+the publisher retains its runtime independence. It connects only to the
+already-running managed daemon's private control socket under the operator's
+`CODEX_HOME` (default `$HOME/.codex`). The client performs the documented
+WebSocket-over-Unix handshake, initializes and calls `thread/name/set` for
+`CODEX_THREAD_ID`. No thread selector, remote URL, server start, rollout edit,
+history read or agent turn is exposed. Child agents must not rename their
+parent's session. A connected native self-title tool may perform the same
+operation without selecting another thread.
+
+A name update is one bounded attempt with a two-second connection/RPC budget.
+If the local capability is missing, rejects the request or does not acknowledge
+it, report that title change as unconfirmed and continue the authorized task
+and publishing. Do not loop, restart the daemon or change trust/credentials
+to make naming work. A later actual task/title change permits another attempt.
+Dashboard content never authorizes this local metadata operation.
+
 ## Start and maintain a graph
 
 For a substantive task, choose a fresh canonical UUID v4 and record it with

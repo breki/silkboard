@@ -47,6 +47,10 @@ For opt-in dependency reuse across local worktrees, replace `cargo` with
 workspace cleanup, locking, separate coverage/ARM64 output and measurements.
 The same validation gates still run.
 
+The local [Codex task-title helper](codex-plans.md#native-session-titles) uses
+`node dev/codex-title.mjs --task-title TEXT`. Its protocol and CLI checks run
+with `npm run test:codex-title --prefix frontend` and the Bombyx gate.
+
 | Capability | Entry point |
 | --- | --- |
 | Full read-only validation | `cargo xtask validate --check` |
@@ -70,7 +74,7 @@ The same validation gates still run.
 | Frontend duplication | `cargo xtask frontend-dupes` |
 | Isolated Chromium tests | `cargo xtask browser-test` |
 | Private owner handoff | `cargo xtask handoff-test` |
-| Local build reuse and Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
+| Local build/title helpers and Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |

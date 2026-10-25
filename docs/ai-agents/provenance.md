@@ -1,5 +1,23 @@
 # Canon provenance
 
+## Native Codex task titles, 2026-10-25
+
+The owner requested native Codex title updates at Silkboard lifecycle moments
+and selected the current task on task start/change. The local root agent calls
+the helper from the plan workflow; step/status/completion updates retain the
+task name. The dashboard and publisher gain no Codex control or read authority.
+The helper declares the already-admitted undici 7.30.1 version directly in the
+development tool dependencies; no resolved package version changes.
+
+The advertised self-title tool was unreachable. Raw byte proxy requests did
+not initialize because the managed Unix control socket uses a WebSocket HTTP
+upgrade. The installed daemon 0.164.0 schema and the
+[official protocol](https://learn.chatgpt.com/docs/app-server#protocol) define
+that transport and `thread/name/set`. A WebSocket-over-Unix request and the
+implemented helper both received a rename acknowledgement for this session's
+current task. No daemon, listener, history read or turn was started. This is
+local native metadata evidence, not a production application deployment.
+
 ## Release handoff retrospective, 2026-10-25
 
 The owner requested a retrospective after v0.8.0 publication passed its exact
