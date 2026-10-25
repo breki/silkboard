@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ThemeSelector from "./ThemeSelector.svelte";
   let {
     owner,
     showMenu = true,
@@ -63,6 +64,7 @@
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
           <a href="/status">Application status</a>
+          <ThemeSelector />
           {#if owner}
             <button
               onclick={() => {
@@ -83,5 +85,7 @@
         </nav>
       {/if}
     </div>
+  {:else}
+    <ThemeSelector />
   {/if}
 </header>

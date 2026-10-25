@@ -90,3 +90,15 @@ test("setup header has no navigation", () => {
   expect(screen.queryByRole("button")).toBeNull();
   expect(screen.queryByRole("link")).toBeNull();
 });
+
+test("theme preference can be changed and survives closing the menu", async () => {
+  render(Header);
+  await fireEvent.click(menu());
+  const selector = screen.getByRole("combobox", { name: "Theme" });
+  expect(selector.value).toBe("system");
+  await fireEvent.change(selector, { target: { value: "dark" } });
+  expect(document.documentElement.dataset.theme).toBe("dark");
+  await fireEvent.click(menu());
+  await fireEvent.click(menu());
+  expect(screen.getByRole("combobox", { name: "Theme" }).value).toBe("dark");
+});
