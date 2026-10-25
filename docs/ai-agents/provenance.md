@@ -797,7 +797,8 @@ as scheduled discovery or as replacement of the privileged updater.
 
 Actual native task reports and a controlled rejected update establish the
 reported history and full-snapshot repair. The owner explicitly confirmed
-received history and receipt time/age on their phone. This narrower observation
-does not establish step-dialog behavior or viewing final completed work; those
-remain final #81 acceptance. Fixture identities/states, reported completion and
-local tests do not fill those gaps or grant execution/merge authority.
+received history and receipt time/age on their phone, then explicitly confirmed
+all three final checks: 7 of 7 steps done, step details opening/closing, and
+received Blocked-to-Active-to-Done history. Those owner observations establish
+live phone acceptance; they are separate from fixture identities/states and
+local tests. Reported completion grants no execution or merge authority.

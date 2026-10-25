@@ -25,7 +25,7 @@ and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 
 Production runs `v0.7.0` with private HTTPS, persistent private storage and
 owner phone access. [Task-plan rollout evidence](docs/task-plan-rollout.md)
-records real native reporting, preserved data and remaining phone acceptance.
+records real native reporting, preserved data and confirmed phone acceptance.
 Automatic upgrades and live rollback/retry are verified; updater reboot
 recovery and live pending-check reconsideration remain separate work.
 [Production evidence](docs/production-vm.md) records the original installation.

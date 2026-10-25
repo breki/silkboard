@@ -218,8 +218,9 @@ Agreed with the owner on 2026-10-24. The
 [reporting contract](task-plan-contract.md) before API, publisher and UI work.
 The contract and implementation have shipped in `v0.7.0` with real native
 reporting. [Production rollout evidence](task-plan-rollout.md) distinguishes
-verified operation from the remaining owner phone acceptance; the milestone
-is not complete solely because implementation and release checks passed.
+verified operation and confirmed owner phone acceptance from local fixtures.
+The milestone is not complete solely because implementation and release
+checks passed; #81's reviewed evidence records the live acceptance too.
 
 - Display an agent's evolving task-specific directed plan. Arrows show step
   prerequisites; steps can be pending, active, done or blocked. Several steps

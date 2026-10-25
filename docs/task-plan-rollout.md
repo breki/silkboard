@@ -4,7 +4,7 @@ Observed on 2026-10-25 for [#81](https://github.com/breki/silkboard/issues/81).
 This record separates live observations from the
 [local acceptance fixtures](task-plan-acceptance.md). The owner approved the
 private recovery copy, release publication, compatible publisher installation
-and explicit plan-reporting opt-in. Final phone acceptance remains open.
+and explicit plan-reporting opt-in. Final phone acceptance is confirmed below.
 
 ## Signed release and activation
 
@@ -98,7 +98,7 @@ Private HTTPS checks confirmed unauthenticated feed and plan reads still
 return 401 and first-owner setup remains closed. Repeated metadata reads kept
 the same receipt time while its age increased; reads did not create freshness.
 
-## Owner observation and remaining acceptance
+## Owner phone acceptance
 
 The owner opened the task on their phone and explicitly confirmed received
 history and the last-report time/age were visible after their locations were
@@ -106,9 +106,11 @@ explained. That answer resumed the actual phone step; subsequent reports
 recorded the blocked-to-active-to-done transition. These are live reports,
 not fictional mockup states or evidence that reported work authorizes actions.
 
-The remaining owner check is the completed plan view, step-detail interaction
-and the received blocked/resumed transition. Do not infer those observations
-from the narrower history/time confirmation or local browser tests. Keep #81
-and milestone 5 open until that final acceptance and its evidence are recorded.
-Recurring backups, updater reboot recovery and other-agent integration retain
-their separate scope.
+After the follow-up task completed, the owner explicitly confirmed all three
+final checks: the phone showed 7 of 7 steps done, a step's details opened and
+closed, and received history showed the phone step changing from Blocked to
+Active and then Done. This supplies the final live phone observation for #81,
+including a genuine subsequent task reported from its beginning to completion.
+The evidence PR can close #81 when merged; milestone closure remains separate
+from this record. Recurring backups, updater reboot recovery and other-agent
+integration retain their separate scope.
