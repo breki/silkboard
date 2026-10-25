@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.0 - 2026-10-25
+
 - Clarify task-plan freshness and verify full-snapshot recovery across lost
   updates, ambiguous acknowledgements, timeouts and interrupted handoffs.
 
