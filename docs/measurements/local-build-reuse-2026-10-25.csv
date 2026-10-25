@@ -1,0 +1,13 @@
+condition,result,wall_seconds,user_seconds,system_seconds,max_child_rss_kib,total_cache_kib
+cold-a,pass,156.37,223.33,23.67,446284,2395044
+warm-a,pass,28.39,16.41,3.78,205440,2395044
+switch-b-failed,failed,36.04,36.77,9.14,383952,
+prepare-a,pass,28.56,36.83,9.16,382844,2396368
+switch-b,pass,54.11,52.32,12.40,383636,2396352
+edit-b,pass,1.41,1.33,0.97,202696,2446460
+return-a,pass,25.32,36.87,8.61,383672,2396384
+arm64,pass,26.84,39.55,6.01,362684,2648760
+arm64-warm,pass,0.19,0.08,0.05,48804,2648760
+profile,pass,67.43,111.73,10.53,366876,4538588
+flags,pass,6.29,8.94,1.25,251968,4595900
+full-validation,pass,333.46,334.57,44.10,468060,5932712

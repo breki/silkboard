@@ -1,5 +1,17 @@
 # Canon provenance
 
+## Local worktree build reuse, 2026-10-25
+
+The owner selected [#66](https://github.com/breki/silkboard/issues/66) for
+implementation. Its scope is local development dependency reuse, separate
+normal/coverage/ARM64 output, source freshness and concurrent worktree safety.
+The opt-in [local procedure](../local-build-reuse.md) cleans workspace
+artifacts on path switches and serializes complete commands while retaining
+dependency builds and Cargo freshness checks. It changes no CI, production
+build or release-admission policy. Runtime workspace discovery corrects the
+compiled-in xtask root exposed by shared output. Measurement evidence and
+limits belong in that procedure rather than claims about production speed.
+
 ## Event Markdown and receipt-time format, 2026-10-23
 
 The owner created #64 in Basic UI improvements, requested Markdown messages,

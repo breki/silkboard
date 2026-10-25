@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Opt-in, local-only Cargo reuse. Keep the lock through tests and fixtures.
+set -euo pipefail
+umask 077
+mode=normal
+if [[ ${1:-} == --arm64 ]]; then mode=arm64; shift; fi
+cache=${SILKBOARD_DEV_BUILD_ROOT:-${XDG_CACHE_HOME:-$HOME/.cache}/silkboard-build}
+[[ $cache == /* && $cache != / ]] || { echo 'Expected an absolute build cache directory' >&2; exit 1; }
+mkdir -p "$cache"
+[[ -d $cache && ! -L $cache && -O $cache && $(stat -c %a "$cache") == 700 ]] || {
+    echo 'Build cache must be an owned, private directory (mode 700)' >&2; exit 1;
+}
+# All modes share one lock: validation may use normal and coverage together.
+exec 9>"$cache/command.lock"
+flock --exclusive 9
+export CARGO_TARGET_DIR="$cache/$mode"
+export CARGO_LLVM_COV_TARGET_DIR="$cache/coverage"
+# Bootstrap without xtask: that executable may itself belong to the old tree.
+metadata=$(cargo metadata --locked --no-deps --format-version 1)
+workspace=$(jq -er '.workspace_root' <<< "$metadata")
+packages=$(jq -er '.workspace_members as $members | .packages[] | select(.id as $id | $members | index($id)) | .name' <<< "$metadata")
+if [[ ! -f $cache/workspace || $(cat "$cache/workspace") != "$workspace" ]]; then
+    clean_args=()
+    while IFS= read -r package; do clean_args+=(--package "$package"); done <<< "$packages"
+    # A global workspace marker requires cleaning EVERY existing mode.
+    for directory in normal arm64; do
+        if [[ -d $cache/$directory ]]; then
+            CARGO_TARGET_DIR="$cache/$directory" cargo clean "${clean_args[@]}"
+            if [[ $directory == arm64 ]]; then
+                CARGO_TARGET_DIR="$cache/arm64" cargo clean "${clean_args[@]}" --target aarch64-unknown-linux-gnu
+            fi
+        fi
+    done
+    if [[ -d $cache/coverage ]]; then cargo llvm-cov clean --workspace; fi
+    printf '%s\n' "$workspace" > "$cache/workspace.next"
+    mv -f "$cache/workspace.next" "$cache/workspace"
+fi
+exec cargo "$@"

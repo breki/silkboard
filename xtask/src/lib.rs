@@ -9,6 +9,7 @@ mod dependencies;
 mod registry_dates;
 mod release;
 mod validation;
+pub mod workspace;
 
 /// Subprocess adapter shared by real execution and behavioral tests.
 /// Registry checks and explicitly parallel validation may invoke it concurrently.

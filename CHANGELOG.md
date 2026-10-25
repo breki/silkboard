@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add opt-in local Cargo build reuse across worktrees with isolated coverage
+  and ARM64 output, whole-command locking and runtime xtask workspace selection.
+
 ## 0.7.0 - 2026-10-25
 
 - Clarify task-plan freshness and verify full-snapshot recovery across lost

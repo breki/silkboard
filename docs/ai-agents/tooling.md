@@ -42,6 +42,11 @@ Validation also emits a `Validation timing:` JSON record per completed gate
 before stopping. The [CI time analysis](../ci-time-analysis.md) records the
 measured baseline, interpretation limits and proposed follow-ups.
 
+For opt-in dependency reuse across local worktrees, replace `cargo` with
+`./dev/cargo`. The [local build procedure](../local-build-reuse.md) documents
+workspace cleanup, locking, separate coverage/ARM64 output and measurements.
+The same validation gates still run.
+
 | Capability | Entry point |
 | --- | --- |
 | Full read-only validation | `cargo xtask validate --check` |
@@ -65,7 +70,7 @@ measured baseline, interpretation limits and proposed follow-ups.
 | Frontend duplication | `cargo xtask frontend-dupes` |
 | Isolated Chromium tests | `cargo xtask browser-test` |
 | Private owner handoff | `cargo xtask handoff-test` |
-| Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
+| Local build reuse and Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
