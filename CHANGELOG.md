@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.8.0 - 2026-10-25
+
 - Add project and agent filters to Events and Workflows, received-time bounds
   for Events, and reported-status filtering for Workflows across paginated history.
 
