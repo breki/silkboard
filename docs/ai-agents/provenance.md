@@ -783,3 +783,22 @@ binary, then checked additive plan initialization and legacy-compatible recovery
 No production data, model account, user transcripts or existing user hook/reporting
 configuration was used or changed. Temporary configuration opted in only for
 the disposable fixture. Release and phone dogfooding remain #81.
+
+## Production task-plan rollout — 2026-10-25
+
+After merging #93, the owner approved a private recovery copy, publication of
+the agent-selected `v0.7.0`, compatible publisher installation and explicit
+Codex plan opt-in on the existing development machine. The
+[live rollout record](../task-plan-rollout.md) binds signed release admission,
+the exact successful release run, installed revisions, isolated snapshot
+verification and production data/authority preservation to that authorization.
+The normal installed updater poll was requested manually; this is not claimed
+as scheduled discovery or as replacement of the privileged updater.
+
+Actual native task reports and a controlled rejected update establish the
+reported history and full-snapshot repair. The owner explicitly confirmed
+received history and receipt time/age on their phone, then explicitly confirmed
+all three final checks: 7 of 7 steps done, step details opening/closing, and
+received Blocked-to-Active-to-Done history. Those owner observations establish
+live phone acceptance; they are separate from fixture identities/states and
+local tests. Reported completion grants no execution or merge authority.

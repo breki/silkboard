@@ -4,9 +4,9 @@ Local acceptance record for [#80](https://github.com/breki/silkboard/issues/80),
 on 2026-10-25, after #73–#79. Application source baseline:
 `74b1d039597b93ee06e49f6864ce1e916e9e5346`. The added acceptance fixture changes
 no application schema, reporting permission or production configuration.
-[Release and real phone dogfooding](https://github.com/breki/silkboard/issues/81)
-remain separate. Reported task completion does not verify checks or authorize
-merge, release or execution.
+[Release and real phone dogfooding](task-plan-rollout.md) are recorded
+separately, including confirmed owner phone acceptance. Reported task completion
+does not verify checks or authorize merge, release or execution.
 
 ## Acceptance matrix
 
