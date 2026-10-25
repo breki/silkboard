@@ -56,7 +56,9 @@ jobs:
         run: |
           npm ci
           npm run build
-      - name: Verify and build release backend
+      - name: Verify and build release backend and publisher
         run: |
           cargo xtask release-check "$GITHUB_REF_NAME"
-          SILKBOARD_RELEASE_TAG="$GITHUB_REF_NAME" SILKBOARD_COMMIT="$(git rev-parse HEAD)" cargo build --locked --release -p silkboard-web
+          SILKBOARD_RELEASE_TAG="$GITHUB_REF_NAME" SILKBOARD_COMMIT="$(git rev-parse HEAD)" cargo build --locked --release -p silkboard-web -p silkboard-publish
+          expected="silkboard-publish ${GITHUB_REF_NAME#v} (tag $GITHUB_REF_NAME; commit $(git rev-parse HEAD))"
+          test "$(target/release/silkboard-publish --version)" = "$expected"

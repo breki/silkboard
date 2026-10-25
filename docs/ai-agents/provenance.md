@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Publisher build identity, 2026-10-25
+
+The owner requested [#110](https://github.com/breki/silkboard/issues/110)
+after the installed CLI still reported `0.1.0` despite feature changes.
+Implementation uses a shared repository version for server and publisher,
+plus explicit source commit and tagged/development identity. The
+[publisher guide](../publishing-cli.md) and [release procedure](../releases.md)
+distinguish build labels from signature and GitHub-check evidence. This does
+not install a new CLI, publish a release or introduce self-updating clients.
+
 ## Explicit event workflow links, 2026-10-25
 
 For [#104](https://github.com/breki/silkboard/issues/104), the owner selected

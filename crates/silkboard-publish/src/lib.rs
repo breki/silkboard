@@ -68,7 +68,10 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         [version] if version == "--version" => {
             return Ok(concat!(
                 "silkboard-publish ",
-                env!("CARGO_PKG_VERSION")
+                env!("CARGO_PKG_VERSION"),
+                " (",
+                env!("SILKBOARD_PUBLISH_IDENTITY"),
+                ")"
             ));
         }
         [command, flag, path] if command == "publish" && flag == "--config" => {

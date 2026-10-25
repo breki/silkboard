@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Identify publisher builds with the shared repository version, source commit
+  and explicit tagged/development provenance in `--version`.
+
 ## 0.9.0 - 2026-10-25
 
 - Link explicitly associated Events to their existing Workflows, preserving
