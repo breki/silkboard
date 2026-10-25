@@ -1,6 +1,8 @@
 //! Installed, best-effort progress and task-plan publishing without an outgoing queue.
 
 mod codex;
+mod context;
+mod hook_context;
 mod model;
 mod plans;
 mod state;
@@ -62,7 +64,7 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
         }
         [help] if help == "--help" => {
             return Ok(
-                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nsilkboard-publish codex-plan {start|publish} --config PATH\nsilkboard-publish plan {start|publish|handoff} --config PATH\nRead one JSON progress/plan report, handoff or native Codex hook payload from stdin. codex-plan derives identity from operator Codex configuration and CODEX_THREAD_ID. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
+                "silkboard-publish publish --config PATH\nsilkboard-publish codex-hook --config PATH\nsilkboard-publish codex-hook-context --config PATH\nsilkboard-publish codex-plan {start|publish|select|clear} --config PATH\nsilkboard-publish plan {start|publish|handoff|select|clear} --config PATH\nRead one JSON progress/plan report, handoff, workflow selection or native Codex hook payload from stdin. codex-plan clear reads no input. codex-plan derives identity from operator Codex configuration and CODEX_THREAD_ID. One bounded attempt; no queue or service. codex-hook always returns {} with exit 0.",
             );
         }
         [version] if version == "--version" => {
@@ -82,11 +84,16 @@ pub fn run(args: &[OsString], input: impl Read) -> Result<&'static str, Error> {
             publish(&config, report)?;
         }
         [command, flag, path]
-            if command == "codex-hook" && flag == "--config" =>
+            if (command == "codex-hook" || command == "codex-hook-context")
+                && flag == "--config" =>
         {
             // Native async hooks must never turn delivery failure into a
             // continuation, context injection or permission decision.
-            let _ = codex::run(Path::new(path), input);
+            let _ = codex::run(
+                Path::new(path),
+                input,
+                command == "codex-hook-context",
+            );
             return Ok("{}");
         }
         [plan, command, flag, path] if plan == "plan" && flag == "--config" => {
@@ -111,10 +118,18 @@ fn configuration(path: &Path) -> Result<model::Config, Error> {
 }
 
 fn publish(config: &model::Config, report: model::Report) -> Result<(), Error> {
+    let (event, token) = prepare(config, report)?;
+    transport::send(config, &event, &token)
+}
+
+fn prepare(
+    config: &model::Config,
+    report: model::Report,
+) -> Result<(model::ProgressEvent, String), Error> {
     report.validate()?;
     let token = token(config)?;
     let event = state::allocate(config, report)?;
-    transport::send(config, &event, &token)
+    Ok((event, token))
 }
 
 fn token(config: &model::Config) -> Result<String, Error> {

@@ -33,11 +33,33 @@ pub(super) fn run_codex(
     path: &Path,
     input: impl Read,
 ) -> Result<&'static str, Error> {
-    if command != "start" && command != "publish" {
+    if !matches!(
+        command.to_str(),
+        Some("start" | "publish" | "select" | "clear")
+    ) {
         return Err(Error::Usage);
     }
     let config = configuration(path)?;
-    let reporter = crate::codex::plan_reporter(&config)?;
+    let reporter = if command == "clear" {
+        crate::codex::context_reporter(&config)?
+    } else {
+        crate::codex::plan_reporter(&config)?
+    };
+    if command == "clear" {
+        crate::context::Context::lock(&config, &reporter)?.clear()?;
+        return Ok("Workflow context cleared locally");
+    }
+    if command == "select" {
+        let choice: CodexSelection =
+            serde_json::from_slice(&bounded(input, 8192)?)
+                .map_err(|_| Error::Input)?;
+        return select(
+            &config,
+            choice.schema_version,
+            &choice.task_id,
+            &reporter,
+        );
+    }
     let draft: CodexDraft = serde_json::from_slice(&bounded(
         input,
         silkboard_plan::MAX_SNAPSHOT_BYTES as u64,
@@ -90,11 +112,34 @@ pub(super) fn run(
     path: &Path,
     input: impl Read,
 ) -> Result<&'static str, Error> {
-    if command != "start" && command != "publish" && command != "handoff" {
+    if !matches!(
+        command.to_str(),
+        Some("start" | "publish" | "handoff" | "select" | "clear")
+    ) {
         return Err(Error::Usage);
     }
     let config = configuration(path)?;
     let bytes = bounded(input, silkboard_plan::MAX_SNAPSHOT_BYTES as u64)?;
+    if command == "select" || command == "clear" {
+        let choice: Selection =
+            serde_json::from_slice(&bytes).map_err(|_| Error::Input)?;
+        if command == "select" {
+            return select(
+                &config,
+                choice.schema_version,
+                choice.task_id.as_deref().ok_or(Error::Input)?,
+                &choice.reporter,
+            );
+        }
+        if choice.schema_version != 1
+            || choice.task_id.is_some()
+            || !crate::codex::context_scope(&config, &choice.reporter)
+        {
+            return Err(Error::Input);
+        }
+        crate::context::Context::lock(&config, &choice.reporter)?.clear()?;
+        return Ok("Workflow context cleared locally");
+    }
     if command == "handoff" {
         let handoff: Handoff =
             serde_json::from_slice(&bytes).map_err(|_| Error::Input)?;
@@ -113,7 +158,66 @@ fn send(
 ) -> Result<&'static str, Error> {
     let snapshot = draft.snapshot()?;
     let token = token(config)?;
-    let snapshot = state::allocate(config, snapshot, start)?;
+    let mut context = if crate::codex::context_scope(config, &snapshot.reporter)
+    {
+        Some(crate::context::Context::lock(config, &snapshot.reporter)?)
+    } else {
+        None
+    };
+    let mut selected = false;
+    let snapshot = state::allocate(config, snapshot, start, |snapshot| {
+        selected = crate::codex::context_enabled(config, &snapshot.reporter)
+            && context
+                .as_ref()
+                .is_some_and(|c| start || c.matches(snapshot));
+        if let Some(context) = &mut context {
+            if selected {
+                context.select(snapshot, false)?;
+            } else if start {
+                context.clear()?;
+            }
+        }
+        Ok(())
+    })?;
     transport::send_plan(config, &snapshot, &token)?;
+    if selected && let Some(context) = &mut context {
+        context.select(&snapshot, true)?;
+    }
     Ok("Task plan acknowledged")
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CodexSelection {
+    schema_version: u8,
+    task_id: String,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Selection {
+    schema_version: u8,
+    task_id: Option<String>,
+    reporter: Reporter,
+}
+
+fn select(
+    config: &crate::model::Config,
+    schema: u8,
+    id: &str,
+    reporter: &Reporter,
+) -> Result<&'static str, Error> {
+    if schema != 1 || !crate::codex::context_enabled(config, reporter) {
+        return Err(Error::Input);
+    }
+    let mut context = crate::context::Context::lock(config, reporter)?;
+    let snapshot = owned(config, id, reporter)?;
+    context.select(&snapshot, false)?;
+    Ok("Workflow context selected locally; publish the plan to confirm")
+}
+pub(super) fn owned(
+    config: &crate::model::Config,
+    id: &str,
+    reporter: &Reporter,
+) -> Result<Snapshot, Error> {
+    state::owned(config, id, reporter)
 }

@@ -60,6 +60,16 @@ pub(super) struct Report {
 }
 
 impl Report {
+    pub fn reporter(&self) -> silkboard_plan::Reporter {
+        silkboard_plan::Reporter {
+            hostname: self.hostname.clone(),
+            tool: self.tool.clone(),
+            session_id: self.session_id.clone(),
+            subagent_id: self.subagent_id.clone(),
+            parent_session_id: self.parent_session_id.clone(),
+            session_name: self.session_name.clone(),
+        }
+    }
     pub fn validate(&self) -> Result<(), Error> {
         for s in [&self.hostname, &self.tool, &self.session_id]
             .into_iter()

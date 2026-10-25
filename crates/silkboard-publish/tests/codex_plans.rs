@@ -145,7 +145,16 @@ fn failed_delivery_keeps_native_writer_binding_and_does_not_restart_task() {
     f.config["codex"] = json!({"workspace":f.root,"hostname":"configured-host","plan_reporting":true});
     let first = cli(&f, "start", &draft(), Some("native-root"));
     assert!(!first.status.success());
-    let path = &f.state_files("json")[0];
+    let paths = f.state_files("json");
+    let path = paths
+        .iter()
+        .find(|p| {
+            p.file_name()
+                .unwrap()
+                .to_string_lossy()
+                .starts_with("plan-")
+        })
+        .unwrap();
     let read = || {
         serde_json::from_slice::<Value>(&std::fs::read(path).unwrap()).unwrap()
     };

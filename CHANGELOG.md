@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Link automatic Codex summaries to their explicitly selected, confirmed
+  workflow; retain completed context until switch/clear and reject stale
+  writer associations without guessing parent/subagent relationships.
+
 - Add a private hierarchical Todos checklist with independent checkboxes,
   editable text, child promotion on deletion and protection against stale edits.
 

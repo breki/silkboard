@@ -397,4 +397,55 @@ test("installed Codex adapter, owner graph and existing data survive a real back
       ).json()
     ).summary.sequence,
   ).toBe("4");
+  await checkAutomaticWorkflowLink(page);
 });
+
+async function checkAutomaticWorkflowLink(page) {
+  const options = {
+    cwd: join(root, "workspace"),
+    env: { ...process.env, PATH: "/nonexistent" },
+    input: JSON.stringify({
+      hook_event_name: "Stop",
+      session_id: "fixture-native-acceptance",
+      turn_id: "turn-acceptance",
+      cwd: join(root, "workspace"),
+      last_assistant_message:
+        "Automatic workflow summary. Additional private fixture detail.",
+    }),
+    encoding: "utf8",
+  };
+  expect(
+    execFileSync(
+      publisher,
+      ["codex-hook-context", "--config", config],
+      options,
+    ).trim(),
+  ).toBe("{}");
+  const output = execFileSync(
+    publisher,
+    ["codex-hook", "--config", config],
+    options,
+  );
+  expect(output.trim()).toBe("{}");
+  const response = await page.context().request.get("/api/owner/events");
+  const reports = await response.json();
+  expect(
+    reports.items.find(
+      (event) => event.message === "Automatic workflow summary.",
+    )?.workflow_task_id,
+  ).toBe(task);
+  await page
+    .getByRole("navigation", { name: "Primary navigation" })
+    .getByRole("link", { name: "Events", exact: true })
+    .click();
+  const event = page
+    .locator("tr.event-row")
+    .filter({ hasText: "Automatic workflow summary." });
+  const link = event.getByRole("link", { name: "Open workflow", exact: true });
+  await expect(link).toHaveAttribute("href", path);
+  await link.focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Release and dogfood, Blocked" }),
+  ).toBeVisible();
+}

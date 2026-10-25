@@ -24,6 +24,7 @@ pub(super) struct Settings {
 #[derive(Deserialize)]
 struct Payload {
     hook_event_name: String,
+    turn_id: Option<String>,
     session_id: String,
     cwd: PathBuf,
     agent_id: Option<String>,
@@ -33,13 +34,37 @@ struct Payload {
     last_assistant_message: Option<String>,
 }
 
+pub(super) fn context_enabled(
+    config: &crate::model::Config,
+    reporter: &silkboard_plan::Reporter,
+) -> bool {
+    context_scope(config, reporter)
+        && config.codex.as_ref().is_some_and(|s| s.plan_reporting)
+}
+
+pub(super) fn context_scope(
+    config: &crate::model::Config,
+    reporter: &silkboard_plan::Reporter,
+) -> bool {
+    config.codex.as_ref().is_some_and(|s| {
+        reporter.tool == "codex" && reporter.hostname == s.hostname
+    })
+}
+
 pub(super) fn plan_reporter(
+    config: &crate::model::Config,
+) -> Result<silkboard_plan::Reporter, Error> {
+    if !config.codex.as_ref().is_some_and(|s| s.plan_reporting) {
+        return Err(Error::Input);
+    }
+    context_reporter(config)
+}
+pub(super) fn context_reporter(
     config: &crate::model::Config,
 ) -> Result<silkboard_plan::Reporter, Error> {
     let settings = config.codex.as_ref().ok_or(Error::Input)?;
     let cwd = std::env::current_dir().map_err(|_| Error::Input)?;
-    if !settings.plan_reporting
-        || !clean_absolute(&settings.workspace)
+    if !clean_absolute(&settings.workspace)
         || !clean_absolute(&cwd)
         || !cwd.starts_with(&settings.workspace)
     {
@@ -56,7 +81,11 @@ pub(super) fn plan_reporter(
     })
 }
 
-pub(super) fn run(path: &Path, input: impl Read) -> Result<(), Error> {
+pub(super) fn run(
+    path: &Path,
+    input: impl Read,
+    capture: bool,
+) -> Result<(), Error> {
     let config = crate::configuration(path)?;
     let settings = config.codex.as_ref().ok_or(Error::Input)?;
     let payload: Payload = serde_json::from_slice(&bounded(input, 65536)?)
@@ -86,7 +115,7 @@ pub(super) fn run(path: &Path, input: impl Read) -> Result<(), Error> {
             .and_then(first_sentence)
             .unwrap_or_else(|| fallback.to_owned())
     };
-    let report = Report {
+    let mut report = Report {
         task_id: None,
         description: None,
         hostname: settings.hostname.clone(),
@@ -101,7 +130,31 @@ pub(super) fn run(path: &Path, input: impl Read) -> Result<(), Error> {
         },
         message,
     };
-    crate::publish(&config, report)
+    report.validate()?;
+    let reporter = report.reporter();
+    if capture {
+        if context_enabled(&config, &reporter) {
+            crate::hook_context::capture(
+                &config,
+                &reporter,
+                &payload.hook_event_name,
+                payload.turn_id.as_deref().ok_or(Error::Input)?,
+            )?;
+        }
+        return Ok(());
+    }
+    if context_enabled(&config, &reporter) {
+        report.task_id = payload.turn_id.as_deref().and_then(|turn| {
+            crate::hook_context::resolve(
+                &config,
+                &reporter,
+                &payload.hook_event_name,
+                turn,
+            )
+        });
+    }
+    let (event, token) = crate::prepare(&config, report)?;
+    crate::transport::send(&config, &event, &token)
 }
 
 fn clean_absolute(path: &Path) -> bool {

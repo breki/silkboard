@@ -36,6 +36,32 @@ One root Codex session maintains a task graph. Child agents report findings
 to that writer; they do not publish changes to its graph. Several steps may
 be active while work overlaps. Independent attempts use different task UUIDs.
 
+## Automatic summary context
+
+When the installed publisher's `--help` lists `codex-plan` select/clear
+controls, a successful start also selects that workflow. Automatic summaries
+require the compatible `codex-hook-context` command and operator-reviewed
+synchronous capture handlers as well as the async uploader. The capture freezes
+the selection at each native event/turn boundary; missing capture stays unlinked.
+Completion retains the association through the final summary.
+Never infer completion from a hook or inherit parent context for a subagent.
+A later update to a different old plan does not change the current selection.
+
+Before switching to unrelated work without a reported workflow, run the
+installed `codex-plan clear --config PATH` once. It is a local operation and
+accepts no stdin. To resume a prior task or adopt an explicit writer handoff,
+use `codex-plan select --config PATH` with schema version 1 and its existing
+task ID, then `codex-plan publish` with the complete current graph. Selection
+must match the native identity's existing reporting role; handoff invalidates
+the old writer's selection. Keep the same counters and task ID.
+
+These controls require compatible installed components; do not substitute a
+repository executable, enable reporting or change hook trust to obtain them.
+Missing/unconfirmed context simply leaves summaries unlinked. A failed local
+selection/clear is not confirmation that it changed. Report that limit and
+continue authorized work. See the
+[full lifecycle and local state rules](../task-plan-publisher.md#automatic-summary-workflow-context).
+
 ## Native session titles
 
 The owner selected task-based native Codex titles: set the title when a root

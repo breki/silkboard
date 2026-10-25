@@ -45,8 +45,16 @@ hook contract with a newer installed version. The project registrations in
 [`.codex/hooks.json`](../.codex/hooks.json) call the thin
 [wrapper](../.codex/hooks/publish-progress.sh) asynchronously with a five-second
 native timeout. The publisher retains its three-second network budget.
+For automatic workflow links, also install a publisher with
+`codex-hook-context` and review/enable the three synchronous
+[capture handlers](../.codex/hooks/capture-workflow.sh), one for each reporting
+event. Each has a one-second native timeout, performs only bounded private
+local metadata work, and returns `{}`. It freezes the explicit workflow at
+the native event boundary before the turn completes. Delivery remains async;
+concurrently started uploaders wait at most 500 ms for this capture.
 After reviewing the commands, use Codex's `/hooks` interface to trust and
-enable the three new reporting handlers. Changed command definitions require
+enable the reporting handlers and, when using workflow links, capture handlers.
+Changed command definitions require
 review/retrust. This procedure does not edit user trust records or bypass them.
 Keep the existing [validation hook](ai-agents/stop-check-hook.md) and
 [Git-summary hook](ai-agents/git-status-hook.md) enabled; their commands,
@@ -75,7 +83,8 @@ and falls back to lifecycle text for absent/empty replies or opening code fences
 This is a simple excerpt, not an AI summary or secret detector. Keep final
 replies suitable for the private dashboard; abbreviations may shorten excerpts.
 
-Only the fields in the table, `cwd`, `agent_type`, `stop_hook_active` and the
+Only the fields in the table, `cwd`, `agent_type`, `stop_hook_active`,
+`turn_id` (local capture correlation only) and the
 optional final reply are interpreted. Native stdin is capped at 64 KiB;
 oversized/invalid payloads are dropped. Unknown fields, prompts, tool data,
 transcript paths and transcript contents are ignored. Nothing follows those
@@ -139,17 +148,27 @@ The installed publisher also accepts `codex-plan {start|publish} --config PATH`
 with a complete graph on stdin. It derives reporter identity from the existing
 operator `codex` configuration and native `CODEX_THREAD_ID`; the graph does not
 include `reporter`. This requires an explicit `"plan_reporting": true` member
-inside `codex`. It defaults to false and does not affect existing summaries.
+inside `codex`. It defaults to false; without opt-in, existing summary behavior
+is unchanged.
 Install a server supporting #75 and a compatible publisher before enabling it;
 the protocol first shipped in v0.7.0. See the
 [installation order](task-plan-publisher.md#installation-order).
 
+A compatible publisher also supports local `codex-plan select` and
+`codex-plan clear` controls. Confirmed plan starts supply explicit workflow
+context for automatic summaries when the synchronous capture handlers are
+also enabled. Completion retains it until a switch or clear. Delayed uploads
+use their frozen event/turn association; absent captures remain unlinked.
+Subagents remain unlinked without their own selected writer identity.
+See [workflow context](task-plan-publisher.md#automatic-summary-workflow-context).
+
 Follow the [Codex plan workflow](ai-agents/codex-plans.md) for stable identities,
 actual step transitions, revisions, failures and explicit session handoff.
-Existing native hook definitions remain unchanged and need no new trust grant
-for this explicit command. Calls remain subject to the agent's normal shell
-permissions and operator configuration. There is no transcript parser, new
-hook event, app-server listener or background delivery process.
+The explicit plan commands need no hook trust grant and remain subject to
+normal shell permissions and operator configuration. Automatic workflow links
+also require the reviewed capture registrations above; changing tracked hook
+configuration alone does not enable them in an existing session. There is no
+transcript parser, additional event type, app-server listener or delivery daemon.
 
 ### Local plan integration evidence
 
