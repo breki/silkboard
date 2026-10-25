@@ -765,3 +765,21 @@ verify aging, retained states/selection and read-failure warnings. The owner
 copy now explicitly distinguishes reported states from connection status.
 [Recovery evidence](../task-plan-recovery.md) records the scenarios and limits;
 it does not claim #80 combined acceptance or #81 production installation.
+
+## Combined task-plan acceptance — 2026-10-25
+
+After authorizing merge #92, the owner asked to continue milestone 5. Issue
+#80 adds the installed publisher/owner graph/process restart seam and collects
+[acceptance evidence](../task-plan-acceptance.md). The existing native Codex
+0.163.0 probe was repeated with its actual shell invoking the compatible
+installed publisher against a disposable local API. Official
+[app-server](https://learn.chatgpt.com/docs/app-server) and
+[provider configuration](https://learn.chatgpt.com/docs/config-file/config-advanced)
+references describe the transport/setup; the native environment match is a
+measured version-specific observation. Controlled provider responses are
+separate from actual development-session plan reports to the same local server.
+A fresh isolated drill began with data created by the retained signed v0.6.0
+binary, then checked additive plan initialization and legacy-compatible recovery.
+No production data, model account, user transcripts or existing user hook/reporting
+configuration was used or changed. Temporary configuration opted in only for
+the disposable fixture. Release and phone dogfooding remain #81.
