@@ -16,6 +16,7 @@ export interface Message {
   sequence: string;
   received_at: number;
   message: string;
+  description?: string | null;
   workflow_task_id?: string | null;
 }
 export interface AgentIdentity {
@@ -95,6 +96,7 @@ const message = (value: unknown): value is Message =>
   value.received_at >= 0 &&
   value.received_at <= 8640000000000000 &&
   text(value.message, 2000) &&
+  (value.description === undefined || nullable(value.description, 8000)) &&
   (value.workflow_task_id === undefined ||
     value.workflow_task_id === null ||
     taskId(value.workflow_task_id));

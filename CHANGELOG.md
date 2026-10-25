@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a Flat list / Session hierarchy switch to Events, with grouped parent
+  and subagent sessions, independent collapse controls and explicit missing
+  parent labels while preserving filters, pagination and event details.
+
 ## 0.9.0 - 2026-10-25
 
 - Link explicitly associated Events to their existing Workflows, preserving
