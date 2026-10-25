@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.7.1 - 2026-10-25
+
 - Show Events and Task plans directly in the compact header instead of hiding
   those primary links in the hamburger menu.
 
