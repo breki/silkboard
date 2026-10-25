@@ -5,8 +5,6 @@ import { join } from "node:path";
 import { publish } from "./plans-fixture.mjs";
 import { detail } from "../test/plans.js";
 
-test.use({ baseURL: "https://127.0.0.1:38132" });
-
 const appearance = async (page, mode) =>
   expect
     .poll(() =>
@@ -144,48 +142,69 @@ test("blocked preference storage does not prevent current-tab switching", async 
   await appearance(page, "light");
 });
 
-test("both themes cover authenticated events, credentials and status", async ({
-  page,
-  context,
-}, info) => {
-  await page.goto("/");
-  await page.getByLabel("Owner password").fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  for (const theme of ["light", "dark"]) {
-    await choose(page, theme);
-    await appearance(page, theme);
-    await expect(
-      page.getByRole("table", { name: "Events from all projects" }),
-    ).toBeVisible();
-    await contrast(page, ".event-preview", ":root");
-    await contrast(page, ".muted", ":root");
-    await page.getByRole("button", { name: "Navigation menu" }).click();
-    await page
-      .getByRole("button", { name: "Manage publisher credentials" })
-      .click();
-    await expect(page.getByLabel("Installation label")).toBeVisible();
-    await contrast(page, "input", "input");
-    await page.screenshot({
-      path: info.outputPath(`credentials-${theme}.png`),
-      fullPage: true,
-    });
-    await page.getByRole("button", { name: "Navigation menu" }).click();
-    await page.getByRole("link", { name: "Application status" }).click();
-    await expect(page.getByText("Healthy", { exact: true })).toBeVisible();
-    await appearance(page, theme);
-    await page
-      .getByRole("navigation", { name: "Primary navigation" })
-      .getByRole("link", { name: "Events", exact: true })
-      .click();
-    await expect(
-      page.getByRole("table", { name: "Events from all projects" }),
-    ).toBeVisible();
-  }
-  expect((await context.request.get("/api/owner/events")).status()).toBe(200);
-});
-
-test.describe("graph themes", () => {
+test.describe("authenticated themes", () => {
   test.use({ baseURL: "https://127.0.0.1:38128" });
+  test("both themes cover authenticated events, credentials and status", async ({
+    page,
+    context,
+  }, info) => {
+    // Use the isolated authenticated fixture: the feed server already exercises
+    // its five-attempt sign-in budget. Seed this test's event explicitly.
+    const token = readFileSync(
+      join(process.env.SILKBOARD_E2E_DIR, "plans.token"),
+      "utf8",
+    ).trim();
+    const seeded = await context.request.post(
+      "/api/projects/silkboard/progress",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          event_id: "theme-event",
+          hostname: "theme-fixture",
+          tool: "codex",
+          session_id: "theme-events",
+          sequence: 1,
+          message: "Theme fixture progress",
+        },
+      },
+    );
+    expect(seeded.status()).toBe(200);
+    await page.goto("/");
+    await page.getByLabel("Owner password").fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    for (const theme of ["light", "dark"]) {
+      await choose(page, theme);
+      await appearance(page, theme);
+      await expect(
+        page.getByRole("table", { name: "Events from all projects" }),
+      ).toBeVisible();
+      await contrast(page, ".event-preview", ":root");
+      await contrast(page, ".muted", ":root");
+      await page.getByRole("button", { name: "Navigation menu" }).click();
+      await page
+        .getByRole("button", { name: "Manage publisher credentials" })
+        .click();
+      await expect(page.getByLabel("Installation label")).toBeVisible();
+      await contrast(page, "input", "input");
+      await page.screenshot({
+        path: info.outputPath(`credentials-${theme}.png`),
+        fullPage: true,
+      });
+      await page.getByRole("button", { name: "Navigation menu" }).click();
+      await page.getByRole("link", { name: "Application status" }).click();
+      await expect(page.getByText("Healthy", { exact: true })).toBeVisible();
+      await appearance(page, theme);
+      await page
+        .getByRole("navigation", { name: "Primary navigation" })
+        .getByRole("link", { name: "Events", exact: true })
+        .click();
+      await expect(
+        page.getByRole("table", { name: "Events from all projects" }),
+      ).toBeVisible();
+    }
+    expect((await context.request.get("/api/owner/events")).status()).toBe(200);
+  });
+
   test("graph states, arrows, focus and phone dialogs remain readable in both themes", async ({
     page,
   }, info) => {

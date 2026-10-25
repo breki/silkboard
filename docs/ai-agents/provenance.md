@@ -10,6 +10,18 @@ plus explicit source commit and tagged/development identity. The
 distinguish build labels from signature and GitHub-check evidence. This does
 not install a new CLI, publish a release or introduce self-updating clients.
 
+## Events session hierarchy, 2026-10-25
+
+The owner authorized [#109](https://github.com/breki/silkboard/issues/109)
+and selected proposal A, grouped event rows, with a switch back to the
+existing flat chronological list. The implementation groups only visible
+page reports using scoped native identities and explicit primary-parent
+references. Missing parents remain separate; no extra history is fetched.
+Flat list remains the initial view, with no stored preference. Current
+filters and pagination survive view switching. These routine presentation
+decisions preserve publish-only agents and owner-only reads; mockups remain
+illustrative rather than rollout evidence.
+
 ## Explicit event workflow links, 2026-10-25
 
 For [#104](https://github.com/breki/silkboard/issues/104), the owner selected
