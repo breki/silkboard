@@ -5,10 +5,14 @@
     workflows = false,
     onapply,
     onexpire,
+    sessionScoped = false,
+    onclear,
   }: {
     workflows?: boolean;
     onapply: ApplyFilters;
     onexpire: () => void;
+    sessionScoped?: boolean;
+    onclear?: () => void;
   } = $props();
   let project = $state("");
   let agent = $state("");
@@ -47,6 +51,7 @@
     project = agent = from = to = workflowState = error = "";
     validFrom = validTo = undefined;
     onapply({});
+    onclear?.();
   }
 </script>
 
@@ -55,26 +60,28 @@
   aria-label={workflows ? "Workflow filters" : "Event filters"}
   onsubmit={(event) => event.preventDefault()}
 >
-  <FilterPicker
-    view={workflows ? "workflows" : "events"}
-    kind="project"
-    value={project}
-    onselect={(value) => {
-      project = value;
-      apply();
-    }}
-    {onexpire}
-  />
-  <FilterPicker
-    view={workflows ? "workflows" : "events"}
-    kind="agent"
-    value={agent}
-    onselect={(value) => {
-      agent = value;
-      apply();
-    }}
-    {onexpire}
-  />
+  {#if !sessionScoped}
+    <FilterPicker
+      view={workflows ? "workflows" : "events"}
+      kind="project"
+      value={project}
+      onselect={(value) => {
+        project = value;
+        apply();
+      }}
+      {onexpire}
+    />
+    <FilterPicker
+      view={workflows ? "workflows" : "events"}
+      kind="agent"
+      value={agent}
+      onselect={(value) => {
+        agent = value;
+        apply();
+      }}
+      {onexpire}
+    />
+  {/if}
   {#if workflows}
     <fieldset>
       <legend>Workflow status</legend>

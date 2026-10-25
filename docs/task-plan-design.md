@@ -14,8 +14,10 @@ The owner selected a separate **Workflows** page for the existing evolving
 agent-progress graphs. [Issue #98](https://github.com/breki/silkboard/issues/98)
 sets this UI name; technical task/plan contracts retain their names.
 [Issue #96](https://github.com/breki/silkboard/issues/96) puts **Events** and
-**Workflows** directly in the top header row. Events remains the starting
-view and retains the all-project event table. Application status, credential
+**Workflows** directly in the top header row. [Issue #114](https://github.com/breki/silkboard/issues/114)
+adds Agents as home at `/` and moves the all-project Events table to `/events`.
+Workflow links from Agents pin the reported snapshot; see the
+[owner guide](owner-feed.md) for native identity and latest-activity rules. Application status, credential
 management and Sign out remain in the hamburger menu; no task execution controls are added.
 
 Existing owner browser paths:

@@ -1,6 +1,6 @@
 //! Bounded owner-only projections; never return credential or raw payload rows.
 
-use super::{AuthError, OwnerAuth};
+use super::{AuthError, OwnerAuth, agent_identity::AgentIdentity};
 use crate::progress::{ProgressStore, validate_identity, validate_project};
 use axum::{
     Json, Router,
@@ -48,29 +48,6 @@ struct AgentSession {
     #[serde(flatten)]
     identity: AgentIdentity,
     latest: ProgressMessage,
-}
-
-#[derive(Serialize)]
-struct AgentIdentity {
-    hostname: String,
-    tool: String,
-    session_id: String,
-    subagent_id: Option<String>,
-    parent_session_id: Option<String>,
-    session_name: Option<String>,
-}
-
-impl AgentIdentity {
-    fn read(row: &Row<'_>, start: usize) -> rusqlite::Result<Self> {
-        Ok(Self {
-            hostname: row.get(start)?,
-            tool: row.get(start + 1)?,
-            session_id: row.get(start + 2)?,
-            subagent_id: row.get(start + 3)?,
-            parent_session_id: row.get(start + 4)?,
-            session_name: row.get(start + 5)?,
-        })
-    }
 }
 
 impl ProgressMessage {
@@ -138,6 +115,10 @@ struct EventQuery {
     agent: Option<String>,
     from: Option<i64>,
     to: Option<i64>,
+    hostname: Option<String>,
+    tool: Option<String>,
+    session_id: Option<String>,
+    subagent_id: Option<String>,
 }
 impl EventQuery {
     fn validate(&self) -> Result<(), AuthError> {
@@ -145,6 +126,32 @@ impl EventQuery {
             self.project.as_deref(),
             self.agent.as_deref(),
         )?;
+        let fields = [
+            &self.hostname,
+            &self.tool,
+            &self.session_id,
+            &self.subagent_id,
+        ];
+        if fields.iter().any(|field| field.is_some()) {
+            if self.project.is_none()
+                || fields.iter().any(|field| field.is_none())
+            {
+                return Err(AuthError::Invalid);
+            }
+            for value in [&self.hostname, &self.tool, &self.session_id]
+                .into_iter()
+                .flatten()
+            {
+                validate_identity(value).map_err(|_| AuthError::Invalid)?;
+            }
+            if let Some(child) = self
+                .subagent_id
+                .as_deref()
+                .filter(|child| !child.is_empty())
+            {
+                validate_identity(child).map_err(|_| AuthError::Invalid)?;
+            }
+        }
         if self
             .from
             .into_iter()
@@ -209,6 +216,7 @@ fn list_events(
            AND (?5 IS NULL OR instr(lower(s.tool || ' ' || s.hostname),lower(?5))>0)
            AND (?6 IS NULL OR e.received_at>=?6)
            AND (?7 IS NULL OR e.received_at<=?7)
+           AND (?8 IS NULL OR (s.hostname=?8 AND s.tool=?9 AND s.native_id=?10 AND s.child_id=?11))
          ORDER BY e.received_at DESC,e.project DESC,e.event_id DESC
          LIMIT 21",
     )?;
@@ -222,6 +230,10 @@ fn list_events(
                 filters.agent,
                 filters.from,
                 filters.to,
+                filters.hostname,
+                filters.tool,
+                filters.session_id,
+                filters.subagent_id,
             ],
             |row| {
                 Ok(FeedEvent {

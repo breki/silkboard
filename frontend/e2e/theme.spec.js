@@ -170,7 +170,7 @@ test.describe("authenticated themes", () => {
       },
     );
     expect(seeded.status()).toBe(200);
-    await page.goto("/");
+    await page.goto("/events");
     await page.getByLabel("Owner password").fill(password);
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     for (const theme of ["light", "dark"]) {

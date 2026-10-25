@@ -15,18 +15,48 @@ production rollout of that navigation change is separate from implementation.
 
 ## Using the page
 
-Open the configured private HTTPS site and enter the owner password. The
-starting view is one table of individual events across all projects, with
-Time, Project, Agent (tool and host), and a short Message preview. Long labels
-and previews stay compact; full values are available in the expanded details.
+Open the configured private HTTPS site and enter the owner password. Agents
+is the home page at `/`. Events is at `/events`; Workflows remains at `/plans`,
+and existing workflow snapshot links remain valid.
+
+Agents shows one row per project, host, tool, native session and subagent.
+Readable names are labels and never merge rows. Each row shows its project,
+latest activity and browser-local receipt date/time including the year. Expand
+Session identity to inspect native, child and parent identifiers.
+
+Latest activity is selected across all stored events and workflow snapshots
+before pagination, using server receipt time rather than session counters.
+Historical workflow writers keep their own activity after a handoff. A workflow
+row opens the reported snapshot, matching its displayed status. A later-received
+report is the newest observation even if the work happened earlier. Equal
+receipt times prefer workflows, then descending item key and workflow sequence;
+agent rows use descending full identity to break receipt-time ties.
+
+An event row opens Events with its exact full identity in the URL. The visible
+Exact agent session scope distinguishes the primary session from each child,
+remains through paging and view switching, and survives reload and browser
+Back/Forward. Time filters still apply immediately. Clear session filter
+removes that scope and restores Project/Agent selection. Incomplete identity
+links show an error and fetch no event data until cleared.
+
+Agents pages contain up to 20 identities with Older agents and Latest agents.
+New activity can move an identity toward the latest page while paging; return
+to Latest agents to see it. Visible pages poll every ten seconds, pause while
+hidden, retain stale rows with a retry warning on failure, and clear private
+content on login expiry. Publisher tokens cannot read this owner-only API.
+
+Events shows one table of individual events across all projects, with Time,
+Project, Agent (tool and host), and a short Message preview. Long labels and
+previews stay compact; full values are available in expanded details.
 No project selection is required.
 
 The compact header has a top-right Navigation menu. Open it by touch or with
 Enter/Space; Tab reaches its links and owner actions. Escape closes it and
 returns focus to the menu button. Clicking or moving focus outside also closes
-it. Events links to the starting view. Application status opens `/status`,
+it. Agents, Events and Workflows are always visible primary links.
+Application status opens `/status`,
 which shows public health, version, release tag and commit, with navigation
-back to Events. It supports direct links, reloads and browser history.
+back to the primary pages. It supports direct links, reloads and browser history.
 
 When signed in, the menu also contains Manage publisher credentials and Sign
 out. The credential manager opens inline on the current page; Close credential
@@ -112,6 +142,7 @@ owner cookies cannot publish progress.
 
 | GET path | Optional cursor | Items |
 | --- | --- | --- |
+| `/api/owner/agents` | `before=CURSOR` | Latest activity per native identity |
 | `/api/owner/events` | `before=CURSOR` | Individual events across projects |
 | `/api/owner/projects` | `after=PROJECT` | `{id}` |
 | `/api/owner/projects/PROJECT/sessions` | `before=ID` | Sessions |
@@ -124,6 +155,19 @@ precision. Malformed cursors/unknown query parameters return 400. Missing
 projects or sessions, including a session from another project, return 404.
 Existing empty projects return empty pages. Invalid/expired owner sessions
 return 401; storage/admission failures return 503.
+
+An Agents item contains `project`, `hostname`, `tool`, `session_id`, nullable
+`subagent_id`, `parent_session_id`, `session_name`, numeric `received_at` and
+`latest`. An event activity has `kind: "event"`, `event_id` and `message`;
+a workflow activity has `kind: "workflow"`, `task_id`, string `sequence`,
+`title` and reported `state`. Return its opaque JSON cursor unchanged,
+URL-encoded as `before`; it contains receipt time and full native identity.
+
+Exact Events scope requires `project`, `hostname`, `tool`, `session_id` and
+`subagent_id` together. Use an explicit empty `subagent_id=` for a primary
+session, or the child's native identifier for a subagent. Incomplete sets
+return 400. Existing optional `agent` text and `from`/`to` receipt-millisecond
+bounds remain supported; the UI uses time bounds with exact scope.
 
 The global event cursor is an opaque JSON string, URL-encoded as a query value.
 It contains receipt time, project and event ID and must be returned unchanged.

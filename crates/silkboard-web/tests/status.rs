@@ -74,6 +74,11 @@ async fn serves_built_assets_without_spa_fallback_or_path_escape() {
         ("/status", StatusCode::OK, "<h1>Silkboard</h1>"),
         ("/plans", StatusCode::OK, "<h1>Silkboard</h1>"),
         (
+            "/events?project=alpha&hostname=dev&tool=codex&session_id=native&subagent_id=",
+            StatusCode::OK,
+            "<h1>Silkboard</h1>",
+        ),
+        (
             "/plans/silkboard/11111111-1111-4111-8111-111111111111?sequence=1",
             StatusCode::OK,
             "<h1>Silkboard</h1>",

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
+  import Agents from "./Agents.svelte";
   import EventFeed from "./EventFeed.svelte";
   import TaskPlans from "./TaskPlans.svelte";
   import PublisherTokens from "./PublisherTokens.svelte";
@@ -10,7 +11,12 @@
   let {
     statusPage = false,
     plansPage = false,
-  }: { statusPage?: boolean; plansPage?: boolean } = $props();
+    eventsPage = false,
+  }: {
+    statusPage?: boolean;
+    plansPage?: boolean;
+    eventsPage?: boolean;
+  } = $props();
   let managing = $state(false);
 
   type Phase =
@@ -133,8 +139,10 @@
     {#if phase === "signed-in"}
       {#if plansPage}
         <TaskPlans onexpire={expired} />
-      {:else}
+      {:else if eventsPage}
         <EventFeed onexpire={expired} />
+      {:else}
+        <Agents onexpire={expired} />
       {/if}
     {:else if phase === "signed-out"}
       <div class="panel login">

@@ -16,12 +16,15 @@ test("primary links are visible without opening the owner menu", async () => {
   expect(screen.getByRole("heading", { name: "Silkboard" })).toBeTruthy();
   expect(menu().getAttribute("aria-expanded")).toBe("false");
   expect(drawer()).toBeNull();
+  expect(
+    screen.getByRole("link", { name: "Agents" }).getAttribute("href"),
+  ).toBe("/");
   const primary = screen.getByRole("navigation", {
     name: "Primary navigation",
   });
   expect(
     within(primary).getByRole("link", { name: "Events" }).getAttribute("href"),
-  ).toBe("/");
+  ).toBe("/events");
   expect(
     within(primary)
       .getByRole("link", { name: "Workflows" })
@@ -35,7 +38,7 @@ test("primary links are visible without opening the owner menu", async () => {
   ).toBeNull();
   expect(
     screen.getByRole("link", { name: "Events" }).getAttribute("href"),
-  ).toBe("/");
+  ).toBe("/events");
   expect(
     screen
       .getByRole("link", { name: "Application status" })

@@ -4,6 +4,10 @@ export interface ListFilters {
   from?: number;
   to?: number;
   state?: string;
+  hostname?: string;
+  tool?: string;
+  session_id?: string;
+  subagent_id?: string;
 }
 
 export function filterQuery(
@@ -11,7 +15,10 @@ export function filterQuery(
   filters: ListFilters,
 ): string {
   const entries = Object.entries({ before, ...filters }).filter(
-    ([, value]) => value !== null && value !== undefined && value !== "",
+    ([key, value]) =>
+      value !== null &&
+      value !== undefined &&
+      (value !== "" || key === "subagent_id"),
   );
   return entries.length
     ? `?${entries.map(([key, value]) => `${key}=${encodeURIComponent(String(value))}`).join("&")}`
