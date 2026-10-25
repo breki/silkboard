@@ -5,7 +5,16 @@ use std::process::{Command, ExitCode};
 
 fn main() -> ExitCode {
     let args: Vec<_> = std::env::args().skip(1).collect();
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let root = match std::env::current_dir()
+        .map_err(|error| error.to_string())
+        .and_then(|cwd| xtask::workspace::root(&cwd))
+    {
+        Ok(root) => root,
+        Err(error) => {
+            eprintln!("{error}");
+            return ExitCode::FAILURE;
+        }
+    };
     let mut runner = |program: &str, args: &[&str], cwd: &Path| {
         let executable = if program == "cargo" {
             std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into())
@@ -55,7 +64,7 @@ fn main() -> ExitCode {
         .filter(|value| !value.is_empty());
     match xtask::dispatch_with_publication_cache(
         &args,
-        root,
+        &root,
         &mut runner,
         dates.as_deref().map(Path::new),
     ) {

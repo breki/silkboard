@@ -19,7 +19,7 @@
     "dupes": "jscpd src",
     "test:browser": "playwright test",
     "test:handoff": "prettier --check ../deploy/owner-handoff && node --test --experimental-test-coverage --test-coverage-include='../deploy/owner-handoff/*.mjs' --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=85 ../deploy/owner-handoff/tests/*.test.mjs",
-    "test:bombyx": "prettier --check ../.bombyx && node --test --experimental-test-coverage --test-coverage-include='../.bombyx/*.mjs' --test-coverage-exclude='../.bombyx/*-cli.mjs' --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=85 ../.bombyx/tests/*.test.mjs"
+    "test:bombyx": "prettier --check ../.bombyx ../dev/*.mjs && node --test --experimental-test-coverage --test-coverage-include='../.bombyx/*.mjs' --test-coverage-exclude='../.bombyx/*-cli.mjs' --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=85 ../.bombyx/tests/*.test.mjs ../dev/*.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

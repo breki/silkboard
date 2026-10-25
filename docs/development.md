@@ -79,6 +79,13 @@ signatures, clean worktree, or GitHub checks. A future release builder/updater
 must establish those facts and supply the exact approved identity before
 building. This command alone does not produce a deployment-eligible release.
 
+## Local build reuse
+
+For repeated builds across trusted development worktrees, use the opt-in
+[local Cargo wrapper](local-build-reuse.md). It separates normal, coverage and
+ARM64 output and serializes complete commands. Ordinary Cargo remains
+worktree-local unless you configure it otherwise.
+
 ## Checks
 
 ```sh

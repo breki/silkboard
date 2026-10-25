@@ -36,6 +36,9 @@ reports, prompts, and tracked files.
 When sharing Cargo output across worktrees, verify that repository helpers
 operate on the current worktree. A reused executable can retain another
 worktree's build-time root even when invoked from the correct directory.
+Cargo can also reuse another worktree's same-version workspace binaries.
+Follow the [local reuse procedure](../local-build-reuse.md): serialize commands
+and clean workspace artifacts on workspace-path switches, retaining dependencies.
 
 Validate invariants at the boundary that owns the value. Check sibling fields
 and other instances of a bug pattern. After removing a capability, search its

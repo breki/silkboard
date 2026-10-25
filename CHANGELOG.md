@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add opt-in local Cargo build reuse across worktrees with isolated coverage
+  and ARM64 output, whole-command locking and runtime xtask workspace selection.
+
 - Add Light, Dark and System themes with browser-local preferences and shared
   colors for reports, graphs, dialogs and account controls.
 
