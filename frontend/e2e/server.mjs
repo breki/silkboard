@@ -14,6 +14,8 @@ import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { password, hostile, markdownReport } from "./fixture.mjs";
 
+import { seedPlans } from "./plans-fixture.mjs";
+
 const dir = process.env.SILKBOARD_E2E_DIR;
 if (
   !dir ||
@@ -25,7 +27,7 @@ if (
 )
   throw new Error("Expected a private browser-test directory");
 // Refuse an occupied backend port before starting or seeding any service.
-for (const port of [38125, 38126, 38127])
+for (const port of [38125, 38126, 38127, 38128, 38129])
   await new Promise((done, reject) => {
     const probe = createServer();
     probe.once("error", reject);
@@ -118,9 +120,26 @@ writeFileSync(
   JSON.stringify({ binary, database: env.SILKBOARD_DATABASE }),
   { mode: 0o600 },
 );
+// Isolate plan browser sessions from feed/setup login and revocation tests.
+const plansEnv = {
+  ...env,
+  SILKBOARD_DATABASE: join(dir, "plans.sqlite"),
+  SILKBOARD_OWNER_ORIGIN: "https://127.0.0.1:38128",
+  SILKBOARD_LISTEN: "127.0.0.1:38129",
+};
+execFileSync(binary, ["owner", "set-password"], {
+  env: plansEnv,
+  input: password,
+});
+execFileSync(
+  binary,
+  ["publisher", "issue", "silkboard", "plan-browser", join(dir, "plans.token")],
+  { env: plansEnv },
+);
+const plansApp = spawn(binary, [], { env: plansEnv, stdio: "inherit" });
 const app = spawn(binary, [], { env, stdio: "inherit" });
 const setupApp = spawn(binary, [], { env: setupEnv, stdio: "inherit" });
-const apps = [app, setupApp],
+const apps = [app, setupApp, plansApp],
   proxies = [];
 let stopping = false;
 function stop(code) {
@@ -152,7 +171,7 @@ for (const child of apps)
     if (!stopping) stop(1);
   });
 try {
-  for (const backendPort of [38125, 38127]) {
+  for (const backendPort of [38125, 38127, 38129]) {
     let ready = false;
     for (let attempt = 0; attempt < 100; attempt++) {
       try {
@@ -209,6 +228,7 @@ try {
         throw new Error(`Fixture publish failed: ${response.status}`);
     }
   }
+  await seedPlans(readFileSync(join(dir, "plans.token"), "utf8").trim());
   const otherToken = readFileSync(join(dir, "other.token"), "utf8").trim();
   const other = await fetch(
     "http://127.0.0.1:38125/api/projects/bombyx/progress",
@@ -230,6 +250,7 @@ try {
   );
   if (!other.ok) throw new Error("Other-project fixture publish failed");
   for (const [httpsPort, backendPort] of [
+    [38128, 38129],
     [38126, 38127],
     [38124, 38125],
   ]) {

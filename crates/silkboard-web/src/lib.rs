@@ -64,6 +64,14 @@ pub fn create_router(frontend_path: &Path) -> Router {
             "/status",
             ServeFile::new(frontend_path.join("index.html")),
         )
+        .route_service(
+            "/plans",
+            ServeFile::new(frontend_path.join("index.html")),
+        )
+        .route_service(
+            "/plans/{project}/{task}",
+            ServeFile::new(frontend_path.join("index.html")),
+        )
         .fallback_service(ServeDir::new(frontend_path))
 }
 

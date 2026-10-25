@@ -16,6 +16,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   vi.useRealTimers();
+  window.history.replaceState(null, "", "/");
 });
 async function submit() {
   const input = await screen.findByLabelText("Owner password");
@@ -277,60 +278,68 @@ test("credential expiry on status clears owner actions and offers sign-in naviga
   expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
 });
 
-test("idle status session revocation removes a disclosed token without another action", async () => {
-  vi.useFakeTimers();
-  let revoked = false;
-  const token = "b".repeat(64);
-  const fetch = vi.fn(
-    routes({
-      "/api/owner/session": () =>
-        response(
-          { authenticated: true, csrf_token: csrf },
-          revoked ? 401 : 200,
-        ),
-      "/api/owner/projects/silkboard/publishers": (options) =>
-        options.method === "POST"
-          ? response({ token }, 201)
-          : response({
-              items: [{ label: "dev", revoked: false }],
-              next_cursor: null,
-            }),
-    }),
-  );
-  vi.stubGlobal("fetch", fetch);
-  render(App, { statusPage: true });
-  await vi.advanceTimersByTimeAsync(0);
-  await fireEvent.click(
-    screen.getByRole("button", { name: "Navigation menu" }),
-  );
-  await fireEvent.click(
-    screen.getByRole("button", { name: "Manage publisher credentials" }),
-  );
-  await fireEvent.input(screen.getByLabelText("Credential project"), {
-    target: { value: "silkboard" },
-  });
-  await fireEvent.input(screen.getByLabelText("Installation label"), {
-    target: { value: "dev" },
-  });
-  await fireEvent.submit(
-    screen.getByLabelText("Installation label").closest("form"),
-  );
-  await vi.advanceTimersByTimeAsync(0);
-  expect(screen.getByLabelText("New publisher token").value).toBe(token);
-  revoked = true;
-  await vi.advanceTimersByTimeAsync(10000);
-  expect(screen.queryByLabelText("New publisher token")).toBeNull();
-  expect(screen.queryByLabelText("Credential project")).toBeNull();
-  expect(screen.getByRole("alert").textContent).toContain("session expired");
-  expect(screen.getByText("Healthy")).toBeTruthy();
-  await fireEvent.click(
-    screen.getByRole("button", { name: "Navigation menu" }),
-  );
-  expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
-  expect(fetch.mock.calls.some(([path]) => path === "/api/owner/events")).toBe(
-    false,
-  );
-});
+test.each(["status", "invalid plan"])(
+  "idle %s session revocation removes a disclosed token without another action",
+  async (view) => {
+    vi.useFakeTimers();
+    let revoked = false;
+    const token = "b".repeat(64);
+    const fetch = vi.fn(
+      routes({
+        "/api/owner/session": () =>
+          response(
+            { authenticated: true, csrf_token: csrf },
+            revoked ? 401 : 200,
+          ),
+        "/api/owner/projects/silkboard/publishers": (options) =>
+          options.method === "POST"
+            ? response({ token }, 201)
+            : response({
+                items: [{ label: "dev", revoked: false }],
+                next_cursor: null,
+              }),
+      }),
+    );
+    vi.stubGlobal("fetch", fetch);
+    if (view === "invalid plan")
+      window.history.replaceState(null, "", "/plans?bad=1");
+    render(App, {
+      statusPage: view === "status",
+      plansPage: view === "invalid plan",
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Navigation menu" }),
+    );
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Manage publisher credentials" }),
+    );
+    await fireEvent.input(screen.getByLabelText("Credential project"), {
+      target: { value: "silkboard" },
+    });
+    await fireEvent.input(screen.getByLabelText("Installation label"), {
+      target: { value: "dev" },
+    });
+    await fireEvent.submit(
+      screen.getByLabelText("Installation label").closest("form"),
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(screen.getByLabelText("New publisher token").value).toBe(token);
+    revoked = true;
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(screen.queryByLabelText("New publisher token")).toBeNull();
+    expect(screen.queryByLabelText("Credential project")).toBeNull();
+    expect(screen.getByRole("alert").textContent).toContain("session expired");
+    if (view === "status") expect(screen.getByText("Healthy")).toBeTruthy();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Navigation menu" }),
+    );
+    expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+    expect(
+      fetch.mock.calls.some(([path]) => path === "/api/owner/events"),
+    ).toBe(false);
+  },
+);
 
 test("status session checks pause while hidden, tolerate outages and cancel on teardown", async () => {
   vi.useFakeTimers();
@@ -369,4 +378,50 @@ test("status session checks pause while hidden, tolerate outages and cancel on t
   expect(pendingSignal.aborted).toBe(false);
   view.unmount();
   expect(pendingSignal.aborted).toBe(true);
+});
+
+test("plan deep links survive login and private plan data clears on logout", async () => {
+  const { detail, task } = await import("../test/plans");
+  const value = detail();
+  window.history.replaceState(null, "", `/plans/silkboard/${task}?sequence=1`);
+  let signed = false;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      routes({
+        "/api/owner/session": () =>
+          response(
+            signed ? { authenticated: true, csrf_token: csrf } : {},
+            signed ? 200 : 401,
+          ),
+        "/api/auth/login": () => {
+          signed = true;
+          return response(null, 204);
+        },
+        "/api/owner/logout": () => {
+          signed = false;
+          return response(null, 204);
+        },
+        [`/api/owner/projects/silkboard/plans/${task}`]: response(value),
+        [`/api/owner/projects/silkboard/plans/${task}?sequence=1`]:
+          response(value),
+      }),
+    ),
+  );
+  render(App, { plansPage: true });
+  await submit();
+  await screen.findByRole("region", { name: "Task prerequisite graph" });
+  expect(window.location.search).toBe("?sequence=1");
+  expect(
+    screen.queryByRole("table", { name: "Events from all projects" }),
+  ).toBeNull();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Sign out", exact: true }),
+  );
+  await screen.findByLabelText("Owner password");
+  expect(screen.queryByText(value.snapshot.title)).toBeNull();
+  window.history.replaceState(null, "", "/");
 });

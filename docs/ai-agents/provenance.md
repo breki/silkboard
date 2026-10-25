@@ -737,3 +737,18 @@ remain authoritative. Root writers hand off explicitly; child/Stop observations
 never complete the task. Local API/CLI fixtures verify states, revisions,
 reopening and replacement writers. Production installation/phone acceptance
 remain separate milestone work.
+
+## Owner task-plan graph — 2026-10-25
+
+The owner resumed milestone 5 after #77. Issue #78 implements the accepted
+[presentation design](../task-plan-design.md), including the owner's earlier
+choices of a separate Task plans page, evolving definitions, multiple active
+steps and retained received history. Native HTML buttons over bounded SVG
+prerequisite arrows avoid an additional graph package. This is a routine
+implementation choice, explained when the owner asked about dependencies.
+The existing safe Markdown renderer and authenticated same-origin owner APIs
+remain authoritative. The UI adds no reporting, execution or VM privileges.
+Local component tests and disposable real-API browser fixtures cover snapshots,
+reopening, revision selection, phone focus and the contract's maximum graph.
+These fixtures are not production reports, installation or phone acceptance;
+combined milestone verification and authorized rollout remain separate work.

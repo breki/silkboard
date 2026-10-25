@@ -66,3 +66,11 @@ test("setup header has no navigation", () => {
   render(Header, { showMenu: false });
   expect(screen.queryByRole("button")).toBeNull();
 });
+
+test("task plans have a separate menu destination", async () => {
+  render(Header);
+  await fireEvent.click(menu());
+  expect(
+    screen.getByRole("link", { name: "Task plans" }).getAttribute("href"),
+  ).toBe("/plans");
+});

@@ -2,11 +2,15 @@
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
   import EventFeed from "./EventFeed.svelte";
+  import TaskPlans from "./TaskPlans.svelte";
   import PublisherTokens from "./PublisherTokens.svelte";
   import Header from "./Header.svelte";
   import StatusCard from "./StatusCard.svelte";
   import { poll } from "./poll";
-  let { statusPage = false }: { statusPage?: boolean } = $props();
+  let {
+    statusPage = false,
+    plansPage = false,
+  }: { statusPage?: boolean; plansPage?: boolean } = $props();
   let managing = $state(false);
 
   type Phase =
@@ -24,7 +28,7 @@
   let alive = true;
   let active = new AbortController();
   $effect(() => {
-    if (!statusPage || phase !== "signed-in") return;
+    if ((!statusPage && !plansPage) || phase !== "signed-in") return;
     return poll(async (signal) => {
       try {
         await ownerSession(signal);
@@ -127,7 +131,11 @@
 {#if !statusPage || phase === "logout-failed"}
   <section class="feed" aria-label="Progress feed">
     {#if phase === "signed-in"}
-      <EventFeed onexpire={expired} />
+      {#if plansPage}
+        <TaskPlans onexpire={expired} />
+      {:else}
+        <EventFeed onexpire={expired} />
+      {/if}
     {:else if phase === "signed-out"}
       <div class="panel login">
         <h2>Sign in to your progress feed</h2>

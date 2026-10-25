@@ -1,8 +1,10 @@
 # Task-plan presentation design
 
-Status: milestone 5 presentation design for
+Status: accepted milestone 5 presentation design for
 [issue #74](https://github.com/breki/silkboard/issues/74), building on the
-[reporting contract](task-plan-contract.md). This is not deployed UI.
+[reporting contract](task-plan-contract.md). Issue #78 implements the owner
+view against the private APIs; release and production acceptance remain
+separate. This document defines the presentation requirements.
 The [interactive reference](mockups/task-plan.html) opens locally in a browser
 without dependencies or a server. Its simulated statuses are example data.
 

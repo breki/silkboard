@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add owner-only task-plan graphs with directed prerequisites, step details,
+  phone dialogs, received history and pinned revisions alongside the event feed.
+
 - Fix intermittent publisher CI failures when a rejected CLI closes stdin
   before its test helper writes the input.
 
