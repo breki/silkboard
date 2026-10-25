@@ -4,7 +4,8 @@ Locally verified for [#79](https://github.com/breki/silkboard/issues/79), using
 the installed publisher, actual Axum publisher/owner routes and private test
 storage. The [wire contract](task-plan-contract.md) supplies the ordering rules;
 this work adds composition checks, not a new reconciliation service.
-Combined milestone acceptance and production dogfooding remain #80 and #81.
+[Combined local acceptance](task-plan-acceptance.md) is recorded in #80;
+production dogfooding remains #81.
 
 ## How recovery works
 

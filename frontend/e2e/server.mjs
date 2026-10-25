@@ -41,11 +41,20 @@ const env = {
   SILKBOARD_LISTEN: "127.0.0.1:38125",
   SILKBOARD_FRONTEND: join(repo, "frontend/dist"),
 };
-// Use the same profile as the fresh normal test binary. Cargo still checks
-// all source/build inputs; standalone browser runs build it when necessary.
+// Use the same profile as the fresh normal test binaries. Build both tools
+// before browser hooks start; the combined acceptance fixture uses the CLI.
 execFileSync(
   "cargo",
-  ["build", "--locked", "--profile", "test", "-p", "silkboard-web"],
+  [
+    "build",
+    "--locked",
+    "--profile",
+    "test",
+    "-p",
+    "silkboard-web",
+    "-p",
+    "silkboard-publish",
+  ],
   {
     cwd: repo,
     stdio: "inherit",

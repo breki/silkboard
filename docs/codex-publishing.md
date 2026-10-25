@@ -171,4 +171,6 @@ Compiled CLI/API tests additionally exercise blocked/done/reopened steps,
 revised definitions, multiple active steps, explicit session handoff and
 rejection of the old writer. A Stop observation leaves the task snapshot
 unchanged. The [owner graph](task-plan-design.md) is locally implemented in #78;
-combined freshness/recovery checks and production rollout remain #79–#81.
+[recovery evidence](task-plan-recovery.md) covers #79 and
+[combined acceptance](task-plan-acceptance.md) covers #80. Production rollout
+remains #81.

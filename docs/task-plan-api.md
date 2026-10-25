@@ -5,7 +5,8 @@ verification only. This does not install a production migration. The installed
 publisher has [explicit plan commands](task-plan-publisher.md) in #76,
 the explicit Codex adapter is implemented in #77, and the owner graph in #78.
 Local [recovery and freshness evidence](task-plan-recovery.md) covers #79;
-combined verification and production rollout remain #80–#81.
+[combined local acceptance](task-plan-acceptance.md) covers #80 and production
+rollout remains #81.
 The [wire contract](task-plan-contract.md)
 defines fields, graph validation, ordering and writer handoff.
 
