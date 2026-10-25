@@ -35,7 +35,7 @@ test("lazy history pages and revision selection remain explicit bounded reads", 
   await fireEvent.click(button("Received history and revisions"));
   await settle();
   expect(
-    screen.getByRole("list", { name: "Received plan reports" }),
+    screen.getByRole("list", { name: "Received workflow reports" }),
   ).toBeTruthy();
   await fireEvent.click(screen.getByRole("link"));
   expect(onopen).toHaveBeenCalledOnce();
@@ -177,13 +177,13 @@ test("clicking an already selected history tab keeps its received results visibl
   await fireEvent.click(button("Received reports"));
   await settle();
   expect(
-    screen.getByRole("list", { name: "Received plan reports" }),
+    screen.getByRole("list", { name: "Received workflow reports" }),
   ).toBeTruthy();
   await fireEvent.click(button("Definition revisions"));
   await settle();
   await fireEvent.click(button("Definition revisions"));
   await settle();
   expect(
-    screen.getByRole("list", { name: "Received plan revisions" }),
+    screen.getByRole("list", { name: "Received workflow revisions" }),
   ).toBeTruthy();
 });

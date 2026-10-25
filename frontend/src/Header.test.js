@@ -24,14 +24,14 @@ test("primary links are visible without opening the owner menu", async () => {
   ).toBe("/");
   expect(
     within(primary)
-      .getByRole("link", { name: "Task plans" })
+      .getByRole("link", { name: "Workflows" })
       .getAttribute("href"),
   ).toBe("/plans");
   await fireEvent.click(menu());
   expect(menu().getAttribute("aria-expanded")).toBe("true");
   expect(within(drawer()).queryByRole("link", { name: "Events" })).toBeNull();
   expect(
-    within(drawer()).queryByRole("link", { name: "Task plans" }),
+    within(drawer()).queryByRole("link", { name: "Workflows" }),
   ).toBeNull();
   expect(
     screen.getByRole("link", { name: "Events" }).getAttribute("href"),

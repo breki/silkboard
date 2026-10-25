@@ -113,7 +113,7 @@
   });
 </script>
 
-<div class="plan-toolbar" aria-label="Plan presentation">
+<div class="plan-toolbar" aria-label="Workflow presentation">
   <button
     aria-pressed={presentation === "graph"}
     onclick={() => (presentation = "graph")}>Graph</button

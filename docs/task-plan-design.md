@@ -1,4 +1,4 @@
-# Task-plan presentation design
+# Workflow presentation design
 
 Status: accepted milestone 5 presentation design for
 [issue #74](https://github.com/breki/silkboard/issues/74), building on the
@@ -10,32 +10,35 @@ without dependencies or a server. Its simulated statuses are example data.
 
 ## Entry points and navigation
 
-The owner selected a separate **Task plans** page. The later
-[issue #96](https://github.com/breki/silkboard/issues/96) moves **Events** and
-**Task plans** into direct links in the top header row, replacing their
-hamburger-menu entries. Events remains the starting view and retains the
-all-project event table. Application status, credential management and Sign
-out remain in the hamburger menu; no task execution controls are added.
+The owner selected a separate **Workflows** page for the existing evolving
+agent-progress graphs. [Issue #98](https://github.com/breki/silkboard/issues/98)
+sets this UI name; technical task/plan contracts retain their names.
+[Issue #96](https://github.com/breki/silkboard/issues/96) puts **Events** and
+**Workflows** directly in the top header row. Events remains the starting
+view and retains the all-project event table. Application status, credential
+management and Sign out remain in the hamburger menu; no task execution controls are added.
 
-Proposed owner browser paths:
+Existing owner browser paths:
 
 | View | Path |
 | --- | --- |
-| All-project task summaries | `/plans` |
-| Current task | `/plans/PROJECT/TASK_ID` |
+| All-project workflow summaries | `/plans` |
+| Current workflow | `/plans/PROJECT/TASK_ID` |
 | Exact historical snapshot | `/plans/PROJECT/TASK_ID?sequence=SEQUENCE` |
 
-These are browser paths, not publisher API routes. Use the contract's project,
-UUID and decimal-string rules. Deep links and reloads must reach the normal
+The UI terminology change keeps these existing browser paths and all publisher
+commands, API fields and stored/received data compatible. It introduces no
+fixed templates or task execution. These are browser paths, not publisher API
+routes. Use the contract's project, UUID and decimal-string rules. Deep links and reloads must reach the normal
 application shell. Login returns to the requested same-origin plan view;
 expiry/logout clears task and history data and shows login. Never accept an
 arbitrary return URL or place credentials/plan text in links.
 
-Task plans opens a compact table across projects, most recently accepted report
-first. Show Last report, Project, Task and Reported state; keep step counts and
-active/blocked counts with the state rather than adding many columns. The task
-title is the accessible link to its current graph. Reporter information belongs
-in task details. Preserve the existing bounded pagination pattern, and restore
+The Workflows page shows a compact table across projects, most recently
+accepted report first. Show Last report, Project, Workflow and Reported state;
+keep step counts and active/blocked counts with the state. The workflow title
+is the accessible link to its current graph. Reporter information belongs in
+workflow details. Preserve the existing bounded pagination pattern, and restore
 the earlier list position when returning with browser Back.
 
 Use local `HH:mm` above `MM-DD` in the summary table, and full local
@@ -46,7 +49,7 @@ If present, show the validated GitHub issue as a link, never fetched content.
 ## Task heading and progress summary
 
 Keep the compact Silkboard header. The task view has breadcrumbs back to
-Task plans, project and task title, and an optional description/issue link.
+Workflows, project and task title, and an optional description/issue link.
 
 The summary shows:
 
@@ -121,13 +124,13 @@ validated at ingestion; the browser does not silently rewrite reported states.
 A plan-definition revision differs from a status report. The revision chooser
 shows distinct received plan revisions with their receipt context. Selecting
 an earlier revision resolves to its latest accepted snapshot and pins the
-historical view to that exact sequence. The explicit **Current plan** choice
+historical view to that exact sequence. The explicit **Current workflow** choice
 returns to live updates. Received-history entries can also open another
 snapshot within the same definition revision, including before a reopening.
 
 Historical views have a persistent **Earlier snapshot** label and receipt time.
 Their states come from that snapshot, not today's graph. They remain pinned
-when new reports arrive; offer a clear return to Current plan. A newer-report
+when new reports arrive; offer a clear return to Current workflow. A newer-report
 notice must not silently replace the historical view.
 
 Show added/removed steps and changed prerequisites when the adjacent received
@@ -163,12 +166,12 @@ Respect reduced motion and never steal focus when a report arrives.
 
 ## Loading, errors and freshness
 
-- A loading view identifies that task plans are being fetched. Existing content
+- A loading view identifies that workflows are being fetched. Existing content
   stays visible during refresh; do not reset selection merely to show loading.
-- An empty list explains that no task-plan reports have arrived yet. It does
+- An empty list explains that no workflow reports have arrived yet. It does
   not create tasks or invite publishers to fetch dashboard instructions.
 - Authentication failure clears private data and asks the owner to log in.
-  Distinguish unavailable plan support from an unknown/removed task or snapshot.
+  Distinguish unavailable workflow support from an unknown/removed task or snapshot.
 - A refresh failure retains the last received content, with a clear warning
   and Retry action. Do not relabel that content as freshly received.
 - Always display the last accepted report time and a readable age. Silence

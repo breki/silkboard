@@ -32,9 +32,9 @@ test("owner login uses a secure cookie and logout revokes event access", async (
     "silkboard-owner",
   );
   const primary = page.getByRole("navigation", { name: "Primary navigation" });
-  await primary.getByRole("link", { name: "Task plans", exact: true }).click();
+  await primary.getByRole("link", { name: "Workflows", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Task plans", exact: true }),
+    page.getByRole("heading", { name: "Workflows", exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Owner password")).toHaveCount(0);
   await primary.getByRole("link", { name: "Events", exact: true }).click();

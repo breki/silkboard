@@ -23,7 +23,10 @@ test("lists plans and opens a stable directed graph with selected step details",
     ),
   );
   render(TaskPlans, { onexpire: vi.fn() });
-  await screen.findByRole("table", { name: "Task plans from all projects" });
+  await screen.findByRole("table", { name: "Workflows from all projects" });
+  expect(
+    screen.getByRole("columnheader", { name: "Workflow", exact: true }),
+  ).toBeTruthy();
   await fireEvent.click(
     screen.getByRole("link", { name: value.snapshot.title }),
   );
@@ -50,7 +53,7 @@ test("shows explicit empty and unavailable states without fabricating tasks", as
   );
   render(TaskPlans, { onexpire: vi.fn() });
   expect(
-    await screen.findByText("No task-plan reports have arrived yet."),
+    await screen.findByText("No workflow reports have arrived yet."),
   ).toBeTruthy();
 });
 
@@ -71,10 +74,10 @@ test("invalid links recover locally and Back restores the previous list position
   );
   render(TaskPlans, { onexpire: vi.fn() });
   expect(
-    screen.getByRole("heading", { name: "Invalid task-plan link" }),
+    screen.getByRole("heading", { name: "Invalid workflow link" }),
   ).toBeTruthy();
   await fireEvent.click(
-    screen.getByRole("link", { name: "Return to Task plans" }),
+    screen.getByRole("link", { name: "Return to Workflows" }),
   );
   await screen.findByRole("table");
   vi.spyOn(window, "scrollY", "get").mockReturnValue(123);
@@ -86,7 +89,7 @@ test("invalid links recover locally and Back restores the previous list position
   await fireEvent.click(
     screen.getByRole("button", { name: "Received history and revisions" }),
   );
-  await screen.findByRole("list", { name: "Received plan reports" });
+  await screen.findByRole("list", { name: "Received workflow reports" });
   await fireEvent.click(
     screen.getByRole("button", { name: "Definition revisions", exact: true }),
   );
@@ -96,7 +99,7 @@ test("invalid links recover locally and Back restores the previous list position
   );
   expect(window.location.search).toBe("?sequence=1");
   await fireEvent.click(
-    await screen.findByRole("link", { name: "Current plan", exact: true }),
+    await screen.findByRole("link", { name: "Current workflow", exact: true }),
   );
   expect(window.location.search).toBe("");
   window.history.replaceState(null, "", "/plans");

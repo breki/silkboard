@@ -138,7 +138,7 @@ test("failed and malformed refreshes retain displayed reports, with explicit ret
   ).toBeTruthy();
   expect(screen.getByRole("alert").textContent).toContain("out of date");
   code = 200;
-  await fireEvent.click(button("Retry plan"));
+  await fireEvent.click(button("Retry workflow"));
   await settle();
   expect(screen.queryByRole("alert")).toBeNull();
   current = detail({ sequence: "2" });
@@ -159,15 +159,15 @@ test("expired and absent current plans distinguish disabled APIs and unknown tas
       path === "/api/owner/plans" ? 200 : 404,
     ),
   );
-  await fireEvent.click(button("Retry plan"));
+  await fireEvent.click(button("Retry workflow"));
   await settle();
   expect(screen.getByRole("alert").textContent).toContain(
-    "task plan was not found",
+    "workflow was not found",
   );
   fetch.mockImplementation(async (path) =>
     response({}, path === "/api/owner/plans" ? 401 : 404),
   );
-  await fireEvent.click(button("Retry plan"));
+  await fireEvent.click(button("Retry workflow"));
   await settle();
   expect(onexpire.mock.calls.length).toBeGreaterThan(1);
   view.unmount();

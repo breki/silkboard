@@ -52,7 +52,7 @@ credentials exist only inside the disposable fixture.
 
 ## What the owner sees
 
-The Task plans page shows the last received report time and age. Repeated
+The Workflows page shows the last received report time and age. Repeated
 reads and identical replays do not make an old report fresh. Reported states
 are not verified results or a live connection status. In particular, a quiet
 reporter is not automatically blocked, complete, offline or still working.

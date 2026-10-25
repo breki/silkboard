@@ -68,7 +68,7 @@ test("primary header links and compact menu support keyboards and small phones",
   await widerFont.evaluate((node) => node.parentNode?.removeChild(node));
   const primary = page.getByRole("navigation", { name: "Primary navigation" });
   const events = primary.getByRole("link", { name: "Events", exact: true });
-  const plans = primary.getByRole("link", { name: "Task plans", exact: true });
+  const plans = primary.getByRole("link", { name: "Workflows", exact: true });
   await expect(events).toBeVisible();
   await expect(plans).toBeVisible();
   await events.focus();
@@ -96,7 +96,7 @@ test("primary header links and compact menu support keyboards and small phones",
     drawer.getByRole("link", { name: "Events", exact: true }),
   ).toHaveCount(0);
   await expect(
-    drawer.getByRole("link", { name: "Task plans", exact: true }),
+    drawer.getByRole("link", { name: "Workflows", exact: true }),
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Application status" }),

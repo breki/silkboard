@@ -58,8 +58,8 @@
   }
 </script>
 
-<section class="plans" aria-label="Task plans">
-  <h2>Task plans</h2>
+<section class="plans" aria-label="Workflows">
+  <h2>Workflows</h2>
   <p class="muted">
     All projects · Last reported states · Updates while this page is visible.
   </p>
@@ -68,10 +68,10 @@
     <div class="notice">
       <p role="alert">
         {unsupported
-          ? "Task plans are not available on this server."
-          : "Unable to update task plans. Displayed reports may be out of date."}
+          ? "Workflows are not available on this server."
+          : "Unable to update workflows. Displayed reports may be out of date."}
       </p>
-      <button onclick={() => retry++}>Retry task plans</button>
+      <button onclick={() => retry++}>Retry workflows</button>
     </div>
   {/if}
   {#if page}
@@ -82,11 +82,11 @@
         )
           ? "No workflows match these filters on this page."
           : before === null
-            ? "No task-plan reports have arrived yet."
-            : "No task plans on this page. Return to the latest reports."}
+            ? "No workflow reports have arrived yet."
+            : "No workflows on this page. Return to the latest reports."}
       </p>
     {:else}
-      <table class="plan-table" aria-label="Task plans from all projects">
+      <table class="plan-table" aria-label="Workflows from all projects">
         <colgroup
           ><col class="plan-time" /><col class="plan-project" /><col /><col
             class="plan-state-column"
@@ -95,7 +95,7 @@
         <thead
           ><tr
             ><th scope="col">Last report</th><th scope="col">Project</th><th
-              scope="col">Task</th
+              scope="col">Workflow</th
             ><th scope="col">Reported state</th></tr
           ></thead
         >
@@ -133,15 +133,15 @@
         </tbody>
       </table>
     {/if}
-    <nav class="plan-pagination" aria-label="Task-plan pages">
+    <nav class="plan-pagination" aria-label="Workflow pages">
       {#if before !== null}<button
           disabled={busy}
-          onclick={() => navigate(null)}>Latest task plans</button
+          onclick={() => navigate(null)}>Latest workflows</button
         >{/if}
       {#if page.next_cursor}<button
           disabled={busy}
-          onclick={() => navigate(page!.next_cursor)}>Older task plans</button
+          onclick={() => navigate(page!.next_cursor)}>Older workflows</button
         >{/if}
     </nav>
-  {:else if !failed}<p role="status">Loading task plans…</p>{/if}
+  {:else if !failed}<p role="status">Loading workflows…</p>{/if}
 </section>

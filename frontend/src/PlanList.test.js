@@ -32,7 +32,7 @@ test("pages, retries and retains the last received rows after a poll failure", a
   await settle();
   expect(screen.getByRole("alert").textContent).toContain("Unable to update");
   fail = false;
-  await fireEvent.click(screen.getByText("Retry task plans"));
+  await fireEvent.click(screen.getByText("Retry workflows"));
   await settle();
   expect(screen.getByRole("table")).toBeTruthy();
   fail = true;
@@ -40,15 +40,15 @@ test("pages, retries and retains the last received rows after a poll failure", a
   expect(screen.getByRole("table")).toBeTruthy();
   expect(screen.getByRole("alert").textContent).toContain("out of date");
   fail = false;
-  await fireEvent.click(screen.getByText("Older task plans"));
+  await fireEvent.click(screen.getByText("Older workflows"));
   await settle();
   expect(fetch.mock.calls.at(-1)[0]).toContain("before=opaque%20%26%20cursor");
   expect(
     screen.getByText(
-      "No task plans on this page. Return to the latest reports.",
+      "No workflows on this page. Return to the latest reports.",
     ),
   ).toBeTruthy();
-  await fireEvent.click(screen.getByText("Latest task plans"));
+  await fireEvent.click(screen.getByText("Latest workflows"));
   await settle();
   await view.rerender({ active: false, onexpire: vi.fn(), onopen: vi.fn() });
   const calls = fetch.mock.calls.length;
@@ -69,7 +69,7 @@ test("expired, unsupported and aborted reads do not invent reports", async () =>
   await vi.advanceTimersByTimeAsync(10000);
   expect(screen.getByRole("alert").textContent).toContain("not available");
   code = 503;
-  await fireEvent.click(screen.getByText("Retry task plans"));
+  await fireEvent.click(screen.getByText("Retry workflows"));
   await settle();
   expect(screen.getByRole("alert").textContent).toContain("Unable");
 });
@@ -115,7 +115,7 @@ test("applying filters resets the cursor and preserves filters across paging and
   vi.stubGlobal("fetch", fetch);
   render(PlanList, { active: true, onexpire: vi.fn(), onopen: vi.fn() });
   await settle();
-  await fireEvent.click(screen.getByText("Older task plans"));
+  await fireEvent.click(screen.getByText("Older workflows"));
   await settle();
   expect(fetch.mock.calls.at(-1)[0]).toContain("before=older");
   await fireEvent.input(screen.getByLabelText("Project"), {
@@ -129,7 +129,7 @@ test("applying filters resets the cursor and preserves filters across paging and
   expect(fetch.mock.calls.at(-1)[0]).toBe(
     "/api/owner/plans?project=silkboard&state=active",
   );
-  await fireEvent.click(screen.getByText("Older task plans"));
+  await fireEvent.click(screen.getByText("Older workflows"));
   await settle();
   expect(fetch.mock.calls.at(-1)[0]).toBe(
     "/api/owner/plans?before=older&project=silkboard&state=active",
@@ -151,12 +151,12 @@ test("empty workflows distinguish unfiltered history from matching filters", asy
   render(PlanList, { active: true, onexpire: vi.fn(), onopen: vi.fn() });
   await settle();
   expect(
-    screen.getByText("No task-plan reports have arrived yet."),
+    screen.getByText("No workflow reports have arrived yet."),
   ).toBeTruthy();
   await fireEvent.submit(screen.getByRole("form"));
   await settle();
   expect(
-    screen.getByText("No task-plan reports have arrived yet."),
+    screen.getByText("No workflow reports have arrived yet."),
   ).toBeTruthy();
   await fireEvent.input(screen.getByLabelText("Project"), {
     target: { value: "alpha" },

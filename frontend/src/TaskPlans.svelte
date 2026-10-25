@@ -71,9 +71,9 @@
   {/key}
 {:else if route.kind === "invalid"}
   <section class="panel">
-    <h2>Invalid task-plan link</h2>
+    <h2>Invalid workflow link</h2>
     <a href="/plans" onclick={(event) => open(event, "/plans")}
-      >Return to Task plans</a
+      >Return to Workflows</a
     >
   </section>
 {/if}
