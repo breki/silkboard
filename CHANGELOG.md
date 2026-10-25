@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Publish explicit Codex task plans with native session identity, separate
+  operator opt-in and workflow guidance for revisions and writer handoff.
+
 - Reduce full-validation work through verified Rust publication-date evidence,
   normalized dependency-cache keys, cheaper workspace test builds, fresh
   browser binary reuse and bounded parallel scheduling.

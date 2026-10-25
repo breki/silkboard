@@ -712,3 +712,28 @@ toml_datetime 0.6.11, serde_spanned 0.6.9, indexmap 2.14.2,
 winnow 0.7.15 and equivalent 1.0.2. Equivalent remains pinned in the lockfile
 to 1.0.2 because the newer release had not completed the fourteen-day cooldown.
 No security exception or validation threshold was added or relaxed.
+
+## Explicit Codex evolving plans, 2026-10-24
+
+After #73–#76 merged, the owner resumed milestone 5 and work on #77. The
+[Codex workflow](codex-plans.md) maintains the full task-specific graph through
+explicit installed-publisher calls. OpenAI's [app-server documentation](https://learn.chatgpt.com/docs/app-server)
+and installed Codex 0.163.0 generated `TurnPlanUpdatedNotification` schema
+supply only text/status entries; they do not carry stable step IDs,
+prerequisites or blocked reasons. The [hook documentation](https://learn.chatgpt.com/docs/hooks)
+permits observing local plan-tool calls but cannot supply those missing fields.
+No transcript reader or new listener/hook is introduced to reconstruct them.
+
+A controlled-local-provider probe ran the actual installed Codex app server
+with an owned temporary home and a self-authored shell command. It confirmed
+`CODEX_THREAD_ID` equals the native thread ID. This is verified version-specific
+behavior, not a documented permanent environment API. No real model account,
+user hook trust or production configuration changed. The adapter requires that
+identity and explicit `codex.plan_reporting: true`; existing summary settings
+remain disabled for plans. It derives host/name from operator configuration,
+checks the actual working directory and never accepts reporter or configuration
+overrides in plan input. Existing synchronized plan state and bounded delivery
+remain authoritative. Root writers hand off explicitly; child/Stop observations
+never complete the task. Local API/CLI fixtures verify states, revisions,
+reopening and replacement writers. Production installation/phone acceptance
+remain separate milestone work.

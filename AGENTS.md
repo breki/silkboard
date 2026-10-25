@@ -36,6 +36,9 @@ after milestone 5 is unset.
   launch reviewers or bump versions; a release owns the version bump.
 - Use the [workflow catalog](docs/ai-agents/catalog.md) when a workflow is
   requested. Read its shared procedure, not every workflow at startup.
+- For Codex task plans, follow [reporting guidance](docs/ai-agents/codex-plans.md)
+  when the operator has explicitly enabled compatible installed components.
+  Reporting failure does not block work or grant execution permission.
 
 ## Open deployment decisions
 

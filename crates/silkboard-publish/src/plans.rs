@@ -16,6 +16,47 @@ struct Draft {
     github_issue: Option<IssueReference>,
     steps: Vec<Step>,
 }
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CodexDraft {
+    schema_version: u8,
+    task_id: String,
+    title: String,
+    description: Option<String>,
+    github_issue: Option<IssueReference>,
+    steps: Vec<Step>,
+}
+
+pub(super) fn run_codex(
+    command: &OsStr,
+    path: &Path,
+    input: impl Read,
+) -> Result<&'static str, Error> {
+    if command != "start" && command != "publish" {
+        return Err(Error::Usage);
+    }
+    let config = configuration(path)?;
+    let reporter = crate::codex::plan_reporter(&config)?;
+    let draft: CodexDraft = serde_json::from_slice(&bounded(
+        input,
+        silkboard_plan::MAX_SNAPSHOT_BYTES as u64,
+    )?)
+    .map_err(|_| Error::Input)?;
+    send(
+        &config,
+        Draft {
+            schema_version: draft.schema_version,
+            task_id: draft.task_id,
+            reporter,
+            title: draft.title,
+            description: draft.description,
+            github_issue: draft.github_issue,
+            steps: draft.steps,
+        },
+        command == "start",
+    )
+}
 impl Draft {
     fn snapshot(self) -> Result<Snapshot, Error> {
         let one = Counter::new(1).map_err(|_| Error::State)?;
@@ -62,9 +103,17 @@ pub(super) fn run(
     }
     let draft: Draft =
         serde_json::from_slice(&bytes).map_err(|_| Error::Input)?;
+    send(&config, draft, command == "start")
+}
+
+fn send(
+    config: &crate::model::Config,
+    draft: Draft,
+    start: bool,
+) -> Result<&'static str, Error> {
     let snapshot = draft.snapshot()?;
-    let token = token(&config)?;
-    let snapshot = state::allocate(&config, snapshot, command == "start")?;
-    transport::send_plan(&config, &snapshot, &token)?;
+    let token = token(config)?;
+    let snapshot = state::allocate(config, snapshot, start)?;
+    transport::send_plan(config, &snapshot, &token)?;
     Ok("Task plan acknowledged")
 }

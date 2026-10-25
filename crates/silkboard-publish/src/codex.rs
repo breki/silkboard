@@ -15,6 +15,8 @@ pub(super) struct Settings {
     workspace: PathBuf,
     hostname: String,
     session_name: Option<String>,
+    #[serde(default)]
+    plan_reporting: bool,
 }
 
 // Deliberately ignore unknown native fields. Only these fields may enter a
@@ -29,6 +31,29 @@ struct Payload {
     #[serde(default)]
     stop_hook_active: bool,
     last_assistant_message: Option<String>,
+}
+
+pub(super) fn plan_reporter(
+    config: &crate::model::Config,
+) -> Result<silkboard_plan::Reporter, Error> {
+    let settings = config.codex.as_ref().ok_or(Error::Input)?;
+    let cwd = std::env::current_dir().map_err(|_| Error::Input)?;
+    if !settings.plan_reporting
+        || !clean_absolute(&settings.workspace)
+        || !clean_absolute(&cwd)
+        || !cwd.starts_with(&settings.workspace)
+    {
+        return Err(Error::Input);
+    }
+    Ok(silkboard_plan::Reporter {
+        hostname: settings.hostname.clone(),
+        tool: "codex".into(),
+        session_id: std::env::var("CODEX_THREAD_ID")
+            .map_err(|_| Error::Input)?,
+        subagent_id: None,
+        parent_session_id: None,
+        session_name: settings.session_name.clone(),
+    })
 }
 
 pub(super) fn run(path: &Path, input: impl Read) -> Result<(), Error> {

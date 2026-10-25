@@ -131,3 +131,44 @@ Native semantics were checked against OpenAI's
 and [Responses streaming reference](https://developers.openai.com/api/reference/resources/responses/streaming-events),
 alongside actual installed schemas/payloads. Recheck them when upgrading Codex;
 do not infer native metadata from transcript files.
+
+## Explicit evolving task plans
+
+The installed publisher also accepts `codex-plan {start|publish} --config PATH`
+with a complete graph on stdin. It derives reporter identity from the existing
+operator `codex` configuration and native `CODEX_THREAD_ID`; the graph does not
+include `reporter`. This requires an explicit `"plan_reporting": true` member
+inside `codex`. It defaults to false and does not affect existing summaries.
+Install a server supporting #75 and a compatible publisher before enabling it;
+these plan features have not yet been released to production.
+
+Follow the [Codex plan workflow](ai-agents/codex-plans.md) for stable identities,
+actual step transitions, revisions, failures and explicit session handoff.
+Existing native hook definitions remain unchanged and need no new trust grant
+for this explicit command. Calls remain subject to the agent's normal shell
+permissions and operator configuration. There is no transcript parser, new
+hook event, app-server listener or background delivery process.
+
+### Local plan integration evidence
+
+On 2026-10-24, installed Codex 0.163.0 generated its actual app-server schema
+and ran an owned native shell probe against a controlled local provider.
+`CODEX_THREAD_ID` matched the native app-server thread ID. The probe used only
+an owned temporary home and self-authored commands; it did not contact a real
+model account, read transcripts or change the user's hook trust.
+
+Separately, the Codex agent developing #77 used an installed copy of the new
+publisher to send its actual current task graph to a disposable local Axum
+instance, using that session's native environment identity. The instance had
+its own initialized owner, project credential, private state and SQLite file.
+Start and a subsequent full update were acknowledged; read-only fixture data
+inspection confirmed two snapshots, sequence 2, definition revision 1 and the
+actual native reporter identity. Adapter/workflow steps completed while the
+verification step became active. The CLI ran without runtime helper commands.
+These are local development observations, not production or phone acceptance.
+
+Compiled CLI/API tests additionally exercise blocked/done/reopened steps,
+revised definitions, multiple active steps, explicit session handoff and
+rejection of the old writer. A Stop observation leaves the task snapshot
+unchanged. Future UI, combined freshness/recovery checks and production
+rollout remain #78–#81.
