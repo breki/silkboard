@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Identify publisher builds with the shared repository version, source commit
+  and explicit tagged/development provenance in `--version`.
+
 - Add a Flat list / Session hierarchy switch to Events, with grouped parent
   and subagent sessions, independent collapse controls and explicit missing
   parent labels while preserving filters, pagination and event details.

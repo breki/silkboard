@@ -73,7 +73,8 @@ SILKBOARD_RELEASE_TAG="$(git describe --tags --exact-match HEAD)" \
 ./target/release/silkboard-web
 ```
 
-The tag version must match `crates/silkboard-web/Cargo.toml`.
+The tag version must match `[workspace.package].version` in `Cargo.toml`,
+shared by the server and publisher.
 These inputs label a build; they do not verify the checkout,
 signatures, clean worktree, or GitHub checks. A future release builder/updater
 must establish those facts and supply the exact approved identity before
