@@ -19,30 +19,40 @@ Open the configured private HTTPS site and enter the owner password. Agents
 is the home page at `/`. Events is at `/events`; Workflows remains at `/plans`,
 and existing workflow snapshot links remain valid.
 
-Agents shows one row per project, host, tool, native session and subagent.
-Readable names are labels and never merge rows. Each row shows its project,
-latest activity and browser-local receipt date/time including the year. Expand
-Session identity to inspect native, child and parent identifiers.
+Agents shows one card per main/root agent session, preserving project, host,
+tool and native session identity. [Issue #120](https://github.com/breki/silkboard/issues/120)
+revises the earlier mixed session/subagent table. Explicit child and parent
+metadata exclude subagents; names never select or merge sessions. The API
+selects main agents before cursor pagination so child reports consume no slots.
+A child's activity is never rolled into a parent's latest activity. Child
+events remain in Events and its session hierarchy; workflow snapshots remain
+available in Workflows and its received history.
+
+Cards use one column on narrow phones and an adaptive grid on larger screens.
+Each card shows its readable name or tool/host fallback, tool/host context,
+project, full native session, latest activity and browser-local receipt date
+and time including seconds and year. Long labels, titles and IDs wrap within
+the card. Values remain visible without the former narrow table columns.
 
 Latest activity is selected across all stored events and workflow snapshots
 before pagination, using server receipt time rather than session counters.
 Historical workflow writers keep their own activity after a handoff. A workflow
-row opens the reported snapshot, matching its displayed status. A later-received
+card opens the reported snapshot, matching its displayed status. A later-received
 report is the newest observation even if the work happened earlier. Equal
 receipt times prefer workflows, then descending item key and workflow sequence;
-agent rows use descending full identity to break receipt-time ties.
+main agent cards use descending full identity to break receipt-time ties.
 
-An event row opens Events with its exact full identity in the URL. The visible
+An event card opens Events with its exact full identity in the URL. The visible
 Exact agent session scope distinguishes the primary session from each child,
 remains through paging and view switching, and survives reload and browser
 Back/Forward. Time filters still apply immediately. Clear session filter
 removes that scope and restores Project/Agent selection. Incomplete identity
 links show an error and fetch no event data until cleared.
 
-Agents pages contain up to 20 identities with Older agents and Latest agents.
+Agents pages contain up to 20 main identities with Older agents and Latest agents.
 New activity can move an identity toward the latest page while paging; return
 to Latest agents to see it. Visible pages poll every ten seconds, pause while
-hidden, retain stale rows with a retry warning on failure, and clear private
+hidden, retain stale cards with a retry warning on failure, and clear private
 content on login expiry. Publisher tokens cannot read this owner-only API.
 
 Events shows one table of individual events across all projects, with Time,
@@ -160,7 +170,8 @@ projects or sessions, including a session from another project, return 404.
 Existing empty projects return empty pages. Invalid/expired owner sessions
 return 401; storage/admission failures return 503.
 
-An Agents item contains `project`, `hostname`, `tool`, `session_id`, nullable
+An Agents item represents a main session with null child/parent identifiers.
+It contains `project`, `hostname`, `tool`, `session_id`, nullable
 `subagent_id`, `parent_session_id`, `session_name`, numeric `received_at` and
 `latest`. An event activity has `kind: "event"`, `event_id` and `message`;
 a workflow activity has `kind: "workflow"`, `task_id`, string `sequence`,

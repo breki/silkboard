@@ -12,6 +12,8 @@ import {
 import { taskId } from "./plan-model";
 export interface AgentActivity extends AgentIdentity {
   project: string;
+  subagent_id: null;
+  parent_session_id: null;
   received_at: number;
   latest:
     | { kind: "event"; event_id: string; message: string }
@@ -28,6 +30,8 @@ function agent(value: unknown): value is AgentActivity {
     !object(value) ||
     !projectId(value.project) ||
     !identity(value) ||
+    value.subagent_id !== null ||
+    value.parent_session_id !== null ||
     typeof value.received_at !== "number" ||
     !Number.isSafeInteger(value.received_at) ||
     value.received_at < 0 ||

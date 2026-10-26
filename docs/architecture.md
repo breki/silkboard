@@ -147,6 +147,9 @@ combined verification and production dogfooding are separate milestone issues.
 The [presentation design](task-plan-design.md), owned by #74, includes separate
 Events and Workflows destinations (#98). Issue #114 adds Agents as home,
 aggregating complete stored event and snapshot history by native identity.
+Issue #120 restricts this overview to main sessions, selected before pagination,
+and presents responsive cards. Child events remain separate in Events; child
+workflow reports remain in Workflows.
 All three primary links appear in the top header row. The
 [owner guide](owner-feed.md) defines receipt ordering and snapshot/exact-session
 links. The tracked

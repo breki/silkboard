@@ -442,10 +442,11 @@ test("explicit event workflow links open the existing graph by keyboard on a pho
   await expect(page).toHaveURL(new RegExp(`${link(task)}$`));
 });
 
-test("Agents home links exact event sessions and reported workflow snapshots", async ({
+test("Main agent cards link exact main events and reported workflow snapshots", async ({
   page,
   context,
 }, info) => {
+  await page.clock.install();
   const token = readFileSync(
     join(process.env.SILKBOARD_E2E_DIR, "plans.token"),
     "utf8",
@@ -473,6 +474,7 @@ test("Agents home links exact event sessions and reported workflow snapshots", a
           tool: "codex",
           session_id: "agents-native",
           subagent_id: child,
+          parent_session_id: child === null ? null : "agents-native",
           sequence: 1,
           session_name: `Agents ${child ?? "primary"}`,
           message: `Report ${child ?? "primary"}`,
@@ -481,20 +483,115 @@ test("Agents home links exact event sessions and reported workflow snapshots", a
     );
     expect(seeded.status()).toBe(200);
   }
+  const longName = "Subagent " + "E".repeat(111);
+  const longEvent = await context.request.post(
+    "/api/projects/silkboard/progress",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        event_id: "agents-long-main",
+        hostname: "event-host-" + "h".repeat(245),
+        tool: "event-tool-" + "t".repeat(245),
+        session_id: "event-native-" + "n".repeat(243),
+        sequence: 1,
+        session_name: longName,
+        message: "x".repeat(2000),
+      },
+    },
+  );
+  expect(longEvent.status()).toBe(200);
+  const longPlan = detail({
+    task_id: "acacacac-acac-4cac-8cac-acacacacacac",
+    title: "W".repeat(160),
+  }).snapshot;
+  longPlan.reporter = {
+    ...longPlan.reporter,
+    hostname: "workflow-host-" + "h".repeat(242),
+    tool: "workflow-tool-" + "t".repeat(242),
+    session_id: "workflow-native-" + "n".repeat(240),
+    session_name: "Workflow " + "W".repeat(111),
+  };
+  await publish(longPlan, token);
   await page.setViewportSize({ width: 320, height: 720 });
   await openPlan(page, "/");
-  const table = page.getByRole("table", { name: "Agents and latest activity" });
-  await expect(table).toBeVisible();
+  const cards = page.getByRole("list", { name: "Main agents" });
+  await expect(cards).toBeVisible();
+  await expect(
+    cards.getByRole("link", { name: "Agents child-a", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    cards.getByRole("link", { name: "Agents child-b", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    cards.getByRole("link", { name: longName, exact: true }),
+  ).toBeVisible();
+  const before = await cards
+    .getByRole("article", { name: "Agents primary", exact: true })
+    .textContent();
+  const update = await context.request.post(
+    "/api/projects/silkboard/progress",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        event_id: "agents-child-refresh",
+        hostname: "agents-host",
+        tool: "codex",
+        session_id: "agents-native",
+        subagent_id: "child-refresh",
+        parent_session_id: "agents-native",
+        sequence: 1,
+        message: "New child activity",
+      },
+    },
+  );
+  expect(update.status()).toBe(200);
+  await page.clock.fastForward(10000);
+  await expect(
+    cards.getByRole("article", { name: "Agents primary", exact: true }),
+  ).toHaveText(before);
+  await expect(
+    cards.getByText("Event: New child activity", { exact: true }),
+  ).toHaveCount(0);
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 800 });
+    await noOverflow(page);
+    expect(
+      await cards
+        .getByRole("article")
+        .evaluateAll((nodes) =>
+          nodes.every((node) => node.scrollWidth <= node.clientWidth),
+        ),
+    ).toBe(true);
+    const columns = await cards
+      .getByRole("article")
+      .evaluateAll(
+        (nodes) =>
+          new Set(
+            nodes.map((node) => Math.round(node.getBoundingClientRect().x)),
+          ).size,
+      );
+    if (width < 600) expect(columns).toBe(1);
+    else expect(columns).toBeGreaterThan(1);
+    const received = cards
+      .getByRole("article", { name: "Agents primary", exact: true })
+      .locator("time");
+    await expect(received).toHaveText(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    await page.screenshot({
+      path: info.outputPath(`agents-cards-${width}.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 320, height: 720 });
   await noOverflow(page);
-  await page.getByRole("link", { name: "Agents child-a", exact: true }).focus();
+  await page.getByRole("link", { name: "Agents primary", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("region", { name: "Selected agent session" }),
   ).toBeVisible();
-  expect(new URL(page.url()).searchParams.get("subagent_id")).toBe("child-a");
+  expect(new URL(page.url()).searchParams.get("subagent_id")).toBe("");
   await expect(
     page.getByRole("button", {
-      name: "Event details: Report child-a",
+      name: "Event details: Report primary",
       exact: true,
     }),
   ).toBeVisible();
@@ -522,7 +619,7 @@ test("Agents home links exact event sessions and reported workflow snapshots", a
     page.getByRole("button", { name: "Project: All projects" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Agents", exact: true }).click();
-  const links = table.locator(`a[href^="${link(agentTask)}?sequence="]`);
+  const links = cards.locator(`a[href^="${link(agentTask)}?sequence="]`);
   await expect(links).toHaveCount(2);
   const targets = await links.evaluateAll((nodes) =>
     nodes.map((node) => node.getAttribute("href")),
@@ -533,7 +630,7 @@ test("Agents home links exact event sessions and reported workflow snapshots", a
     path: info.outputPath("agents-phone.png"),
     fullPage: true,
   });
-  await table.locator(`a[href="${link(agentTask)}?sequence=1"]`).click();
+  await cards.locator(`a[href="${link(agentTask)}?sequence=1"]`).click();
   await expect(page).toHaveURL(`${link(agentTask)}?sequence=1`);
   await expect(page.getByText(/Earlier snapshot/).first()).toBeVisible();
 });

@@ -155,6 +155,11 @@ mod tests {
         conn.execute("INSERT INTO events(project,event_id,session,sequence,message,session_name,payload,received_at) VALUES (?1,?2,?3,(SELECT coalesce(max(sequence),0)+1 FROM events WHERE session=?3),?2,'Same name','{}',?4)",params![key[0],id,session,at]).unwrap();
     }
     fn workflow(conn: &Connection, key: [&str; 5], at: i64) {
+        conn.execute(
+            "INSERT OR IGNORE INTO projects(id) VALUES (?1)",
+            [key[0]],
+        )
+        .unwrap();
         let summary=serde_json::json!({"reporter":{"hostname":key[1],"tool":key[2],"session_id":key[3],"subagent_id":if key[4].is_empty(){None}else{Some(key[4])},"session_name":"Same name"},"title":"Reported workflow","state":"active"}).to_string();
         let task = "11111111-1111-4111-8111-111111111111";
         conn.execute_batch("BEGIN; PRAGMA defer_foreign_keys=ON;")
@@ -211,7 +216,7 @@ mod tests {
             Cursor::parse(first.next_cursor.as_deref().unwrap()).unwrap();
         store.0.lock().unwrap().execute_batch("VACUUM").unwrap();
         let last = list(&store, Some(&cursor)).unwrap();
-        assert_eq!(last.items.len(), 10);
+        assert_eq!(last.items.len(), 8);
         assert!(last.next_cursor.is_none());
         let keys: std::collections::HashSet<_> = first
             .items
@@ -227,7 +232,52 @@ mod tests {
                 )
             })
             .collect();
-        assert_eq!(keys.len(), 30);
+        assert_eq!(keys.len(), 28);
+    }
+    #[test]
+    fn children_never_fill_pages_or_override_main_activity() {
+        let store = ProgressStore::open_memory().unwrap();
+        workflow(
+            &store.0.lock().unwrap(),
+            ["alpha", "dev", "codex", "workflow-child", "child"],
+            2000,
+        );
+        let children_only = list(&store, None).unwrap();
+        assert!(children_only.items.is_empty());
+        assert!(children_only.next_cursor.is_none());
+        event(
+            &store,
+            ["alpha", "dev", "codex", "root", ""],
+            "main-event",
+            100,
+        );
+        for n in 0..45 {
+            event(
+                &store,
+                ["alpha", "dev", "codex", "root", &format!("child-{n}")],
+                &format!("child-event-{n}"),
+                1000 + n,
+            );
+        }
+        let result = list(&store, None).unwrap();
+        assert_eq!(result.items.len(), 1);
+        assert!(result.next_cursor.is_none());
+        let main = &result.items[0];
+        assert_eq!(main.identity.session_id, "root");
+        assert_eq!(main.received_at, 100);
+        assert!(
+            matches!(&main.latest, Activity::Event{event_id,..} if event_id == "main-event")
+        );
+        assert_eq!(
+            store
+                .0
+                .lock()
+                .unwrap()
+                .query_row("SELECT count(*) FROM events", [], |r| r
+                    .get::<_, i64>(0))
+                .unwrap(),
+            46
+        );
     }
     #[test]
     fn workflow_wins_ties_but_later_received_event_wins_even_with_lower_sequence()

@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Main agent cards, 2026-10-26
+
+The owner authorized [#120](https://github.com/breki/silkboard/issues/120),
+revising #114 to show main/root sessions only as responsive cards. Exclude
+children using reported identity metadata before pagination, without rolling
+their activity into a parent. Existing reported workflow snapshots and exact
+main-session Events links remain. The [owner guide](../owner-feed.md) records
+layout, receipt time and native identity. Subagent reporting and the Events
+hierarchy stay available; this is implementation scope, not rollout evidence.
+
 ## Automatic summary workflow context, 2026-10-25
 
 The owner authorized [#115](https://github.com/breki/silkboard/issues/115)
