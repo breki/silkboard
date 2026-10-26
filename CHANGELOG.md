@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add a private hierarchical Todos checklist with independent checkboxes,
+  editable text, child promotion on deletion and protection against stale edits.
+
 - Make Agents the home page with latest activity per native identity, reported
   workflow snapshot links and exact session/subagent links to Events.
 

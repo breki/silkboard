@@ -99,6 +99,10 @@ test("primary header links and compact menu support keyboards and small phones",
     drawer.getByRole("link", { name: "Workflows", exact: true }),
   ).toHaveCount(0);
   await expect(
+    drawer.getByRole("link", { name: "Todos", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
     page.getByRole("link", { name: "Application status" }),
   ).toBeFocused();
   await page.screenshot({

@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Owner Todos, 2026-10-25
+
+The owner authorized [#116](https://github.com/breki/silkboard/issues/116)
+and selected independent checkboxes and keeping children when deleting their
+parent. The [Todos guide](../todos.md) records promotion, confirmation, creation
+ordering, five levels, bounded text/list sizes and revision conflicts. These
+implementation choices add private owner checklist mutations, without agent
+read/write or execution authority, GitHub sync or workflow linkage. Production
+release and recovery acceptance remain separate.
+
 ## Agents landing page, 2026-10-25
 
 The owner authorized [#114](https://github.com/breki/silkboard/issues/114)

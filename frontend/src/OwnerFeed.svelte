@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
+  import Todos from "./Todos.svelte";
   import Agents from "./Agents.svelte";
   import EventFeed from "./EventFeed.svelte";
   import TaskPlans from "./TaskPlans.svelte";
@@ -12,10 +13,12 @@
     statusPage = false,
     plansPage = false,
     eventsPage = false,
+    todosPage = false,
   }: {
     statusPage?: boolean;
     plansPage?: boolean;
     eventsPage?: boolean;
+    todosPage?: boolean;
   } = $props();
   let managing = $state(false);
 
@@ -34,7 +37,8 @@
   let alive = true;
   let active = new AbortController();
   $effect(() => {
-    if ((!statusPage && !plansPage) || phase !== "signed-in") return;
+    if ((!statusPage && !plansPage && !todosPage) || phase !== "signed-in")
+      return;
     return poll(async (signal) => {
       try {
         await ownerSession(signal);
@@ -137,7 +141,9 @@
 {#if !statusPage || phase === "logout-failed"}
   <section class="feed" aria-label="Progress feed">
     {#if phase === "signed-in"}
-      {#if plansPage}
+      {#if todosPage}
+        <Todos onexpire={expired} />
+      {:else if plansPage}
         <TaskPlans onexpire={expired} />
       {:else if eventsPage}
         <EventFeed onexpire={expired} />
@@ -146,7 +152,9 @@
       {/if}
     {:else if phase === "signed-out"}
       <div class="panel login">
-        <h2>Sign in to your progress feed</h2>
+        <h2>
+          {todosPage ? "Sign in to Todos" : "Sign in to your progress feed"}
+        </h2>
         <p>Follow what your development agents are working on.</p>
         {#if notice}<p role="alert">{notice}</p>{/if}
         <form onsubmit={login}>
