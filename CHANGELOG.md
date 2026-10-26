@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.11.0 - 2026-10-26
+
 - Link automatic Codex summaries to their explicitly selected, confirmed
   workflow; retain completed context until switch/clear and reject stale
   writer associations without guessing parent/subagent relationships.
