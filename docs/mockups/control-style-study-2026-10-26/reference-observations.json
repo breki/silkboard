@@ -1,0 +1,37 @@
+{
+  "todo": "https://www.todoist.com/help/todoist/features/use-the-list-layout-in-todoist-AMAhHMVRH",
+  "imgs": [
+    {
+      "src": "https://res.cloudinary.com/imagist/image/fetch/q_auto,f_auto,c_scale,w_565/https%3A%2F%2Fget.todoist.help%2Fhc%2Farticle_attachments%2F18241403835036",
+      "alt": "calendar-layout-web-settings.png",
+      "w": 565,
+      "h": 689
+    }
+  ],
+  "primerDimensions": [
+    {
+      "label": "Small",
+      "height": 28
+    },
+    {
+      "label": "Medium (default)",
+      "height": 32
+    },
+    {
+      "label": "Large",
+      "height": 40
+    }
+  ],
+  "capturedOn": "2026-10-26",
+  "linear": {
+    "page": "https://linear.app/docs/filters",
+    "asset": "https://webassets.linear.app/images/ornj730p/production/26e1e266d76606fad8972baf4b57ed364aa2e4c1-2438x1126.png"
+  },
+  "primerPage": "https://primer.style/product/components/button/",
+  "todoistSubtasks": {
+    "page": "https://www.todoist.com/help/todoist/features/use-sub-tasks-in-todoist-kMamDo",
+    "src": "https://res.cloudinary.com/imagist/image/fetch/q_auto,f_auto,c_scale,w_800/https%3A%2F%2Fget.todoist.help%2Fhc%2Farticle_attachments%2F18241433506716",
+    "alt": "subtasks-help-center-2.png",
+    "download": "https://res.cloudinary.com/imagist/image/fetch/q_auto,f_png,c_scale,w_800/https%3A%2F%2Fget.todoist.help%2Fhc%2Farticle_attachments%2F18241433506716"
+  }
+}

@@ -1,0 +1,851 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>Silkboard controls proposal</title
+  ><style>
+    :root {
+      font-family:
+        Inter,
+        ui-sans-serif,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+      color: #172824;
+      background: #f5f7f8;
+      font-size: 14px;
+      line-height: 1.5;
+      --page: #f5f7f8;
+      --surface: #fff;
+      --text: #172824;
+      --muted: #52635c;
+      --line: #dce4e0;
+      --border: #7a8b84;
+      --accent: #146a52;
+      --accent-text: #fff;
+      --soft: #edf3ef;
+      --focus: #1968d2;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+    }
+    body.dark {
+      --page: #0f1b18;
+      --surface: #172722;
+      --text: #e5f1ea;
+      --muted: #acc0b5;
+      --line: #3a5146;
+      --border: #78978a;
+      --accent: #b3e3cd;
+      --accent-text: #103326;
+      --soft: #223c31;
+      --focus: #8cbbff;
+      background: var(--page);
+      color: var(--text);
+    }
+    a,
+    button {
+      color: inherit;
+      font: inherit;
+    }
+    button,
+    a {
+      touch-action: manipulation;
+    }
+    button {
+      cursor: pointer;
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 3px;
+    }
+    .tap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      background: none;
+      padding: 0;
+      min-height: 32px;
+      min-width: 32px;
+      border-radius: 6px;
+      vertical-align: middle;
+    }
+    .face {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 32px;
+      padding: 5px 11px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 550;
+      line-height: 20px;
+    }
+    .primary .face {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--accent-text);
+    }
+    .quiet .face {
+      background: transparent;
+      border-color: transparent;
+      color: var(--text);
+    }
+    .danger .face {
+      color: #a32d38;
+    }
+    .dark .danger .face {
+      color: #ffb0b8;
+    }
+    .tap:disabled {
+      cursor: default;
+      opacity: 0.55;
+    }
+    .icon .face {
+      width: 32px;
+      padding: 4px;
+    }
+    .icon svg {
+      width: 16px;
+      height: 16px;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .header-inner {
+      max-width: 1200px;
+      padding: 15px 28px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      gap: 36px;
+    }
+    .brand {
+      font-weight: 740;
+      font-size: 19px;
+      letter-spacing: -0.6px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      background: var(--accent);
+      color: var(--accent-text);
+      font-size: 15px;
+    }
+    .nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .nav a {
+      display: flex;
+      align-items: center;
+      min-height: 40px;
+      text-decoration: none;
+      padding: 8px 11px;
+      color: var(--muted);
+      font-size: 13px;
+      border-bottom: 2px solid transparent;
+    }
+    .nav a.active {
+      border-color: var(--accent);
+      color: var(--text);
+      font-weight: 650;
+    }
+    .utility {
+      margin-left: auto;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .demo-label {
+      background: #e9f0f8;
+      color: #254a74;
+      text-align: center;
+      padding: 7px 16px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.25px;
+    }
+    .dark .demo-label {
+      background: #263b50;
+      color: #d3e6fb;
+    }
+    .shell {
+      max-width: 1200px;
+      margin: auto;
+      padding: 32px 28px;
+    }
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    h1 {
+      font-size: 26px;
+      line-height: 1.2;
+      letter-spacing: -0.7px;
+      margin: 0 0 7px;
+      font-weight: 680;
+    }
+    p {
+      margin: 0;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 0 18px;
+    }
+    .toolbar .hint {
+      margin-left: auto;
+    }
+    .filter .face {
+      font-weight: 450;
+    }
+    .filter strong {
+      font-weight: 600;
+    }
+    .muted {
+      color: var(--muted);
+    }
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      min-width: 0;
+    }
+    .card-top {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .avatar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--soft);
+      color: var(--text);
+      width: 35px;
+      height: 35px;
+      flex: none;
+      border-radius: 8px;
+      font-weight: 650;
+      font-size: 12px;
+    }
+    .card-top h2 {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 650;
+      margin: 0 0 2px;
+      overflow-wrap: anywhere;
+    }
+    .eyebrow {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      font-weight: 650;
+      color: var(--muted);
+      margin: 12px 0 8px;
+    }
+    .card h3 {
+      font-size: 17px;
+      line-height: 1.4;
+      font-weight: 610;
+      margin: 0 0 8px;
+      letter-spacing: -0.3px;
+      overflow-wrap: anywhere;
+    }
+    .status {
+      display: inline-flex;
+      gap: 5px;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 5px;
+      padding: 3px 7px;
+      background: #eaf4ee;
+      color: #276442;
+    }
+    .status.blocked {
+      background: #fff2d5;
+      color: #735008;
+    }
+    .status.done {
+      background: var(--soft);
+      color: var(--muted);
+    }
+    .dark .status:not(.done) {
+      background: #234335;
+      color: #b8e7c8;
+    }
+    .dark .status.blocked {
+      background: #4c3b1d;
+      color: #f3d58e;
+    }
+    .dot {
+      height: 5px;
+      width: 5px;
+      background: currentColor;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .description {
+      font-size: 13px;
+      line-height: 1.65;
+      color: var(--muted);
+      margin: 12px 0 20px;
+    }
+    .card-footer {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .text-link {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-underline-offset: 4px;
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+    }
+    .timestamp {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .bottom-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 20px;
+    }
+    .annotation {
+      border-left: 3px solid var(--accent);
+      padding: 13px 16px;
+      background: var(--soft);
+      font-size: 12px;
+      line-height: 1.7;
+      margin-top: 30px;
+      color: var(--text);
+    }
+    .annotation strong {
+      display: block;
+      margin-bottom: 3px;
+    }
+    .todo-panel {
+      max-width: 760px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .todo-entry {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .todo-entry:last-child {
+      border-bottom: none;
+    }
+    .todo-main {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .check-target {
+      display: flex;
+      min-width: 32px;
+      min-height: 32px;
+      align-items: center;
+      justify-content: center;
+    }
+    .check {
+      display: inline-block;
+      width: 17px;
+      height: 17px;
+      border: 1.5px solid var(--border);
+      border-radius: 4px;
+      flex: none;
+    }
+    .check.checked {
+      background: var(--accent);
+      border-color: var(--accent);
+      position: relative;
+    }
+    .check.checked::after {
+      content: "✓";
+      color: var(--accent-text);
+      position: absolute;
+      inset: 0;
+      text-align: center;
+      font-size: 12px;
+      line-height: 15px;
+    }
+    .todo-text {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+    .todo-entry.child {
+      padding-left: 44px;
+    }
+    .todo-entry.child .todo-text {
+      font-size: 14px;
+    }
+    .todo-actions {
+      display: flex;
+      gap: 8px;
+      margin: 4px 0 0 39px;
+      align-items: center;
+    }
+    .todo-actions .tap .face {
+      font-size: 11px;
+      padding: 3px 6px;
+    }
+    .todo-entry.completed .todo-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+    .todo-description {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .new-todo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 760px;
+      margin-bottom: 18px;
+    }
+    .input {
+      height: 38px;
+      min-width: 0;
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      padding: 7px 11px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .sample-section {
+      margin-top: 28px;
+    }
+    .sample-section h2 {
+      font-size: 14px;
+      font-weight: 650;
+      margin-bottom: 12px;
+    }
+    .samples {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .spec-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .spec {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .spec b {
+      display: block;
+      font-size: 13px;
+    }
+    .spec small {
+      display: block;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .board {
+      max-width: 1180px;
+    }
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .compare {
+      border: 1px solid var(--line);
+      padding: 24px;
+      border-radius: 10px;
+      background: var(--surface);
+    }
+    .compare h2 {
+      font-size: 17px;
+      margin: 0 0 5px;
+    }
+    .compare p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+    .current button {
+      font:
+        16px/1.55 system-ui,
+        sans-serif;
+      min-height: 44px;
+      border-radius: 6.4px;
+      border: 1px solid #617580;
+      padding: 8.8px 12.8px;
+      background: #e4eeed;
+      color: #172824;
+    }
+    .dark .current button {
+      background: #1a343b;
+      color: #d5f2e6;
+      border-color: #78929f;
+    }
+    .current .samples {
+      gap: 12px;
+    }
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+    .mini-card h3 {
+      font-size: 15px;
+      margin: 0 0 12px;
+    }
+    .note-small {
+      margin-top: 16px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .focus .face {
+      outline: 2px solid var(--focus);
+      outline-offset: 3px;
+    }
+    .danger-confirm {
+      margin-top: 20px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+    .danger-confirm h3 {
+      font-size: 14px;
+      margin: 0 0 6px;
+    }
+    .danger-confirm p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    .board-footer {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 22px;
+    }
+    .proposal-note {
+      font-size: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+    }
+    @media (max-width: 650px) {
+      .header-inner {
+        padding: 12px 16px 0;
+        gap: 0;
+        flex-wrap: wrap;
+      }
+      .brand {
+        font-size: 18px;
+      }
+      .utility {
+        margin-left: auto;
+      }
+      .utility > span {
+        display: none;
+      }
+      .nav {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+        gap: 0;
+        margin-top: 8px;
+      }
+      .nav a {
+        padding: 10px 7px;
+        min-height: 44px;
+        font-size: 12px;
+      }
+      .shell {
+        padding: 24px 16px;
+      }
+      .title-row {
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 6px;
+      }
+      h1 {
+        font-size: 25px;
+      }
+      .subtitle {
+        font-size: 12px;
+        max-width: 230px;
+      }
+      .agent-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .card {
+        padding: 17px;
+      }
+      .card-top {
+        margin-bottom: 14px;
+      }
+      .toolbar {
+        gap: 4px;
+        padding-top: 5px;
+        padding-bottom: 14px;
+      }
+      .toolbar .hint {
+        display: none;
+      }
+      .tap {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 6px;
+      }
+      .face {
+        min-height: 32px;
+        font-size: 13px;
+        padding: 5px 9px;
+      }
+      .primary .face {
+        min-height: 36px;
+      }
+      .filter .face {
+        font-size: 12px;
+        padding: 5px 7px;
+      }
+      .filter {
+        padding: 4px;
+      }
+      .icon .face {
+        width: 32px;
+        min-height: 32px;
+      }
+      .card-footer {
+        padding-top: 7px;
+      }
+      .text-link {
+        min-height: 44px;
+      }
+      .timestamp {
+        font-size: 10px;
+      }
+      .bottom-note {
+        line-height: 1.6;
+      }
+      .annotation {
+        margin-top: 20px;
+        padding: 12px;
+        font-size: 11px;
+      }
+      .todo-entry {
+        padding: 9px 10px;
+      }
+      .todo-entry.child {
+        padding-left: 25px;
+      }
+      .todo-main {
+        gap: 4px;
+      }
+      .check-target {
+        min-width: 44px;
+        min-height: 44px;
+      }
+      .todo-actions {
+        margin: 0 0 0 34px;
+        gap: 0;
+      }
+      .todo-actions .tap {
+        padding: 5px;
+      }
+      .todo-actions .face {
+        font-size: 11px;
+      }
+      .todo-entry.child .todo-text {
+        font-size: 14px;
+      }
+      .new-todo {
+        gap: 2px;
+        margin-bottom: 12px;
+      }
+      .input {
+        height: 40px;
+        width: 0;
+        font-size: 12px;
+      }
+      .new-todo .face {
+        font-size: 12px;
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      .todo-panel {
+        border-radius: 8px;
+      }
+      .todo-text {
+        font-size: 13px;
+      }
+      .compare-grid,
+      .spec-row {
+        grid-template-columns: 1fr;
+      }
+      .demo-label {
+        font-size: 9px;
+        padding: 5px 8px;
+      }
+      .board .shell {
+        padding: 20px;
+      }
+      .todo-description {
+        font-size: 11px;
+      }
+    }
+  </style>
+  <body>
+    <div class="demo-label">
+      DESIGN PROPOSAL · FICTIONAL DATA · NOT IMPLEMENTED
+    </div>
+    <header>
+      <div class="header-inner">
+        <div class="brand"><span class="mark">s</span>Silkboard</div>
+        <nav class="nav">
+          <a href="#" class="active">Agents</a><a href="#">Events</a
+          ><a href="#">Workflows</a><a href="#">Todos</a>
+        </nav>
+        <div class="utility">
+          <span>Private workspace</span
+          ><button class="tap quiet icon" aria-label="Navigation menu">
+            <span class="face">☰</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <div id="content"></div>
+    <script>
+      const q = new URLSearchParams(location.search);
+      if (q.get("theme") === "dark") document.body.classList.add("dark");
+      const btn = (text, style = "") =>
+        `<button ${text === "···" ? 'aria-label="More todo actions"' : ""} class="tap ${style}"><span class="face">${text}</span></button>`;
+      const footer = `<div class="bottom-note"><span>3 main agents · latest reported activity</span><span>Updated just now</span></div>`;
+      const cards = [
+        [
+          "C1",
+          "Build agent",
+          "Silkboard · dev-01 · Codex",
+          "Dependency reuse across worktrees",
+          "Active",
+          "Latest workflow",
+          "Compile and verify the shared dependency cache.",
+          "14:32",
+        ],
+        [
+          "C2",
+          "UI agent",
+          "Silkboard · dev-02 · Codex",
+          "Review narrow-screen navigation",
+          "Blocked",
+          "Latest workflow",
+          "Waiting for owner review of the layout proposal.",
+          "14:28",
+        ],
+        [
+          "C3",
+          "Review agent",
+          "Silkboard · dev-03 · Codex",
+          "All verification checks passed.",
+          "Done",
+          "Latest event",
+          "Read the agent’s latest report and event history.",
+          "14:21",
+        ],
+      ];
+      if (q.get("page") === "todos") {
+        document
+          .querySelectorAll(".nav a")
+          .forEach((a) =>
+            a.classList.toggle("active", a.textContent === "Todos"),
+          );
+        document.getElementById("content").innerHTML =
+          `<main class="shell"><div class="title-row"><div><h1>Todos</h1><p class="subtitle">A small list. A clear next step.</p></div>${btn("↻ Reload", "quiet")}</div><div class="new-todo"><div class="input">Add a todo…</div>${btn("+ Add todo", "primary")}</div><p class="todo-description">Each checkbox is independent.</p><section class="todo-panel">${[
+            ["", "Review the UI proposal", false],
+            ["child", "Compare button styles", true],
+            ["child", "Check the 320 px phone layout", false],
+            ["", "Verify the next release", false],
+          ]
+            .map(
+              ([level, text, done]) =>
+                `<article class="todo-entry ${level} ${done ? "completed" : ""}"><div class="todo-main"><span class="check-target"><span class="check ${done ? "checked" : ""}"></span></span><span class="todo-text">${text}</span>${btn("···", "quiet icon")}</div><div class="todo-actions">${btn("Edit", "quiet")}${btn("+ Add child", "quiet")}</div></article>`,
+            )
+            .join(
+              "",
+            )}</section><div class="annotation"><strong>Quieter actions, familiar behavior</strong>One primary Add action. Edit and Add child stay visible. Delete is proposed in a labeled More menu, with the existing child-promotion confirmation preserved.</div><p class="proposal-note">Prototype only: menu interactions and data are illustrative.</p></main>`;
+      } else if (q.get("page") === "controls") {
+        document.getElementById("content").innerHTML =
+          `<main class="shell board"><div class="title-row"><div><h1>Less button chrome. More useful content.</h1><p class="subtitle">Recommended direction: quiet neutrals, one green primary action, compact desktop controls.</p></div><span class="status done">STYLE STUDY</span></div><div class="compare-grid"><section class="compare current"><h2>Current shared control style</h2><p>CSS reconstruction, not a production screenshot. All controls start at 44 px.</p><div class="samples"><button>Reload</button><button>Clear filters</button><button>Open workflow</button></div><div class="mini-card"><h3>Review the UI proposal</h3><div class="samples"><button>Edit</button><button>Add child</button><button>Delete</button></div></div><div class="note-small">Similar weight for navigation, maintenance and destructive actions.</div></section><section class="compare"><h2>Proposed hierarchy</h2><p>32 px desktop controls. Neutral secondary actions. Navigation looks like navigation.</p><div class="samples">${btn("+ Add todo", "primary")}${btn("Reload")}${btn("Clear filters", "quiet")}</div><div class="mini-card"><h3>Review the UI proposal</h3><div class="samples">${btn("Edit", "quiet")}${btn("+ Add child", "quiet")}${btn("···", "quiet icon")}<a class="text-link" href="#">Open workflow →</a></div></div><div class="note-small">A smaller visual footprint without shrinking mobile hit areas.</div></section></div><section class="sample-section"><h2>States remain distinguishable</h2><div class="samples">${btn("Save changes", "primary")}${btn("Cancel")}${btn("Keyboard focus", "focus")}${btn("Saving…", "primary")}<button class="tap" disabled><span class="face">Unavailable</span></button>${btn("Delete todo", "danger")}</div></section><div class="spec-row"><div class="spec"><b>32 px face · desktop</b><small>13–14 px type · 6 px radius · thin border</small></div><div class="spec"><b>44 px target · mobile</b><small>32–36 px painted face · nonoverlapping hit areas</small></div><div class="spec"><b>One strong action</b><small>Links navigate · buttons act · badges show status</small></div></div><div class="danger-confirm"><h3>Delete “Review the UI proposal”?</h3><p>Its child todos move up one level. This existing behavior must remain explicit.</p><div class="samples">${btn("Cancel")}${btn("Delete todo", "danger")}</div></div><p class="board-footer">Inspiration: GitHub Primer’s action hierarchy, Linear’s quiet toolbars, Todoist’s focus on task content. Design proposal; metrics are proposed tokens, not a claim of product-wide accessibility certification.</p></main>`;
+      } else {
+        document.getElementById("content").innerHTML =
+          `<main class="shell"><div class="title-row"><div><h1>Agents</h1><p class="subtitle">Your main sessions, at a glance.</p></div>${btn("↻ Reload", "quiet")}</div><div class="toolbar"><span class="subtitle">3 main sessions</span><span class="hint">Latest reported activity</span></div><section class="agent-grid">${cards.map(([initial, name, host, title, state, kind, desc, time]) => `<article class="card"><div class="card-top"><div class="avatar">${initial}</div><div><h2>${name}</h2><span class="hint">${host}</span></div></div><p class="eyebrow">${kind}</p><h3>${title}</h3>${kind === "Latest workflow" ? `<span class="status ${state.toLowerCase()}"><span class="dot"></span>${state}</span>` : ""}<p class="description">${desc}</p><div class="card-footer"><a href="#" class="text-link">${kind === "Latest workflow" ? "Open workflow" : "View events"} →</a><span class="timestamp">Today, ${time}</span></div></article>`).join("")}</section>${footer}<div class="annotation"><strong>Recommended: content first</strong>Keep the four main pages visible. Let card titles and status carry the information. Use quiet links for destinations, reserving filled green buttons for committing actions.</div></main>`;
+      }
+    </script>
+  </body>
+</html>

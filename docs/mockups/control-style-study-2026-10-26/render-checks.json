@@ -1,0 +1,331 @@
+[
+  {
+    "name": "proposal-agents-desktop",
+    "width": 1360,
+    "scrollWidth": 1360,
+    "controls": [
+      {
+        "text": "☰",
+        "height": 32,
+        "width": 32,
+        "faceHeight": 32
+      },
+      {
+        "text": "↻ Reload",
+        "height": 32,
+        "width": 81.96875,
+        "faceHeight": 32
+      }
+    ]
+  },
+  {
+    "name": "proposal-agents-mobile",
+    "width": 320,
+    "scrollWidth": 320,
+    "controls": [
+      {
+        "text": "☰",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "↻ Reload",
+        "height": 44,
+        "width": 89.96875,
+        "faceHeight": 32
+      }
+    ]
+  },
+  {
+    "name": "proposal-todos-mobile",
+    "width": 320,
+    "scrollWidth": 320,
+    "controls": [
+      {
+        "text": "☰",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "↻ Reload",
+        "height": 44,
+        "width": 89.96875,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add todo",
+        "height": 48,
+        "width": 96.546875,
+        "faceHeight": 36
+      },
+      {
+        "text": "···",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 44,
+        "width": 44.78125,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 44,
+        "width": 83.1875,
+        "faceHeight": 32
+      },
+      {
+        "text": "···",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 44,
+        "width": 44.78125,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 44,
+        "width": 83.1875,
+        "faceHeight": 32
+      },
+      {
+        "text": "···",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 44,
+        "width": 44.78125,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 44,
+        "width": 83.1875,
+        "faceHeight": 32
+      },
+      {
+        "text": "···",
+        "height": 44,
+        "width": 44,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 44,
+        "width": 44.78125,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 44,
+        "width": 83.1875,
+        "faceHeight": 32
+      }
+    ]
+  },
+  {
+    "name": "proposal-controls-light",
+    "width": 1280,
+    "scrollWidth": 1280,
+    "controls": [
+      {
+        "text": "☰",
+        "height": 32,
+        "width": 32,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add todo",
+        "height": 32,
+        "width": 91.765625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Reload",
+        "height": 32,
+        "width": 67.34375,
+        "faceHeight": 32
+      },
+      {
+        "text": "Clear filters",
+        "height": 32,
+        "width": 95.546875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 32,
+        "width": 48.5625,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 32,
+        "width": 93.953125,
+        "faceHeight": 32
+      },
+      {
+        "text": "···",
+        "height": 32,
+        "width": 32,
+        "faceHeight": 32
+      },
+      {
+        "text": "Save changes",
+        "height": 32,
+        "width": 110.71875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Cancel",
+        "height": 32,
+        "width": 66.640625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Keyboard focus",
+        "height": 32,
+        "width": 122.25,
+        "faceHeight": 32
+      },
+      {
+        "text": "Saving…",
+        "height": 32,
+        "width": 79.625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Unavailable",
+        "height": 32,
+        "width": 96.265625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Delete todo",
+        "height": 32,
+        "width": 94.796875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Cancel",
+        "height": 32,
+        "width": 66.640625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Delete todo",
+        "height": 32,
+        "width": 94.796875,
+        "faceHeight": 32
+      }
+    ]
+  },
+  {
+    "name": "proposal-controls-dark",
+    "width": 1280,
+    "scrollWidth": 1280,
+    "controls": [
+      {
+        "text": "☰",
+        "height": 32,
+        "width": 32,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add todo",
+        "height": 32,
+        "width": 91.765625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Reload",
+        "height": 32,
+        "width": 67.34375,
+        "faceHeight": 32
+      },
+      {
+        "text": "Clear filters",
+        "height": 32,
+        "width": 95.546875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Edit",
+        "height": 32,
+        "width": 48.5625,
+        "faceHeight": 32
+      },
+      {
+        "text": "+ Add child",
+        "height": 32,
+        "width": 93.953125,
+        "faceHeight": 32
+      },
+      {
+        "text": "···",
+        "height": 32,
+        "width": 32,
+        "faceHeight": 32
+      },
+      {
+        "text": "Save changes",
+        "height": 32,
+        "width": 110.71875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Cancel",
+        "height": 32,
+        "width": 66.640625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Keyboard focus",
+        "height": 32,
+        "width": 122.25,
+        "faceHeight": 32
+      },
+      {
+        "text": "Saving…",
+        "height": 32,
+        "width": 79.625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Unavailable",
+        "height": 32,
+        "width": 96.265625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Delete todo",
+        "height": 32,
+        "width": 94.796875,
+        "faceHeight": 32
+      },
+      {
+        "text": "Cancel",
+        "height": 32,
+        "width": 66.640625,
+        "faceHeight": 32
+      },
+      {
+        "text": "Delete todo",
+        "height": 32,
+        "width": 94.796875,
+        "faceHeight": 32
+      }
+    ]
+  }
+]
