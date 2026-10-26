@@ -1,5 +1,19 @@
 # Canon provenance
 
+## Control hierarchy and density, 2026-10-26
+
+The owner invoked implementation of
+[#122](https://github.com/breki/silkboard/issues/122), selecting the researched
+green/neutral direction for existing controls. Shared styles provide compact
+desktop faces, inset phone faces inside native touch targets, quiet secondary
+actions, explicit destructive roles, and current-page navigation semantics.
+The phone header follows the proposal's separate brand/menu and primary-link
+rows so text enlargement can reflow without shrinking labels. Existing data,
+routes, confirmations and graph/event interactions are preserved. Main-agent
+cards (#120) and four-page navigation (#121) are integrated; keyboard
+editing (#124) remains separate work. [Appearance](../appearance.md) records
+the local UI behavior, not production rollout or owner device acceptance.
+
 ## Four primary pages, 2026-10-26
 
 The owner authorized [#121](https://github.com/breki/silkboard/issues/121)

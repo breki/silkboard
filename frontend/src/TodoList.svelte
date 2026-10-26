@@ -45,16 +45,19 @@
           >
           <div class="todo-actions">
             <button
+              class="quiet"
               {disabled}
               aria-label={`Edit ${item.text}`}
               onclick={() => onedit(item)}>Edit</button
             >
             {#if depth < 5}<button
+                class="quiet"
                 {disabled}
                 aria-label={`Add child to ${item.text}`}
                 onclick={() => onchild(item)}>Add child</button
               >{/if}
             <button
+              class="quiet danger"
               {disabled}
               aria-label={`Delete ${item.text}`}
               onclick={() => ondelete(item)}>Delete</button
@@ -108,8 +111,5 @@
     display: flex;
     gap: 0.4rem;
     flex-wrap: wrap;
-  }
-  button {
-    min-height: 2.75rem;
   }
 </style>

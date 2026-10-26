@@ -37,7 +37,7 @@
   onfocusin={dismissOutside}
   onkeydown={escape}
 />
-<header class="masthead">
+<header class="masthead" class:with-navigation={showMenu}>
   <h1>Silkboard</h1>
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
@@ -59,7 +59,7 @@
     </nav>
     <div class="navigation" bind:this={container}>
       <button
-        class="menu-trigger"
+        class="menu-trigger quiet"
         aria-label="Navigation menu"
         aria-expanded={open}
         aria-controls="main-navigation"

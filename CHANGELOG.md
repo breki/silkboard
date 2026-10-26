@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Give actions compact desktop faces and quieter shared styles while retaining
+  phone hit targets, visible focus and existing editing/navigation behavior.
+
 - Make Todos the fourth visible primary page with a responsive phone header
   and consistent active-page indication across all four destinations.
 

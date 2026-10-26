@@ -121,7 +121,9 @@
     Your private checklist. Checkboxes are independent. Children are indented;
     each level keeps creation order. Up to five levels and 1,000 todos.
   </p>
-  <button disabled={busy} onclick={() => void reload()}>Reload todos</button>
+  <button class="quiet" disabled={busy} onclick={() => void reload()}
+    >Reload todos</button
+  >
   {#if notice}<p role="alert">{notice}</p>{/if}
   {#if busy}<p role="status">
       {data ? "Saving or loading todos…" : "Loading todos…"}
@@ -151,11 +153,13 @@
       {#if draft && !taskText(draft.trim())}<p>
           Use a non-empty single line of at most 1,000 UTF-8 bytes.
         </p>{/if}
-      <button disabled={busy || uncertain || !taskText(draft.trim())}
-        >Add todo</button
+      <button
+        class="primary"
+        disabled={busy || uncertain || !taskText(draft.trim())}>Add todo</button
       >
       {#if parent}<button
           type="button"
+          class="quiet"
           disabled={busy}
           onclick={() => (parent = null)}>Use top level</button
         >{/if}
@@ -190,6 +194,7 @@
             Use a non-empty single line of at most 1,000 UTF-8 bytes.
           </p>{/if}
         <button
+          class="primary"
           disabled={busy ||
             uncertain ||
             !taskText(editText.trim()) ||
@@ -212,6 +217,7 @@
         </p>
         <button
           bind:this={confirmButton}
+          class="danger"
           disabled={busy || uncertain}
           onclick={() => void save({ kind: "delete", id: removing!.id })}
           >Confirm delete</button
@@ -261,8 +267,5 @@
   }
   p {
     overflow-wrap: anywhere;
-  }
-  button {
-    min-height: 2.75rem;
   }
 </style>

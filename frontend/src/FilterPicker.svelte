@@ -134,12 +134,16 @@
           }}
         /></label
       >
-      <button type="button" aria-pressed={!value} onclick={() => choose("")}
-        >All {plural}</button
+      <button
+        class="quiet"
+        type="button"
+        aria-pressed={!value}
+        onclick={() => choose("")}>All {plural}</button
       >
       <ul aria-label={`Available ${plural}`}>
         {#each items as choice (choice)}<li>
             <button
+              class="quiet"
               type="button"
               aria-pressed={value === choice}
               onclick={() => choose(choice)}>{display(choice)}</button
@@ -204,11 +208,6 @@
   li button {
     width: 100%;
     text-align: start;
-  }
-  button[aria-pressed="true"] {
-    font-weight: bold;
-    outline: 2px solid var(--selected);
-    outline-offset: -2px;
   }
   @media (max-width: 600px) {
     .picker-options {

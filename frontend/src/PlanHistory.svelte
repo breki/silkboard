@@ -75,7 +75,9 @@
       ><button
         aria-pressed={kind === "revisions"}
         onclick={() => change("revisions")}>Definition revisions</button
-      ><button disabled={busy} onclick={() => retry++}>Refresh history</button>
+      ><button class="quiet" disabled={busy} onclick={() => retry++}
+        >Refresh history</button
+      >
     </div>
     {#if failed}<p role="alert">
         Unable to load received history. Missing reports and a failed history

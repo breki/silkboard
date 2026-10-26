@@ -274,6 +274,7 @@
             {#if confirming === item.label}
               <p>Revoke this installation’s publishing access?</p>
               <button
+                class="danger"
                 onclick={() => void revoke(item.label)}
                 disabled={busy || issued !== null}>Confirm revocation</button
               >
@@ -282,6 +283,7 @@
               >
             {:else}
               <button
+                class="quiet danger"
                 onclick={() => (confirming = item.label)}
                 disabled={busy || issued !== null}
                 aria-label={`Revoke ${item.label}`}>Revoke</button

@@ -123,6 +123,7 @@
     onclick={() => (presentation = "steps")}>Steps</button
   >
   {#if active.length === 1}<button
+      class="quiet"
       onclick={() => void select(active[0].id, true)}>Locate active step</button
     >
   {:else if active.length > 1}

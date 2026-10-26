@@ -126,7 +126,7 @@
   <p role="alert">
     This agent session link is invalid. Clear it to choose another filter.
   </p>
-  <button onclick={clearSession}>Clear session filter</button>
+  <button class="quiet" onclick={clearSession}>Clear session filter</button>
 {:else}
   {#if session.kind === "session"}<section
       class="session-filter"
@@ -143,7 +143,7 @@
         <dt>Subagent</dt>
         <dd>{session.value.subagent_id ?? "Primary session"}</dd>
       </dl>
-      <button onclick={clearSession}>Clear session filter</button>
+      <button class="quiet" onclick={clearSession}>Clear session filter</button>
     </section>{/if}
   <ListFilters
     onapply={applyFilters}
@@ -232,9 +232,5 @@
     flex-wrap: wrap;
     gap: 0.25rem;
     margin-block: 0.75rem;
-  }
-  .event-view-switch button[aria-pressed="true"] {
-    background: var(--primary);
-    color: var(--primary-text);
   }
 </style>

@@ -51,6 +51,13 @@ test("primary header links and compact menu support keyboards and small phones",
       .locator("header")
       .evaluate((node) => node.getBoundingClientRect().height),
   ).toBeLessThanOrEqual(104);
+  const navBox = await page
+    .getByRole("navigation", { name: "Primary navigation" })
+    .boundingBox();
+  const brandBox = await page
+    .getByRole("heading", { name: "Silkboard", exact: true })
+    .boundingBox();
+  expect(navBox!.y).toBeGreaterThanOrEqual(brandBox!.y + brandBox!.height);
   // Exercise a wider fallback font as well as the platform's default face.
   const widerFont = await page.addStyleTag({
     content: ".masthead { font-family: monospace; }",
