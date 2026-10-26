@@ -108,13 +108,17 @@ fn corrupt_capture_and_wrong_identity_cannot_supply_workflow_ids() {
     }
 }
 #[test]
-fn publisher_waits_briefly_for_concurrent_local_capture() {
+fn publisher_waits_for_an_atomically_installed_capture() {
     let mut f = fixture();
     let (origin, server) = server_at(2, "plans|progress", |v| ack(&v));
     f.config["endpoint"] = json!(origin);
     success(&f, "start", &draft(A));
-    let args = f.args();
     let p = payload(&f, "concurrent");
+    call(&f, "codex-hook-context", &p);
+    let capture = state_path(&f, "hook-context-", "json");
+    let pending = capture.with_extension("pending");
+    std::fs::rename(&capture, &pending).unwrap();
+    let args = f.args();
     let mut upload = args.clone();
     upload[0] = "codex-hook".into();
     let input = p.to_string();
@@ -122,7 +126,9 @@ fn publisher_waits_briefly_for_concurrent_local_capture() {
         silkboard_publish::run(&upload, input.as_bytes())
     });
     std::thread::sleep(std::time::Duration::from_millis(40));
-    call(&f, "codex-hook-context", &p);
+    // Install real capture metadata atomically. Invoking another hook here
+    // would race its nonblocking lock and rewrite the fixture configuration.
+    std::fs::rename(&pending, &capture).unwrap();
     assert_eq!(worker.join().unwrap(), Ok("{}"));
     linked(&server.join().unwrap(), 1, Some(A));
 }
