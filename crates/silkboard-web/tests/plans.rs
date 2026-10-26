@@ -1029,6 +1029,22 @@ async fn agents_include_event_only_and_past_workflow_writers() {
         .0,
         StatusCode::OK
     );
+    let mut child = snapshot("1");
+    child["task_id"] = json!("acacacac-acac-4cac-8cac-acacacacacac");
+    child["reporter"]["subagent_id"] = json!("review");
+    child["reporter"]["parent_session_id"] = json!("native-a");
+    assert_eq!(
+        request(
+            &app,
+            "POST",
+            "/api/projects/silkboard/plans",
+            &token,
+            Some(child)
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
     let (status, agents) =
         request(&app, "GET", "/api/owner/agents", &cookie, None).await;
     assert_eq!(status, StatusCode::OK);

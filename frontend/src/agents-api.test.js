@@ -7,7 +7,7 @@ const read = () => agents(null, new AbortController().signal);
 test("accepts both activities and keys every native identity component", async () => {
   const event = {
     ...agent,
-    subagent_id: "child",
+    session_id: "other",
     latest: { kind: "event", event_id: "event", message: "Observed" },
   };
   vi.stubGlobal(
@@ -30,6 +30,8 @@ test.each([
   null,
   {},
   { ...agent, project: "WRONG" },
+  { ...agent, subagent_id: "child" },
+  { ...agent, parent_session_id: "parent" },
   { ...agent, received_at: -1 },
   { ...agent, received_at: 8640000000000001 },
   { ...agent, received_at: 1.5 },

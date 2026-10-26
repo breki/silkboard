@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Show main agents as responsive cards with wrapping identity and activity,
+  excluding subagents before pagination without aggregating child activity.
+
 ## 0.11.0 - 2026-10-26
 
 - Link automatic Codex summaries to their explicitly selected, confirmed
