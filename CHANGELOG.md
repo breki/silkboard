@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.12.0 - 2026-10-26
+
 - Give actions compact desktop faces and quieter shared styles while retaining
   phone hit targets, visible focus and existing editing/navigation behavior.
 
