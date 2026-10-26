@@ -19,6 +19,10 @@ adds Agents as home at `/` and moves the all-project Events table to `/events`.
 Workflow links from Agents pin the reported snapshot; see the
 [owner guide](owner-feed.md) for native identity and latest-activity rules. Application status, credential
 management and Sign out remain in the hamburger menu; no task execution controls are added.
+[Issue #121](https://github.com/breki/silkboard/issues/121) makes Todos the fourth
+visible primary link. Phones use a second header row for all four links; the
+current page is marked visually and with `aria-current="page"`. Workflow detail
+and snapshot routes retain the Workflows marker.
 
 Existing owner browser paths:
 

@@ -405,15 +405,44 @@ a {
   padding: 0.55rem 0.8rem;
 }
 
-@media (max-width: 360px) {
+/* Current-page styling supplements the semantic aria-current marker. */
+.primary-navigation a[aria-current="page"] {
+  background: var(--panel);
+  border-radius: 0.3rem;
+  box-shadow: inset 0 -3px 0 var(--link);
+  font-weight: 700;
+  text-decoration: none;
+}
+@media (max-width: 600px) {
+  .masthead {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
   .masthead h1 {
-    font-size: 0.875rem;
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .navigation {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
   }
   .primary-navigation {
-    gap: 0.125rem;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    margin-left: 0;
   }
   .primary-navigation a {
-    font-size: 0.75rem;
+    justify-content: center;
     padding-inline: 0;
+  }
+}
+@media (max-width: 360px) {
+  .primary-navigation a {
+    font-size: 0.8125rem;
   }
 }

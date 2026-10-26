@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Make Todos the fourth visible primary page with a responsive phone header
+  and consistent active-page indication across all four destinations.
+
 - Show main agents as responsive cards with wrapping identity and activity,
   excluding subagents before pagination without aggregating child activity.
 

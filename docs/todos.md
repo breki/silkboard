@@ -1,9 +1,11 @@
 # Owner Todos
 
 [Issue #116](https://github.com/breki/silkboard/issues/116) adds an owner-managed
-checklist at `/todos`. Open Navigation menu, then Todos, and sign in using the
-existing owner account. Agents stays home; Events and Workflows keep their
-links. Todos do not sync with GitHub or drive agents, workflows or execution.
+checklist at `/todos`. Choose Todos in the visible primary navigation and sign
+in using the existing owner account. Agents stays home; Events and Workflows
+keep their links. [Issue #121](https://github.com/breki/silkboard/issues/121)
+moves Todos out of the hamburger menu and keeps it directly available from
+each primary page. Todos do not sync with GitHub or drive agents, workflows or execution.
 
 ## Editing the list
 

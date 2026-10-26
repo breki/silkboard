@@ -634,3 +634,85 @@ test("Main agent cards link exact main events and reported workflow snapshots", 
   await expect(page).toHaveURL(`${link(agentTask)}?sequence=1`);
   await expect(page.getByText(/Earlier snapshot/).first()).toBeVisible();
 });
+
+test("four primary pages keep Todos visible and mark the active route", async ({
+  page,
+}, info) => {
+  const cases = [
+    ["/", "Agents"],
+    ["/events", "Events"],
+    ["/plans", "Workflows"],
+    ["/todos", "Todos"],
+    [`/plans/silkboard/${task}?sequence=1`, "Workflows"],
+  ];
+  for (const [path, label] of cases) {
+    await openPlan(page, path);
+    const primary = page.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    await expect(page.getByLabel("Owner password")).toHaveCount(0);
+    await expect(primary.getByRole("link")).toHaveCount(4);
+    const current = primary.getByRole("link", { name: label, exact: true });
+    await expect(current).toHaveAttribute("aria-current", "page");
+    await expect(primary.locator('[aria-current="page"]')).toHaveCount(1);
+    for (const width of [320, 390, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      await noOverflow(page);
+      const links = primary.getByRole("link");
+      for (const link of await links.all()) {
+        await expect(link).toBeVisible();
+        const rect = await link.boundingBox();
+        expect(rect.width).toBeGreaterThanOrEqual(44);
+        expect(rect.height).toBeGreaterThanOrEqual(44);
+      }
+      const nav = await primary.boundingBox();
+      const menu = await page
+        .getByRole("button", { name: "Navigation menu" })
+        .boundingBox();
+      if (width < 600)
+        expect(nav.y).toBeGreaterThanOrEqual(menu.y + menu.height);
+      await page.screenshot({
+        path: info.outputPath(`primary-${label}-${width}.png`),
+      });
+    }
+    await page.setViewportSize({ width: 320, height: 800 });
+    await primary.getByRole("link", { name: "Agents", exact: true }).focus();
+    for (const next of ["Events", "Workflows", "Todos"]) {
+      await page.keyboard.press("Tab");
+      await expect(
+        primary.getByRole("link", { name: next, exact: true }),
+      ).toBeFocused();
+    }
+    if (path === "/") {
+      await page.getByRole("button", { name: "Navigation menu" }).click();
+      const drawer = page.getByRole("navigation", { name: "Main navigation" });
+      await expect(
+        drawer.getByRole("link", { name: "Todos", exact: true }),
+      ).toHaveCount(0);
+      const popup = await drawer.boundingBox();
+      const nav = await primary.boundingBox();
+      expect(popup.y).toBeGreaterThanOrEqual(nav.y + nav.height);
+      await primary.getByRole("link", { name: "Todos", exact: true }).click();
+    } else await page.keyboard.press("Enter");
+    await expect(page).toHaveURL("/todos");
+    await expect(
+      primary.getByRole("link", { name: "Todos", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    await expect(
+      page.getByRole("heading", { name: "Todos", exact: true }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      primary.getByRole("link", { name: "Todos", exact: true }),
+    ).toHaveAttribute("aria-current", "page");
+    if (path !== "/todos") {
+      await page.goBack();
+      await expect(page).toHaveURL(path);
+      await expect(
+        primary.getByRole("link", { name: label, exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      await page.goForward();
+      await expect(page).toHaveURL("/todos");
+    }
+  }
+});

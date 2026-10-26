@@ -26,7 +26,7 @@ test("shows the persisted checklist with independent labeled checkboxes", async 
   expect(screen.getByRole("checkbox", { name: "Child" }).checked).toBe(false);
 });
 
-test("Todos deep link survives owner login and is in the navigation menu", async () => {
+test("Todos deep link retains its visible active primary link after owner login", async () => {
   const { default: App } = await import("./App.svelte");
   const { routes, csrf } = await import("../test/support");
   vi.stubGlobal(
@@ -43,13 +43,17 @@ test("Todos deep link survives owner login and is in the navigation menu", async
   );
   render(App, { todosPage: true });
   await screen.findByText("No todos yet. Add your first todo above.");
-  const { fireEvent } = await import("@testing-library/svelte");
-  await fireEvent.click(
-    screen.getByRole("button", { name: "Navigation menu" }),
-  );
   expect(screen.getByRole("link", { name: "Todos" }).getAttribute("href")).toBe(
     "/todos",
   );
+  expect(
+    screen
+      .getByRole("link", { name: "Todos", exact: true })
+      .getAttribute("aria-current"),
+  ).toBe("page");
+  expect(
+    screen.queryByRole("navigation", { name: "Main navigation" }),
+  ).toBeNull();
 });
 
 const root = { id: "1", parent_id: null, text: "Parent", completed: false };
