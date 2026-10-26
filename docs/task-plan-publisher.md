@@ -183,6 +183,105 @@ scope/revocation/conflict boundaries, failed allocations/delivery, concurrency,
 return handoffs, private transfer and bounded acknowledgement validation.
 They do not establish live phone visibility, installation or tagged upgrades.
 
+## Automatic summary workflow context
+
+Install a compatible publisher whose `--help` lists `codex-hook-context`,
+`select` and `clear`, and
+use the existing explicit `codex.plan_reporting` opt-in. The server must support
+per-event workflow IDs (#104). Older publishers, including v0.10.0, do not
+maintain this context. Upgrade and review/enable the synchronous local capture
+handlers in [Codex setup](codex-publishing.md) before expecting automatic links.
+The existing uploader remains asynchronous. Neither handler fetches dashboard
+content or grants execution permission.
+
+A Codex `codex-plan start`, or `plan start` with a matching configured Codex
+reporter, explicitly selects that workflow. The selection becomes confirmed
+only after its plan acknowledgement. The synchronous `codex-hook-context`
+handler freezes that task ID at each native event boundary, keyed by the
+native event kind and `turn_id`. The asynchronous `codex-hook` uploader reads
+only that capture, never the current mutable selection. A delayed summary from
+workflow A therefore keeps A after the session starts B. Final summaries may
+link after the workflow is marked done. Completion
+does not clear context. A new start replaces the prior selection; failed or
+unconfirmed new reports leave summaries unlinked rather than pointing to the
+previous task. Invalid/repeated starts do not replace a valid selection.
+
+Publishing an older, different workflow does not select it. Publishing the
+selected workflow refreshes its confirmation; failed delivery leaves it
+unconfirmed until a later selected-plan publish is acknowledged. Preserve
+normal best-effort behavior: do not retry the hook or restart task counters.
+
+To resume an existing workflow as the current task, explicitly select it,
+then publish its full current graph using the same task ID:
+
+```sh
+silkboard-publish codex-plan select --config /PRIVATE/config.json <<'JSON'
+{"schema_version":1,"task_id":"c53ba3b1-c55e-45a3-98af-a061aa972224"}
+JSON
+# Now use codex-plan publish with the existing complete graph.
+```
+
+Selection alone remains unconfirmed. `codex-plan select` derives the same
+operator/native identity as other explicit Codex commands; input cannot supply
+`reporter`. The chosen task must already exist in private working state and
+belong to that identity. To switch to unrelated work without a reported graph:
+
+```sh
+silkboard-publish codex-plan clear --config /PRIVATE/config.json
+```
+
+Clear is local, reads no stdin, and can run with plan reporting disabled.
+It does not delete plan state/counters or change workflow status. Publishing
+an old plan after clear does not reactivate it; use select then publish.
+
+After an explicit writer handoff, new old-writer captures no longer resolve
+the selection. A capture made before handoff keeps its historical association. The new writer must select the existing task and publish; handoff
+does not silently assign a current task to that native session. A transfer
+back to an earlier identity also needs fresh selection for the new generation.
+
+Operator commands support the same local controls with an explicit reporter:
+
+```sh
+silkboard-publish plan select --config /PRIVATE/config.json <<'JSON'
+{"schema_version":1,"task_id":"c53ba3b1-c55e-45a3-98af-a061aa972224","reporter":{"hostname":"development-vm","tool":"codex","session_id":"native-session-a"}}
+JSON
+silkboard-publish plan clear --config /PRIVATE/config.json <<'JSON'
+{"schema_version":1,"reporter":{"hostname":"development-vm","tool":"codex","session_id":"native-session-a"}}
+JSON
+```
+
+For a subagent, provide its full child and parent metadata and select only
+when it owns the task's local reporting role. Ordinary delegated subagents
+remain unlinked; a parent relationship or shared name alone is insufficient.
+
+Each endpoint/project/host/tool/session/subagent key has a private stable
+`context-HASH.lock` and mode-0600 `context-HASH.json`. The latter holds only a
+schema version and optional task ID, writer generation and confirmation flag.
+The local capture handler reads the explicitly selected task's private working
+snapshot solely to validate writer identity/generation; it never scans a
+directory for a task. Its mode-0600 `hook-context-HASH.json` stores at most 32
+recent event/turn IDs with optional frozen task IDs (16 KiB read limit), using
+the same native context lock. It stores no summary text or outgoing requests.
+Old entries are evicted at the count or encoded-byte limit; missing, evicted
+or conflicting captures yield no
+association. There is no resend process. The uploader waits at most 500 ms
+for concurrently started capture, then sends an unlinked summary. Missing or
+invalid native turn IDs also remain unlinked; mutable selection is never a
+fallback. No context lock is held during HTTP delivery.
+Context locks precede task locks and use nonblocking acquisition. Unavailable,
+corrupt, unsafe, busy, missing or stale context yields an ordinary unlinked
+summary, not permission to inspect other files or reset state. Context records
+are local selection metadata, not outgoing queues. Keep them private and do
+not copy an old native session's selection as part of a writer transfer.
+
+Disabling plan reporting suppresses hook associations but preserves selection.
+Native `codex-plan start` rejects disabled reporting without changing context.
+A generic `plan start` with a matching configured Codex reporter is still
+allowed while disabled; it clears old selection without activating the new
+one. Before unrelated work, explicitly clear context (which works while
+disabled) so re-enabling cannot revive the earlier task. Unrelated tool
+reporters never alter Codex context.
+
 ## Descriptions alongside titles
 
 Use short workflow and step titles for lists and graph nodes. Supply optional

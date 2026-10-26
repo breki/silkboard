@@ -8,15 +8,19 @@ use silkboard_web::progress::{
 use std::{
     fs,
     path::PathBuf,
+    sync::atomic::{AtomicU64, Ordering},
     time::{SystemTime, UNIX_EPOCH},
 };
+
+static NEXT_DATABASE: AtomicU64 = AtomicU64::new(0);
 
 struct Database(PathBuf);
 impl Database {
     fn new() -> Self {
         let dir = std::env::temp_dir().join(format!(
-            "silkboard-progress-{}-{}",
+            "silkboard-progress-{}-{}-{}",
             std::process::id(),
+            NEXT_DATABASE.fetch_add(1, Ordering::Relaxed),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()

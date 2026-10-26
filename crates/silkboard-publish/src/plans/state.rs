@@ -58,6 +58,7 @@ pub(super) fn allocate(
     config: &Config,
     mut s: Snapshot,
     start: bool,
+    prepare: impl FnOnce(&Snapshot) -> Result<(), Error>,
 ) -> Result<Snapshot, Error> {
     let (_lock, path) = locked(config, &s.task_id)?;
     if let Some(old) = load(&path, &s.task_id)? {
@@ -78,6 +79,7 @@ pub(super) fn allocate(
         return Err(Error::State);
     }
     let s = s.normalized().map_err(|_| Error::Input)?;
+    prepare(&s)?;
     save(&path, &s)?;
     Ok(s)
 }
@@ -103,4 +105,18 @@ pub(super) fn handoff(config: &Config, h: Handoff) -> Result<(), Error> {
     s.writer_generation = increment(s.writer_generation)?;
     let s = s.normalized().map_err(|_| Error::Input)?;
     save(&path, &s)
+}
+
+// Read only the explicitly selected task, under its existing stable lock.
+pub(super) fn owned(
+    config: &Config,
+    id: &str,
+    reporter: &silkboard_plan::Reporter,
+) -> Result<Snapshot, Error> {
+    let (_lock, path) = locked(config, id)?;
+    let snapshot = load(&path, id)?.ok_or(Error::State)?;
+    if !snapshot.reporter.same_identity(reporter) {
+        return Err(Error::Conflict);
+    }
+    Ok(snapshot)
 }

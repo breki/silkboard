@@ -1,5 +1,23 @@
 # Canon provenance
 
+## Automatic summary workflow context, 2026-10-25
+
+The owner authorized [#115](https://github.com/breki/silkboard/issues/115)
+and selected retaining completed-workflow context through final summaries
+until an explicit task switch or clear. Publisher-local selection, confirmed
+by plan acknowledgement, supplies hook task IDs; late updates to another plan
+do not select it. Current writer identity and generation are checked at
+synchronous capture. The asynchronous uploader uses only the frozen native
+event/turn association, preventing delayed A summaries from acquiring B.
+The [official native hooks contract](https://learn.chatgpt.com/docs/hooks)
+documents `turn_id` and concurrent command handlers; the uploader waits briefly
+for the local capture. Missing capture remains unlinked. Updated registrations
+require normal operator review/trust before rollout.
+Subagents never inherit context merely from their parent. Select/clear and
+explicit post-handoff selection preserve native/project boundaries without
+transcript scans, dashboard reads or execution authority. This is local
+implementation scope, not an installed upgrade or production rollout claim.
+
 ## Owner Todos, 2026-10-25
 
 The owner authorized [#116](https://github.com/breki/silkboard/issues/116)

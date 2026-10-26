@@ -103,6 +103,15 @@ pub fn server(
 pub fn server_at(
     count: usize,
     route: &'static str,
+    respond: impl FnMut(Value) -> (u16, String) + Send + 'static,
+) -> (String, thread::JoinHandle<Vec<Value>>) {
+    server_projects(count, "silkboard", route, respond)
+}
+
+pub fn server_projects(
+    count: usize,
+    projects: &'static str,
+    route: &'static str,
     mut respond: impl FnMut(Value) -> (u16, String) + Send + 'static,
 ) -> (String, thread::JoinHandle<Vec<Value>>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
@@ -143,8 +152,10 @@ pub fn server_at(
             let headers = std::str::from_utf8(&bytes[..split])
                 .unwrap()
                 .to_ascii_lowercase();
-            assert!(headers.starts_with(&format!(
-                "post /api/projects/silkboard/{route} http/1.1\r\n"
+            assert!(projects.split('|').any(|project| route.split('|').any(
+                |route| headers.starts_with(&format!(
+                    "post /api/projects/{project}/{route} http/1.1\r\n"
+                ))
             )));
             assert!(headers.contains(&format!(
                 "authorization: bearer {}\r\n",

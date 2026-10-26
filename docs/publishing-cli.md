@@ -175,9 +175,17 @@ project. The field is per event, so one session can publish for several
 workflows and a workflow can continue across sessions. Omit it when unknown;
 the publisher never guesses from a name, message or session. The server must
 be upgraded first; see [the ingestion contract](progress-ingestion.md).
-Native `codex-hook` summaries have no explicit task context and remain
-unlinked. This change does not inspect local plan files or infer a current
-workflow for those summaries.
+With a compatible publisher and explicit Codex plan-reporting opt-in, native
+`codex-hook` summaries use a confirmed, explicitly selected workflow frozen
+by the synchronous `codex-hook-context` handler at the native event boundary.
+The operator must review/enable these capture handlers; delayed uploads never
+fall back to whichever task is selected later. Missing captures stay unlinked.
+Plan start selects a task; older plan updates cannot
+steal that selection. Missing, unconfirmed, stale, unsafe or busy context leaves
+the summary unlinked. Hooks never scan plans, read transcripts or fetch
+dashboard content to guess a workflow. Subagents do not inherit a parent
+association. See [context controls](task-plan-publisher.md#automatic-summary-workflow-context)
+for selection, clear and handoff behavior.
 
 ## Event summaries and descriptions
 

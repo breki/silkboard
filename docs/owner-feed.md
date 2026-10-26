@@ -81,7 +81,10 @@ When an event explicitly names an existing workflow in its project, an
 Open workflow link appears beside its message preview. Touch it or focus it
 with Tab and press Enter to open the workflow's existing graph view. The
 message button still expands details independently. Events with no explicit
-association, including older events, show no link; sharing a session or name
+association, including older events, show no link. Compatible opted-in Codex
+publishers with reviewed local capture hooks attach confirmed workflow context
+frozen at the native event boundary to automatic summaries;
+missing or unconfirmed context remains unlinked. Sharing a session or name
 is not enough. Associations stay with each event across pagination and
 workflow session handoffs. A missing workflow can become linked after its
 first report arrives. See [the ingestion contract](progress-ingestion.md).

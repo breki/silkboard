@@ -143,17 +143,20 @@ fn missing_fields_invalid_config_and_delivery_errors_are_quiet() {
 fn wrapper_missing_installation_and_failed_executable_cannot_block() {
     use std::process::Command;
     let f = Fixture::new();
-    let wrapper = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../.codex/hooks/publish-progress.sh");
-    for binary in ["/nonexistent", "/bin/false"] {
-        let output = Command::new("sh")
-            .arg(&wrapper)
-            .env("SILKBOARD_PUBLISH_BIN", binary)
-            .env("SILKBOARD_PUBLISH_CONFIG", f.args()[2].clone())
-            .output()
-            .unwrap();
-        assert!(output.status.success());
-        assert_eq!(output.stdout, b"{}\n");
-        assert!(output.stderr.is_empty());
+    for name in ["publish-progress.sh", "capture-workflow.sh"] {
+        let wrapper = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../.codex/hooks")
+            .join(name);
+        for binary in ["/nonexistent", "/bin/false"] {
+            let output = Command::new("sh")
+                .arg(&wrapper)
+                .env("SILKBOARD_PUBLISH_BIN", binary)
+                .env("SILKBOARD_PUBLISH_CONFIG", f.args()[2].clone())
+                .output()
+                .unwrap();
+            assert!(output.status.success());
+            assert_eq!(output.stdout, b"{}\n");
+            assert!(output.stderr.is_empty());
+        }
     }
 }
