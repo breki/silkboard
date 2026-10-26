@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Focused local feedback, 2026-10-26
+
+The owner selected [#67](https://github.com/breki/silkboard/issues/67).
+The [development guide](../development.md) now explains existing crate/test
+targets, frontend file tests, Vite hot reload, dependency-install reuse and
+when edits require broader checks. [Local measurements](../local-feedback-measurements.md)
+record command scope, actual compilation, executed tests and a restored
+source-edit/HMR probe. No application behavior, build helper, profile or
+validation threshold changed. Focused results do not establish complete
+validation, hosted release eligibility or production activation.
+
 ## Control hierarchy and density, 2026-10-26
 
 The owner invoked implementation of

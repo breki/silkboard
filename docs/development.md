@@ -1,59 +1,193 @@
 # Local application development
 
-The separate [standalone publishing CLI](publishing-cli.md) builds in this
-workspace and can run on a compatible target without Rust or Cargo.
+Silkboard uses a Rust/Axum backend and Svelte/Vite frontend. The private owner
+pages are Agents, Events, Workflows and Todos; `/status`, `/health` and
+`/api/status` expose application health and build identity. The
+[standalone publisher](publishing-cli.md) builds in the same workspace.
+Production provisioning and automatic upgrades remain separate workflows.
 
-The minimal application adapts rustbase's Axum backend and Svelte/Vite
-frontend. It serves a status page, `/health`, and `/api/status`, with optional
-[persistent progress ingestion](progress-ingestion.md). It has no execution
-API, VM access, or updater credentials. Production provisioning and automatic
-upgrades remain separate work.
+## Install and start once
 
-## Prerequisites and first run
-
-Use Rust with edition 2024 support, rustfmt, and Clippy, plus Node 22.12+
-(or 24+) and npm. The optional [mise](https://mise.jdx.dev/) configuration
-pins Node 24.14.1; `mise exec node@24.14.1 -- <command>` also works without
-changing global settings. Run the following from the repository root:
+Use Rust with edition 2024 support, rustfmt and Clippy. The Rust version is
+pinned in the [CI workflow](../.github/workflows/ci.yml); the optional
+[mise configuration](../.mise.toml) pins Node. See
+[tooling prerequisites](ai-agents/tooling.md) for the complete validation
+tools. From a new checkout, or after the frontend dependency manifests change:
 
 ```sh
 npm ci --prefix frontend
 npm run build --prefix frontend
+```
+
+Keep that dependency installation for source-only edits. The initial frontend
+build supplies `frontend/dist/index.html`, which backend startup requires.
+For UI iteration, Vite serves the current source; rebuilding `dist` after each
+edit is unnecessary.
+
+In one terminal, start the backend from the repository root:
+
+```sh
 cargo run --locked -p silkboard-web
 ```
 
-Open <http://127.0.0.1:3000>. `/health` reports process liveness as
-`{"status":"ok"}`. `/api/status` reports health, package version, release
-tag, and commit. Health describes a successful application response; it
-makes no claim about deployment eligibility or external services. The page
-fetches status once on load, with a ten-second timeout; reload to refresh.
-
-By default development builds show `unknown` for tag and commit. Identity
-comes from the backend binary, never from an independent frontend version.
-The process needs only its binary and the built `frontend/dist` directory;
-it does not inspect Git, contact GitHub, or run commands.
-
-`SILKBOARD_LISTEN` accepts a socket address (default `127.0.0.1:3000`).
-`SILKBOARD_FRONTEND` selects the built public assets directory (default
-`frontend/dist`, relative to the process's working directory). Keep it
-limited to public assets. Startup fails if `index.html` is missing.
-The server handles Ctrl+C and, on Unix, SIGTERM for graceful shutdown.
-`SILKBOARD_DATABASE` enables the publish-only API; see the ingestion guide
-for private storage and local credential provisioning. It is unset by default.
-`SILKBOARD_OWNER_ORIGIN` additionally enables the
-[owner authentication API](owner-login.md) and [progress feed](owner-feed.md).
-Use an HTTPS proxy for owner login; the HTTP Vite server alone cannot supply
-the secure owner cookie.
-
-For frontend hot reload, keep the backend running and in another terminal:
+In another terminal, start Vite:
 
 ```sh
 npm run dev --prefix frontend
 ```
 
-Open <http://127.0.0.1:5173>. Vite proxies `/api` and `/health` to the
-backend on loopback port 3000; keep the default backend address for this
-setup. Both listeners default to loopback. The separate
+Open <http://127.0.0.1:5173>. Use <http://127.0.0.1:5173/status> to verify the
+backend connection without owner credentials. Vite serves source changes with
+hot reload and proxies `/api` and `/health` to `127.0.0.1:3000`. Its configured
+port is 5173 with strict binding; backend port 3000 must match that proxy.
+Both listeners bind to loopback. Resolve a port conflict with the server you
+started rather than connecting this setup to an unrelated listener.
+
+Save Svelte/CSS/TypeScript edits and inspect the existing Vite page. Restart
+the backend after Rust edits so the running process uses the rebuilt code.
+Changes to Vite configuration or dependencies can require a Vite restart.
+
+Use worktree-local Cargo output for the long-running backend. The optional
+[local Cargo wrapper](local-build-reuse.md) holds its shared lock for a whole
+command, including `run`; using it for a persistent server would make later
+wrapper checks wait. The wrapper is useful for the short checks below.
+
+The backend also serves built assets directly at <http://127.0.0.1:3000>.
+That view uses `dist`, so refresh the frontend build before checking the
+standalone app or running the browser fixture suite.
+
+## Choose feedback for the edit
+
+Run commands from the repository root. `./dev/cargo` opts into dependency
+reuse between trusted worktrees; ordinary `cargo` works with worktree-local
+output instead. Cargo handles source/profile/feature changes; routine edits
+do not need a cache deletion. The wrapper rebuilds workspace code when its
+workspace path changes, so that first command can be slower.
+
+For compile-only feedback, check the affected crate and its test targets:
+
+```sh
+./dev/cargo check --locked -p silkboard-web --all-targets
+```
+
+For behavior feedback, run the relevant test target directly; Cargo compiles
+its inputs as needed. These are independent examples:
+
+| Changed behavior | Example focused check |
+| --- | --- |
+| Backend status/static HTTP behavior | `./dev/cargo test --locked -p silkboard-web --test status` |
+| Publisher HTTP delivery | `./dev/cargo test --locked -p silkboard-publish --test publishing` |
+| Updater policy/evidence | `./dev/cargo test --locked -p silkboard-updater --test policy_evidence` |
+| Tooling CI-scope classification | `./dev/cargo test --locked -p xtask --test ci_mode` |
+| Shared task-plan types and validation | `./dev/cargo test --locked -p silkboard-plan` |
+
+For example, owner Todo changes use the backend's `todos` target. Integration target names come from the crate's `tests/*.rs` files.
+A trailing test-name filter can narrow a target further. Cargo can return
+success when a filter matches zero tests; check the names and executed count.
+After the small check passes, run the affected crate's complete tests:
+
+```sh
+./dev/cargo test --locked -p silkboard-web
+```
+
+For frontend edits, keep Vite running and select the affected component/API
+tests. This example selects the existing Header test file:
+
+```sh
+npm test --prefix frontend -- Header.test.js
+```
+
+For repeated edits, its interactive watch command is:
+
+```sh
+npm run test:watch --prefix frontend -- Header.test.js
+```
+
+Stop watch mode with Ctrl+C. Check Svelte/TypeScript consumers as well:
+
+```sh
+npm run check --prefix frontend
+```
+
+Run frontend lint and formatting checks before committing:
+
+```sh
+npm run lint --prefix frontend
+npm run format:check --prefix frontend
+```
+
+For a single file while editing, use the installed tools from `frontend/`:
+
+```sh
+(cd frontend && npm exec -- eslint src/Header.svelte)
+(cd frontend && npm exec -- prettier --check src/Header.svelte)
+```
+
+The full frontend check remains available as `npm run check:all --prefix
+frontend`; it also runs all component tests and builds `dist`. The
+[local measurements](local-feedback-measurements.md) record the scopes,
+executed tests, cache conditions and observed feedback times. A focused test
+result establishes only that selected behavior.
+
+## Widen checks when the change crosses a boundary
+
+| Change | Checks to include before the full gate |
+| --- | --- |
+| Shared plan models or validation | `silkboard-plan`, backend and publisher tests that consume the contract |
+| Wire format, API routes, auth or persistence | Both server/client Rust tests, frontend API/component tests, and relevant browser flows |
+| UI layout, interaction, focus or themes | Svelte types, affected component tests, and the built-app browser suite |
+| Cargo manifests, features, profiles, lockfiles or workspace lints | Workspace checks; dependency changes also need current admission/audit checks |
+| xtask dispatch or cache/build helpers | Relevant xtask integration tests and the helper's existing behavioral tests |
+| Owner-handoff, hooks, VM bootstrap or deployment | Their existing handoff/Bombyx/updater suites as applicable; operational claims require their own live evidence |
+
+For a standalone browser run, finish building the frontend first. Choose a
+free eight-port block for your worktree, then run the suite:
+
+```sh
+npm run build --prefix frontend
+SILKBOARD_E2E_PORT_BASE=18164 ./dev/cargo xtask browser-test
+```
+
+The fixtures serve built assets. Keep `dist` stable while that run executes;
+a concurrent rebuild can replace files being requested by the browser. The
+suite uses disposable local storage and credentials, not production data.
+See [tooling](ai-agents/tooling.md) for Chromium/OpenSSL prerequisites and
+[feed verification](owner-feed.md#verification) for its coverage.
+
+Code changes still require the complete read-only validation suite before
+merging:
+
+```sh
+./dev/cargo xtask validate --check --parallel
+```
+
+The bounded parallel schedule, coverage/security thresholds and full browser
+checks remain unchanged. Documentation-only changes use the documented canon
+and diff checks under [quality rules](ai-agents/quality.md). Release work also
+requires its separate ARM64 lint, advisory audit and signed exact-revision
+checks in the [release procedure](ai-agents/workflows/release.md). Local checks
+do not establish hosted release-suite success or production activation.
+
+## Backend settings and owner access
+
+Development binaries show `unknown` tag/commit unless build identity is
+supplied. Identity comes from the backend rather than a frontend version.
+The process serves its binary and public assets; it does not inspect Git or
+execute commands. Health describes an application response, not deployment
+eligibility or the health of external services.
+
+`SILKBOARD_LISTEN` selects the listener (default `127.0.0.1:3000`).
+`SILKBOARD_FRONTEND` selects the built public assets directory (default
+`frontend/dist`, relative to the process's working directory). Keep that
+path limited to public assets. Ctrl+C or Unix SIGTERM stops the server.
+
+The default setup has no database or owner account. `SILKBOARD_DATABASE`
+enables [persistent ingestion](progress-ingestion.md);
+`SILKBOARD_OWNER_ORIGIN` additionally enables
+[owner authentication](owner-login.md) and the [private feed](owner-feed.md).
+Owner login needs an HTTPS proxy for its Secure cookie. The HTTP Vite server
+alone is not an authenticated owner-testing setup; use the existing local
+HTTPS browser fixtures or the documented owner setup. The
 [production VM](production-vm.md) uses private Tailscale HTTPS.
 
 ## Release build identity
@@ -61,8 +195,8 @@ setup. Both listeners default to loopback. The separate
 Release builds require both `SILKBOARD_RELEASE_TAG` (exactly `v` followed by
 the crate version) and `SILKBOARD_COMMIT` (the full 40-character hexadecimal
 Git commit). Partial or malformed identity fails development builds too.
-The build script tracks environment changes so Cargo rebuilds the identity.
-For an already checked-out release revision, for example:
+The build script tracks these environment changes. For an already verified
+release checkout:
 
 ```sh
 npm ci --prefix frontend
@@ -73,63 +207,7 @@ SILKBOARD_RELEASE_TAG="$(git describe --tags --exact-match HEAD)" \
 ./target/release/silkboard-web
 ```
 
-The tag version must match `[workspace.package].version` in `Cargo.toml`,
-shared by the server and publisher.
-These inputs label a build; they do not verify the checkout,
-signatures, clean worktree, or GitHub checks. A future release builder/updater
-must establish those facts and supply the exact approved identity before
-building. This command alone does not produce a deployment-eligible release.
-
-## Local build reuse
-
-For repeated builds across trusted development worktrees, use the opt-in
-[local Cargo wrapper](local-build-reuse.md). It separates normal, coverage and
-ARM64 output and serializes complete commands. Ordinary Cargo remains
-worktree-local unless you configure it otherwise.
-
-## Checks
-
-```sh
-cargo fmt --all -- --check
-cargo xtask clippy
-cargo xtask doc
-cargo xtask test
-npm run check:all --prefix frontend
-npm audit --prefix frontend
-cargo audit --deny warnings
-```
-
-The Rust tests cover API responses, rejected mutation routes, static asset
-serving, build identity validation, and existing repository tooling. Frontend
-component tests cover loading, identity, failed requests, and timeouts; the
-isolated Chromium suite checks the built app and mobile layout. The frontend
-check runs types, lint, formatting, tests, and the production build.
-Run `cargo xtask validate --check` for the full required suite after
-installing [the gate prerequisites](ai-agents/tooling.md). Add `--parallel`
-for the bounded two-lane schedule used in CI. See the
-[optimization report](ci-validation-optimizations.md) for test profiles,
-optional local publication evidence and measurement limits. These commands
-do not establish a Pi deployment.
-
-The frontend lockfile retains upstream versions where possible, with security
-patches selected after advisory checks. Vitest is pinned to 4.1.11, and
-`nanoid`, `postcss`, and `undici` overrides retain patched versions that met
-the 14-day cooldown on 2026-10-17. Reassess these pins during dependency
-updates; do not blindly refresh to newer patches. Both lockfiles must remain
-committed. npm packages are build/test dependencies; production serves only
-compiled static assets.
-
-Use `cargo xtask coverage` for the enforced Rust coverage gate, including
-application and xtask library logic. Binary entry points are thin I/O adapters
-excluded from coverage; integration tests exercise their observable behavior.
-`cargo xtask frontend-coverage` enforces frontend coverage and
-`cargo xtask browser-test` runs Chromium on the built assets. Install Chromium
-using the tooling prerequisites, and build the frontend before a standalone
-browser run. The browser fixture requires OpenSSL and dedicated loopback
-ports 38124/38125 for the feed HTTPS proxy/backend and 38126/38127 for the
-separate first-owner setup pair, refusing existing servers. All four ports
-must be free.
-It uses private temporary storage and test credentials; see the
-[feed verification](owner-feed.md#verification).
-
-For native Ubuntu guest setup, see [Bombyx development](bombyx-development.md).
+The tag version must match the workspace package version in `Cargo.toml`.
+These inputs label the binary. The release workflow and updater separately
+verify signatures, checkout identity, cleanliness and GitHub evidence before
+admitting a revision. See [release preparation](releases.md).
