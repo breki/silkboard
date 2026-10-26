@@ -1009,3 +1009,12 @@ base pages and task graphs, preserving text and symbols for graph states.
 Storage failure does not block current-page switching or authentication.
 [Appearance guidance](../appearance.md) describes the behavior and its local
 preference scope. The #98 terminology change and any release remain separate.
+
+## Pre-publication disclosure audit, 2026-10-26
+
+The owner authorized [#127](https://github.com/breki/silkboard/issues/127) to
+inspect current tracked files, Git history and related GitHub content before
+open sourcing. The [redacted audit](../security/publication-audit-127.md)
+records scope, findings and limitations. Network-name cleanup options remain
+proposals; no history rewrite, visibility change or production mutation was
+authorized or performed.
