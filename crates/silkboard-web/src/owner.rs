@@ -10,6 +10,7 @@ mod plans;
 mod publishers;
 mod setup;
 mod storage;
+pub(crate) mod todos;
 
 use crate::progress::ProgressStore;
 use axum::http::Uri;
@@ -36,11 +37,11 @@ pub enum AuthError {
     Limited,
     /// Storage, password-hash or entropy operation failed.
     Unavailable,
-    /// An authenticated read addressed a nonexistent project or session.
+    /// An authenticated request addressed a nonexistent resource.
     NotFound,
     /// First-owner registration has permanently closed.
     SetupClosed,
-    /// An installation label is already used, including revoked credentials.
+    /// A mutation conflicts with existing state.
     Conflict,
 }
 
@@ -52,9 +53,9 @@ impl std::fmt::Display for AuthError {
             Self::Forbidden => "owner request rejected",
             Self::Limited => "owner login temporarily limited",
             Self::Unavailable => "owner authentication unavailable",
-            Self::NotFound => "progress resource not found",
+            Self::NotFound => "owner resource not found",
             Self::SetupClosed => "owner setup is already complete",
-            Self::Conflict => "publisher installation label already exists",
+            Self::Conflict => "owner change conflicts with existing state",
         })
     }
 }

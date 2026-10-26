@@ -87,6 +87,7 @@ fn validate(connection: &Connection) -> Result<(), ProgressError> {
         return Err(ProgressError::Invalid);
     }
     crate::plans::schema::validate_optional(connection)?;
+    crate::owner::todos::schema::validate_optional(connection)?;
     // Validate required application tables before creating any destination.
     connection.prepare("SELECT p.token_hash,p.revoked,o.password_hash,s.token_hash,u.closed,u.expires_at,e.payload FROM publishers p,owner o,owner_sessions s,owner_setup u,events e LIMIT 0")?;
     Ok(())

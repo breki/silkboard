@@ -64,6 +64,7 @@
       </button>
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
+          <a href="/todos">Todos</a>
           <a href="/status">Application status</a>
           <ThemeSelector />
           {#if owner}

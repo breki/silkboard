@@ -72,6 +72,7 @@ async fn serves_built_assets_without_spa_fallback_or_path_escape() {
     for (path, expected_status, expected_body) in [
         ("/", StatusCode::OK, "<h1>Silkboard</h1>"),
         ("/status", StatusCode::OK, "<h1>Silkboard</h1>"),
+        ("/todos", StatusCode::OK, "<h1>Silkboard</h1>"),
         ("/plans", StatusCode::OK, "<h1>Silkboard</h1>"),
         (
             "/events?project=alpha&hostname=dev&tool=codex&session_id=native&subagent_id=",

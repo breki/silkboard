@@ -65,6 +65,10 @@ pub fn create_router(frontend_path: &Path) -> Router {
             ServeFile::new(frontend_path.join("index.html")),
         )
         .route_service(
+            "/todos",
+            ServeFile::new(frontend_path.join("index.html")),
+        )
+        .route_service(
             "/events",
             ServeFile::new(frontend_path.join("index.html")),
         )

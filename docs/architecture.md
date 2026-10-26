@@ -212,3 +212,10 @@ credentials/privileges and unrelated services. Milestone 5 task-plan work,
 separate Claude integration and the independent milestone-1 recovery gaps
 remain as recorded in the roadmap; this document grants no new deployment
 authority.
+
+## Owner checklist
+
+The [Todos page](todos.md), authorized by #116, adds a private owner-managed
+checklist with independent completion and indented children. Its additive
+SQLite component and guarded mutations remain separate from publish-only
+agent progress. Todo text grants no execution authority or agent read access.

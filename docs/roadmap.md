@@ -8,7 +8,7 @@ Milestone 3 covers the owner-agreed basic UI improvements. Milestone 4 covers
 build efficiency; milestone 5 adds evolving task-progress graphs.
 
 This roadmap replaces the original milestone list in the architecture proposal.
-Milestones follow the owner's priorities; scope after milestone 5 is not set.
+Milestones follow the owner's priorities; scope after milestone 7 is not set.
 
 ## 1. Complete deployment pipeline with a minimal status page
 
@@ -239,8 +239,19 @@ checks passed; #81's reviewed evidence records the live acceptance too.
   validation/review and a separately authorized release with real phone
   dogfooding. Schema changes need compatible recovery before rollout.
 
+## 7. Hierarchical todo lists
+
+The owner requested [#116](https://github.com/breki/silkboard/issues/116),
+tracked in [milestone 7](https://github.com/breki/silkboard/milestone/7): a private
+owner-editable checklist with indented children. Checkboxes are independent;
+deleting a parent promotes its children after explicit confirmation. The
+[Todos guide](todos.md) records the implemented limits, ordering, concurrency
+and persistence behavior. This grants agents no todo read/write or execution
+authority. GitHub synchronization, workflow linkage and further scope require
+owner agreement. Local implementation checks are separate from rollout.
+
 ## Later milestones
 
-Milestones after 5 are to be defined with the owner. Task coordination and
+Milestones after 7 are to be defined with the owner. Task coordination and
 dashboard-hosted handoff uploads remain outside the agreed publish-only scope.
 A local handoff of current reporting state does not add either capability.

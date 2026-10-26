@@ -58,6 +58,7 @@ Application status opens `/status`,
 which shows public health, version, release tag and commit, with navigation
 back to the primary pages. It supports direct links, reloads and browser history.
 
+The menu also opens the private [Todos checklist](todos.md).
 When signed in, the menu also contains Manage publisher credentials and Sign
 out. The credential manager opens inline on the current page; Close credential
 manager removes it and any disclosed token. Logout or expiry also removes the

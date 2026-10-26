@@ -32,6 +32,7 @@ pub(crate) fn routes(auth: OwnerAuth) -> Router {
     let protected = Router::new()
         .merge(super::feed::routes())
         .merge(super::agents::routes())
+        .merge(super::todos::routes())
         .merge(super::filter_options::routes())
         .merge(super::plans::routes())
         .merge(super::publishers::routes())
