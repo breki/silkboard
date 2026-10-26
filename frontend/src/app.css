@@ -18,6 +18,7 @@ main {
 }
 .masthead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: clamp(0.25rem, 1vw, 0.5rem);
@@ -91,37 +92,109 @@ button,
 input,
 select {
   font: inherit;
-  min-height: 2.75rem;
-  border-radius: 0.4rem;
-  border: 1px solid var(--border);
-  padding: 0.55rem 0.8rem;
   max-width: 100%;
 }
 button {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 0.375rem;
+  min-height: 2rem;
+  min-width: 2rem;
+  border: 0;
+  border-radius: var(--control-radius);
+  padding: calc(0.3125rem + var(--control-inset))
+    calc(0.75rem + var(--control-inset));
   color: var(--control-text);
-  background: var(--control);
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
-button:hover {
-  background: var(--control-hover);
+/* Paint the face inside the native target; padding stays clickable. */
+button::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: var(--control-inset);
+  border: 1px solid var(--button-border, var(--border));
+  border-radius: inherit;
+  background: var(--button-background, var(--control));
+  pointer-events: none;
+}
+button:enabled:hover::before {
+  background: var(--button-hover, var(--control-hover));
 }
 button:disabled {
-  opacity: 0.55;
-  cursor: wait;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
-.primary {
-  background: var(--primary);
+button.primary {
+  --button-background: var(--primary);
+  --button-border: var(--primary);
+  --button-hover: var(--primary-hover);
   color: var(--primary-text);
-  font-weight: 700;
+  font-weight: 650;
 }
-.primary:hover {
-  background: var(--primary-hover);
+button.quiet {
+  --button-background: transparent;
+  --button-border: transparent;
+}
+button.danger {
+  --button-border: var(--alert);
+  --button-hover: var(--danger-hover);
+  color: var(--alert);
+}
+button.quiet.danger {
+  --button-border: transparent;
+}
+button[aria-pressed="true"]:not([data-step]) {
+  --button-background: var(--control-selected);
+  --button-border: var(--selected);
+  font-weight: 650;
+}
+button[aria-pressed="true"]:not([data-step])::before {
+  border-width: 2px;
+}
+/* Content buttons keep their graph, event and group surfaces. */
+button[data-step]::before,
+.event-preview::before,
+.session-toggle::before,
+.navigation nav button::before {
+  content: none;
 }
 input,
 select {
+  min-height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  padding: 0.375rem 0.625rem;
   width: 100%;
   background: var(--input);
   color: var(--input-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+@media (max-width: 40rem), (pointer: coarse) {
+  :root {
+    --control-inset: 0.375rem;
+  }
+  button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+  button.primary {
+    min-height: 3rem;
+  }
+  input,
+  select {
+    min-height: 2.75rem;
+  }
 }
 :focus-visible {
   outline: 3px solid var(--focus);
@@ -295,6 +368,16 @@ dd {
   font-size: 0.875rem;
   white-space: nowrap;
   color: var(--link);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+.primary-navigation a[aria-current="page"] {
+  color: var(--text);
+  border-bottom-color: var(--primary);
+  font-weight: 650;
+}
+.primary-navigation a:hover {
+  text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 .navigation {
@@ -305,6 +388,7 @@ dd {
   align-items: center;
   justify-content: center;
   width: 2.75rem;
+  min-height: 2.75rem;
   padding: 0.5rem;
 }
 .navigation nav {
@@ -405,44 +489,40 @@ a {
   padding: 0.55rem 0.8rem;
 }
 
-/* Current-page styling supplements the semantic aria-current marker. */
-.primary-navigation a[aria-current="page"] {
-  background: var(--panel);
-  border-radius: 0.3rem;
-  box-shadow: inset 0 -3px 0 var(--link);
-  font-weight: 700;
-  text-decoration: none;
-}
-@media (max-width: 600px) {
-  .masthead {
+@media (max-width: 40rem) {
+  .masthead.with-navigation {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.5rem;
   }
-  .masthead h1 {
+  .with-navigation h1 {
     grid-column: 1;
     grid-row: 1;
+    font-size: 1.125rem;
   }
-  .navigation {
+  .with-navigation .navigation {
     position: static;
     grid-column: 2;
     grid-row: 1;
   }
+  .with-navigation .navigation nav {
+    top: calc(100% + 0.5rem);
+  }
   .primary-navigation {
     grid-column: 1 / -1;
     grid-row: 2;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    width: 100%;
     margin-left: 0;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    max-width: 100%;
+    min-width: 0;
   }
   .primary-navigation a {
-    justify-content: center;
-    padding-inline: 0;
+    padding-inline: 0.5rem;
   }
-}
-@media (max-width: 360px) {
-  .primary-navigation a {
-    font-size: 0.8125rem;
+  .theme-choice {
+    flex-wrap: wrap;
+    max-width: 100%;
   }
 }

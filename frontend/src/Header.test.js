@@ -132,3 +132,26 @@ test.each([
     ).toBeNull();
   },
 );
+
+test("primary navigation identifies the current page and changes with its route", async () => {
+  const view = render(Header, { currentPage: "events" });
+  expect(
+    screen.getByRole("link", { name: "Events" }).getAttribute("aria-current"),
+  ).toBe("page");
+  expect(
+    screen.getByRole("link", { name: "Agents" }).getAttribute("aria-current"),
+  ).toBeNull();
+  await view.rerender({ currentPage: "plans" });
+  expect(
+    screen
+      .getByRole("link", { name: "Workflows" })
+      .getAttribute("aria-current"),
+  ).toBe("page");
+  expect(
+    screen.getByRole("link", { name: "Events" }).getAttribute("aria-current"),
+  ).toBeNull();
+  await view.rerender({ currentPage: "todos" });
+  expect(
+    screen.getByRole("link", { name: "Todos" }).getAttribute("aria-current"),
+  ).toBe("page");
+});

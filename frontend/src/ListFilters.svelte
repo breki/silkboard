@@ -124,7 +124,7 @@
     >
     <span class="muted">Received time · local timezone</span>
   {/if}
-  <button type="button" onclick={clear}>Clear filters</button>
+  <button class="quiet" type="button" onclick={clear}>Clear filters</button>
   {#if error}<p role="alert">{error}</p>{/if}
 </form>
 
@@ -154,10 +154,5 @@
     display: flex;
     gap: 0.25rem;
     flex-wrap: wrap;
-  }
-  button[aria-pressed="true"] {
-    font-weight: bold;
-    outline: 2px solid var(--selected);
-    outline-offset: -2px;
   }
 </style>
