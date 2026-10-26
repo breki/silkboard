@@ -3,9 +3,11 @@
   let {
     owner,
     showMenu = true,
+    currentPage,
   }: {
     owner?: { managing: boolean; onmanage: () => void; onlogout: () => void };
     showMenu?: boolean;
+    currentPage?: "agents" | "events" | "plans" | "todos";
   } = $props();
   let open = $state(false);
   let container = $state<HTMLDivElement>();
@@ -39,9 +41,21 @@
   <h1>Silkboard</h1>
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
-      <a href="/">Agents</a>
-      <a href="/events">Events</a>
-      <a href="/plans">Workflows</a>
+      <a href="/" aria-current={currentPage === "agents" ? "page" : undefined}
+        >Agents</a
+      >
+      <a
+        href="/events"
+        aria-current={currentPage === "events" ? "page" : undefined}>Events</a
+      >
+      <a
+        href="/plans"
+        aria-current={currentPage === "plans" ? "page" : undefined}>Workflows</a
+      >
+      <a
+        href="/todos"
+        aria-current={currentPage === "todos" ? "page" : undefined}>Todos</a
+      >
     </nav>
     <div class="navigation" bind:this={container}>
       <button
@@ -64,7 +78,6 @@
       </button>
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
-          <a href="/todos">Todos</a>
           <a href="/status">Application status</a>
           <ThemeSelector />
           {#if owner}

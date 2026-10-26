@@ -16,7 +16,6 @@ test("owner checklist persists nested edits and explains promotion on a phone", 
     page.getByRole("heading", { name: "Todos", exact: true }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Agents", exact: true }).click();
-  await page.getByRole("button", { name: "Navigation menu" }).click();
   await page.getByRole("link", { name: "Todos", exact: true }).focus();
   await page.keyboard.press("Enter");
   await page.getByLabel("New todo", { exact: true }).fill("Prepare release");

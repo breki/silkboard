@@ -112,9 +112,8 @@ test("System follows OS changes, overrides persist, and setup exposes theme sele
   await page.keyboard.press("Enter");
   await page.keyboard.press("Tab");
   await expect(
-    page.getByRole("link", { name: "Todos", exact: true }),
+    page.getByRole("link", { name: "Application status", exact: true }),
   ).toBeFocused();
-  await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await expect(selector).toBeFocused();
   await page.keyboard.press("End");

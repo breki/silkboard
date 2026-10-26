@@ -127,6 +127,15 @@
 </script>
 
 <Header
+  currentPage={statusPage
+    ? undefined
+    : todosPage
+      ? "todos"
+      : plansPage
+        ? "plans"
+        : eventsPage
+          ? "events"
+          : "agents"}
   owner={phase === "signed-in"
     ? {
         managing,

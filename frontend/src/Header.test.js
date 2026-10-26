@@ -105,3 +105,30 @@ test("theme preference can be changed and survives closing the menu", async () =
   await fireEvent.click(menu());
   expect(screen.getByRole("combobox", { name: "Theme" }).value).toBe("dark");
 });
+
+test.each([
+  ["agents", "Agents", "/"],
+  ["events", "Events", "/events"],
+  ["plans", "Workflows", "/plans"],
+  ["todos", "Todos", "/todos"],
+])(
+  "all four primary links expose current page %s",
+  async (currentPage, label, path) => {
+    render(Header, { currentPage });
+    const primary = screen.getByRole("navigation", {
+      name: "Primary navigation",
+    });
+    expect(within(primary).getAllByRole("link")).toHaveLength(4);
+    const current = within(primary).getByRole("link", {
+      name: label,
+      exact: true,
+    });
+    expect(current.getAttribute("href")).toBe(path);
+    expect(current.getAttribute("aria-current")).toBe("page");
+    expect(primary.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
+    await fireEvent.click(menu());
+    expect(
+      within(drawer()).queryByRole("link", { name: "Todos", exact: true }),
+    ).toBeNull();
+  },
+);

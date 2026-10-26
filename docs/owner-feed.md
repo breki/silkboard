@@ -63,12 +63,18 @@ No project selection is required.
 The compact header has a top-right Navigation menu. Open it by touch or with
 Enter/Space; Tab reaches its links and owner actions. Escape closes it and
 returns focus to the menu button. Clicking or moving focus outside also closes
-it. Agents, Events and Workflows are always visible primary links.
+it. Agents, Events, Workflows and Todos are always visible primary links.
+Desktop uses one header row; phones place all four links beneath the brand and
+menu button. The phone menu opens beneath both rows so primary links remain
+reachable while it is open. Each link remains a touch target, with a visible keyboard focus
+outline. The current primary page has bold text and a bottom marker, and is
+announced as the current page by assistive technology. Workflow detail and
+snapshot links keep Workflows active; Application status has no active primary.
 Application status opens `/status`,
 which shows public health, version, release tag and commit, with navigation
 back to the primary pages. It supports direct links, reloads and browser history.
 
-The menu also opens the private [Todos checklist](todos.md).
+The [Todos checklist](todos.md) is a primary link, with no duplicate in the menu.
 When signed in, the menu also contains Manage publisher credentials and Sign
 out. The credential manager opens inline on the current page; Close credential
 manager removes it and any disclosed token. Logout or expiry also removes the

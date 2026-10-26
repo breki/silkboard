@@ -12,7 +12,8 @@ Silkboard. Bombyx-managed development VMs can use the same installed publisher.
 - A dedicated Raspberry Pi VM with private Tailscale HTTPS and SQLite storage.
 - A standalone Rust publishing executable; target machines need no Rust or
   Cargo, daemon or durable outgoing queue. Delivery is bounded and best-effort.
-- Separate owner login for Agents home, Events and Workflows, and project-scoped
+- Separate owner login for Agents home, Events, Workflows and Todos, and
+  project-scoped
   publish-only tokens. First-owner setup and token management work through
   private HTTPS pages.
 - No dashboard access to development repositories, files, VM control or agent

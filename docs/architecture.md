@@ -150,7 +150,8 @@ aggregating complete stored event and snapshot history by native identity.
 Issue #120 restricts this overview to main sessions, selected before pagination,
 and presents responsive cards. Child events remain separate in Events; child
 workflow reports remain in Workflows.
-All three primary links appear in the top header row. The
+Issue #121 adds Todos as the fourth visible primary link, with a responsive
+phone arrangement and active-page semantics. The
 [owner guide](owner-feed.md) defines receipt ordering and snapshot/exact-session
 links. The tracked
 HTML reference remains a fictional prototype. The implemented owner page in

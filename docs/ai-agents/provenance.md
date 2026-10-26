@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Four primary pages, 2026-10-26
+
+The owner authorized [#121](https://github.com/breki/silkboard/issues/121)
+and explicitly kept it in milestone 7. Todos moves from the hamburger menu
+to the visible primary navigation beside Agents, Events and Workflows.
+The [owner guide](../owner-feed.md) records a two-row phone header, existing
+desktop row and current-page indication. Routes, owner authentication and
+Agents home remain; no new execution or agent-read authority is introduced.
+This revises #116's placement decision and does not establish production rollout.
+
 ## Main agent cards, 2026-10-26
 
 The owner authorized [#120](https://github.com/breki/silkboard/issues/120),

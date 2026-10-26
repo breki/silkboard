@@ -249,6 +249,9 @@ deleting a parent promotes its children after explicit confirmation. The
 and persistence behavior. This grants agents no todo read/write or execution
 authority. GitHub synchronization, workflow linkage and further scope require
 owner agreement. Local implementation checks are separate from rollout.
+[Issue #121](https://github.com/breki/silkboard/issues/121) keeps the navigation
+revision in this milestone: Todos becomes the fourth visible primary page,
+with responsive placement and a consistent current-page marker.
 
 ## Later milestones
 
