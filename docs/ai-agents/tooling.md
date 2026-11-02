@@ -39,6 +39,13 @@ Install the external gates before full validation:
 
 Missing required tools, registry responses, or advisory checks fail validation.
 No gate silently skips an absent frontend, coverage tool, or audit database.
+The live npm JSON audit has one
+[owner-approved temporary disposition](../security/npm-audit-assessment.md#approved-temporary-exception)
+for GHSA-gcqx-w48m-w2h4, whose CVE was rejected, bound to exact versions,
+consumer paths and the recorded low finding. It expires at
+2026-11-09T00:00:00Z. Acceptance prints an explicit exception diagnostic;
+it is not a clean scan. All other findings, schema/command failures and
+unavailable evidence remain blocking. No development dependencies are omitted.
 Long runs print stage progress; redirect output to a local log when needed.
 Validation also emits a `Validation timing:` JSON record per completed gate
 (`gate`, integer `elapsed_ms`, and `outcome` pass/fail), including failures
@@ -83,6 +90,12 @@ with `npm run test:codex-title --prefix frontend` and the Bombyx gate.
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
 | CI dependency-cache keys | `cargo xtask ci-cache-plan` |
 | Verified CI dependency-cache cleanup | `cargo xtask ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY` |
+
+The frontend gate's `check:all` also runs
+`npm run test:dependency-compat --prefix frontend`: actual ESLint file
+discovery/ignores, TypeScript/Svelte/rune-module parser selection, and matcher
+partial-traversal/escaped-pattern behavior. These checks protect the scoped
+Minimatch security override against downstream compatibility regressions.
 
 `cargo xtask --help` documents supported arguments. `validate` is also
 read-only without `--check`. Only standalone `fmt` and `frontend-fmt` rewrite

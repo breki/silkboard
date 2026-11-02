@@ -50,6 +50,18 @@ fn main() -> ExitCode {
         if !stderr.trim().is_empty() {
             eprint!("{stderr}");
         }
+        // Capture only this fixed audit invocation. The library checks every
+        // exit status, schema, finding, dependency binding and expiry; this
+        // is not a generic conversion of failed commands into success.
+        if program == "npm" && args == ["audit", "--json", "--audit-level=low"]
+        {
+            return Ok(serde_json::json!({
+                "exit_code": output.status.code(),
+                "stdout": stdout,
+                "stderr": stderr,
+            })
+            .to_string());
+        }
         if output.status.success() {
             Ok(stdout)
         } else {

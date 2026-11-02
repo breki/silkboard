@@ -1032,3 +1032,19 @@ open sourcing. The [redacted audit](../security/publication-audit-127.md)
 records scope, findings and limitations. Network-name cleanup options remain
 proposals; no history rewrite, visibility change or production mutation was
 authorized or performed.
+
+## npm audit remediation, 2026-11-02
+
+After #129, the owner authorized a separate security-fix PR for Minimatch
+11.0.1, downstream compatibility checks, and a Deepmerge reachability
+assessment with a concrete temporary-exception proposal. The
+[assessment](../security/npm-audit-assessment.md) records the authoritative
+CVE rejection separately from npm's still-active advisory. The
+[security dependency record](../dependency-security-exceptions.md#minimatch-pattern-amplification-fix-2026-11-02)
+binds the exact patched matcher and required new dependency to observed
+publication dates. The owner subsequently approved the exact Deepmerge
+exception on 2026-11-02 after reviewing draft PR #135. The implementation
+accepts only the rejected advisory's recorded low finding and plugin
+propagation, bound to the inspected versions/consumer and expiring at
+2026-11-09T00:00:00Z. Unknown or changed evidence and every other finding
+remain blocking; no general ignore flag or automatic extension is added.
