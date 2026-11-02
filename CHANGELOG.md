@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.13.0 - 2026-11-03
+
 - Build standalone Linux x86-64 and Windows x64 reporting clients, smoke-test
   event and workflow publishing, and publish checksummed client downloads
   after eligible releases without changing server deployment admission.
