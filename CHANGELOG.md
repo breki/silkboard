@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Build standalone Linux x86-64 and Windows x64 reporting clients, smoke-test
+  event and workflow publishing, and publish checksummed client downloads
+  after eligible releases without changing server deployment admission.
+- Validate private Windows publisher storage with native ACL/link checks.
+
 ## 0.12.0 - 2026-10-26
 
 - Give actions compact desktop faces and quieter shared styles while retaining

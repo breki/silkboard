@@ -1032,3 +1032,16 @@ open sourcing. The [redacted audit](../security/publication-audit-127.md)
 records scope, findings and limitations. Network-name cleanup options remain
 proposals; no history rewrite, visibility change or production mutation was
 authorized or performed.
+
+## Reporting client downloads, 2026-11-02
+
+The owner invoked the issue workflow for
+[#129](https://github.com/breki/silkboard/issues/129) after confirming public
+repository visibility and merging the disclosure audit. The implementation
+selects x86-64 Linux GNU (Ubuntu 22.04/glibc 2.35 baseline) and Windows MSVC
+(static CRT, private local NTFS) for initial downloads. The
+[download guide](../client-downloads.md) records installation, verification,
+storage requirements and CI/release evidence limits. Server release admission
+retains its exact three-job contract; client publication follows separately.
+No release, production change or credential provisioning is authorized by
+the implementation request.

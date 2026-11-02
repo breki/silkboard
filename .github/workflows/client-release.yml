@@ -1,0 +1,144 @@
+name: Publish reporting clients
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: client-release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  admission:
+    name: Admit successful exact release
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.workflow_id == 387356305 &&
+      github.event.workflow_run.path == '.github/workflows/release.yml' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      tag: ${{ steps.identity.outputs.tag }}
+      tag_object: ${{ steps.identity.outputs.tag_object }}
+      sha: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup override set 1.93.1
+      - name: Verify signed tag and exact upstream revision
+        id: identity
+        env:
+          RELEASE_TAG: ${{ github.event.workflow_run.head_branch }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_RUN: ${{ github.event.workflow_run.id }}
+          RELEASE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cargo xtask release-check "$RELEASE_TAG"
+          cargo xtask client-release-check "$RELEASE_TAG" "$RELEASE_SHA" "$RELEASE_RUN" "$RELEASE_ATTEMPT"
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "tag_object=$(git rev-parse "refs/tags/$RELEASE_TAG")" >> "$GITHUB_OUTPUT"
+
+  clients:
+    needs: admission
+    uses: ./.github/workflows/client-binaries.yml
+    with:
+      release_tag: ${{ needs.admission.outputs.tag }}
+      source_sha: ${{ needs.admission.outputs.sha }}
+
+  revalidate:
+    name: Recheck release after client builds
+    needs: [admission, clients]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.admission.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal
+          rustup override set 1.93.1
+      - name: Recheck signed object and latest complete release evidence
+        env:
+          RELEASE_TAG: ${{ needs.admission.outputs.tag }}
+          RELEASE_SHA: ${{ needs.admission.outputs.sha }}
+          TAG_OBJECT: ${{ needs.admission.outputs.tag_object }}
+          RELEASE_RUN: ${{ github.event.workflow_run.id }}
+          RELEASE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse "refs/tags/$RELEASE_TAG")" = "$TAG_OBJECT"
+          cargo xtask release-check "$RELEASE_TAG"
+          cargo xtask client-release-check "$RELEASE_TAG" "$RELEASE_SHA" "$RELEASE_RUN" "$RELEASE_ATTEMPT"
+
+  publish:
+    name: Publish verified reporting clients
+    needs: [admission, clients, revalidate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    env:
+      RELEASE_TAG: ${{ needs.admission.outputs.tag }}
+      RELEASE_SHA: ${{ needs.admission.outputs.sha }}
+      TAG_OBJECT: ${{ needs.admission.outputs.tag_object }}
+      RELEASE_RUN: ${{ github.event.workflow_run.id }}
+      RELEASE_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+    steps:
+      - name: Download clients from this run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: client-*
+          merge-multiple: true
+          path: dist
+      - name: Check exact asset set and write checksums
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          linux="silkboard-publish-$RELEASE_TAG-x86_64-unknown-linux-gnu"
+          windows="silkboard-publish-$RELEASE_TAG-x86_64-pc-windows-msvc.exe"
+          test "$(find . -mindepth 1 -maxdepth 1 -type f | wc -l)" -eq 2
+          test -f "$linux"
+          test -f "$windows"
+          sha256sum "$linux" "$windows" > SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - name: Publish release downloads
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Refuse even same-commit tag replacement or a changed run attempt.
+          object=$(gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" --jq '.object.sha')
+          test "$object" = "$TAG_OBJECT"
+          current=$(gh api "repos/$GH_REPO/actions/runs/$RELEASE_RUN" --jq '[.run_attempt,.status,.conclusion] | @tsv')
+          test "$current" = "$(printf '%s\tcompleted\tsuccess' "$RELEASE_ATTEMPT")"
+          # Fail on existing releases/assets rather than overwrite downloads.
+          gh release create "$RELEASE_TAG" --verify-tag --draft \
+            --title "$RELEASE_TAG" \
+            --notes 'Standalone reporting clients for Linux x86-64 (glibc 2.35+) and Windows x64. Verify SHA256SUMS before installation. See docs/client-downloads.md at this tag for configuration and smoke checks. Server deployments continue to build from source.'
+          gh release upload "$RELEASE_TAG" SHA256SUMS silkboard-publish-*
+          gh release edit "$RELEASE_TAG" --draft=false

@@ -112,8 +112,11 @@ No release has been requested just by implementing these gates.
 The release-check command verifies stable version syntax, a clean tree, tag
 direct commit target matching HEAD, the signed tag name matching the
 requested release, the trusted SSH signature, and application version.
-It does not call GitHub or certify a release suite. No command creates a
-GitHub Release object or controls the Pi as an implicit step.
+It does not call GitHub or certify a release suite. A successful eligible
+release triggers the separate [client download pipeline](client-downloads.md),
+which creates a GitHub Release with reporting clients and checksums after
+native build/smoke checks. Release preparation does not control the Pi as an
+implicit step.
 
 ## CI and local validation
 
@@ -130,8 +133,9 @@ version-checked cache; npm caches downloads and still runs `npm ci`. See
 read-only contents permission and checkout does not persist credentials.
 
 [The release suite](../.github/workflows/release.yml) reuses these exact gates
-and builds a tagged release. It uploads no build artifacts: the production
-model remains unprivileged in-guest builds. See
+and builds a tagged release. Its exact three-job contract remains unchanged.
+Separate client workflows distribute only the standalone reporting client;
+the production server model remains unprivileged in-guest builds. See
 [tooling prerequisites](ai-agents/tooling.md) and
 [development instructions](development.md). Test fixture tags and keys are
 created only in disposable repositories; tests never use the owner's private

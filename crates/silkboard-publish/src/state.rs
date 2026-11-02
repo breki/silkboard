@@ -14,19 +14,23 @@ use std::{
     path::Path,
 };
 
+#[cfg(windows)]
+mod windows;
+
 fn directory(path: &Path) -> Result<(), Error> {
     let meta = path.symlink_metadata().map_err(|_| Error::PrivateFile)?;
-    if !meta.is_dir()
-        || !path.is_absolute()
+    if !meta.is_dir() || !path.is_absolute() {
+        return Err(Error::PrivateFile);
+    }
+    #[cfg(unix)]
+    if meta.permissions().mode() & 0o777 != 0o700
         || path.canonicalize().map_err(|_| Error::PrivateFile)? != path
     {
         return Err(Error::PrivateFile);
     }
-    #[cfg(unix)]
-    if meta.permissions().mode() & 0o777 != 0o700 {
-        return Err(Error::PrivateFile);
-    }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
+    windows::directory(path)?;
+    #[cfg(not(any(unix, windows)))]
     return Err(Error::PrivateFile);
     Ok(())
 }
@@ -44,6 +48,8 @@ fn check(file: &File, path: &Path) -> Result<(), Error> {
     {
         return Err(Error::PrivateFile);
     }
+    #[cfg(windows)]
+    windows::check(file, path)?;
     Ok(())
 }
 
@@ -161,11 +167,21 @@ pub(super) fn replace(path: &Path, bytes: &[u8]) -> Result<(), Error> {
         #[cfg(unix)]
         options.mode(0o600);
         let mut file = options.open(&temporary).map_err(|_| Error::State)?;
+        check(&file, &temporary)?;
         file.write_all(bytes)
             .and_then(|()| file.sync_all())
             .map_err(|_| Error::State)?;
         fs::rename(&temporary, path).map_err(|_| Error::State)?;
+        #[cfg(unix)]
         File::open(directory)
+            .and_then(|f| f.sync_all())
+            .map_err(|_| Error::State)?;
+        // Windows does not support Unix directory fsync. Flush the replaced
+        // file as well; do not remove the old state before atomic replacement.
+        #[cfg(windows)]
+        File::options()
+            .write(true)
+            .open(path)
             .and_then(|f| f.sync_all())
             .map_err(|_| Error::State)?;
         Ok(())
