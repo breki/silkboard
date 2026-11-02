@@ -38,8 +38,8 @@ match (including partial traversal) and the exported minimatch function;
 compatibility checks must cover file selection and Svelte/TypeScript parsing.
 Remove obsolete age cases during a future scoped update after fourteen days.
 This admits security fixes; it does not suppress any npm advisory. The
-[Deepmerge assessment and proposal](security/npm-audit-assessment.md) is
-separate and does not activate an audit exception.
+[Deepmerge assessment and approved disposition](security/npm-audit-assessment.md)
+is separate; its owner-approved exception expires at 2026-11-09T00:00:00Z.
 
 ## Rustls 0.23.46, 2026-10-18
 

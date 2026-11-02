@@ -1042,5 +1042,9 @@ assessment with a concrete temporary-exception proposal. The
 CVE rejection separately from npm's still-active advisory. The
 [security dependency record](../dependency-security-exceptions.md#minimatch-pattern-amplification-fix-2026-11-02)
 binds the exact patched matcher and required new dependency to observed
-publication dates. No advisory suppression is activated; accepting that
-proposal remains a separate owner decision.
+publication dates. The owner subsequently approved the exact Deepmerge
+exception on 2026-11-02 after reviewing draft PR #135. The implementation
+accepts only the rejected advisory's recorded low finding and plugin
+propagation, bound to the inspected versions/consumer and expiring at
+2026-11-09T00:00:00Z. Unknown or changed evidence and every other finding
+remain blocking; no general ignore flag or automatic extension is added.

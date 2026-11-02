@@ -50,7 +50,14 @@ fn args(words: &[&str]) -> Vec<String> {
 }
 
 fn successful_output(program: &str, args: &[&str]) -> String {
-    if program == "cargo" && args[0] == "metadata" {
+    if program == "npm" && args == ["audit", "--json", "--audit-level=low"] {
+        let report = json!({"auditReportVersion":2,"vulnerabilities":{},"metadata":{
+            "vulnerabilities":{"info":0,"low":0,"moderate":0,"high":0,"critical":0,"total":0},
+            "dependencies":{"prod":1,"dev":0,"optional":0,"peer":0,"peerOptional":0,"total":1}
+        }});
+        json!({"exit_code":0,"stdout":report.to_string(),"stderr":""})
+            .to_string()
+    } else if program == "cargo" && args[0] == "metadata" {
         json!({"workspace_members":["local"],"packages":[{"id":"local","name":"xtask","version":"0.1.0","source":null},{"id":"external","name":"axum","version":"0.8.9","source":"registry+https://github.com/rust-lang/crates.io-index"}]}).to_string()
     } else if program == "curl" && args.last().unwrap().contains("crates.io") {
         json!({"version":{"created_at":"2020-01-01T00:00:00Z"}}).to_string()
@@ -152,6 +159,7 @@ fn validation_requires_every_stage_and_stops_at_each_failure() {
 #[test]
 fn all_standalone_tasks_propagate_failure_and_accept_only_supported_arguments()
 {
+    let fixture = Fixture::new();
     for task in [
         "audit",
         "deny",
@@ -173,15 +181,15 @@ fn all_standalone_tasks_propagate_failure_and_accept_only_supported_arguments()
         "test",
     ] {
         assert_eq!(
-            dispatch(&args(&[task]), Path::new("."), &mut |_, _, _| Err(
+            dispatch(&args(&[task]), &fixture.0, &mut |_, _, _| Err(
                 "unavailable".into()
             )),
             Err("unavailable".into()),
             "{task}"
         );
         assert!(
-            dispatch(&args(&[task]), Path::new("."), &mut |_, _, _| Ok(
-                "tool output".into()
+            dispatch(&args(&[task]), &fixture.0, &mut |program, argv, _| Ok(
+                successful_output(program, argv)
             ))
             .is_ok(),
             "{task}"

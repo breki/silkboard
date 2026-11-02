@@ -1,4 +1,4 @@
-# npm audit assessment and proposed temporary disposition
+# npm audit assessment and temporary disposition
 
 Assessed 2026-11-02 against the security maintenance branch based on
 `21265b593d3c7e852fe69b93d4eda54fbbcff8cc`. This separates a patched
@@ -59,16 +59,15 @@ visible on the returned object, rather than globally changing all object
 prototypes. It is not evidence of a live Silkboard compromise, credential
 disclosure or a reason to change production credentials.
 
-## Concrete exception proposal: inactive
+## Approved temporary exception
 
-**Status: proposed; no audit exception is enabled by this change.**
-The existing `npm audit --audit-level=low` gate remains unchanged and can
-continue to fail while the feed retains this entry. The owner requested
-the assessment and proposal, not activation of an advisory suppression.
+**Status: approved by the owner on 2026-11-02 and implemented in xtask.**
+The owner accepted the exact proposal after reviewing draft PR #135. The
+gate still runs RustSec with denied warnings and live npm audit at the low
+threshold; it accepts only the advisory's exact recorded finding
+and its one propagated plugin entry before the expiry below.
 
-If the owner accepts the proposal while the stale feed remains active:
-
-| Bound | Proposed value |
+| Bound | Approved value |
 | --- | --- |
 | Advisory | Only GHSA-gcqx-w48m-w2h4 / CVE-2026-93753 |
 | Dependency | Only Deepmerge 4.3.1 through Svelte Vite plugin 7.2.0 |
@@ -77,16 +76,25 @@ If the owner accepts the proposal while the stale feed remains active:
 | Expiry | 2026-11-09T00:00:00Z; review earlier if the feed changes |
 | Default | Every other advisory and all unavailable/malformed evidence fail |
 
-Activation would need a separately reviewed implementation that parses the
-live npm audit result, validates the exact advisory/package/version/consumer
-chain, and accounts only for its matching propagated plugin finding. Unknown
-advisories, altered dependency paths, other versions, increased severity,
-unexpected audit schemas, registry errors and expiry must fail closed. It
-must not use `--omit=dev`, raise the global severity threshold, ignore all
-Deepmerge findings or convert nonzero audit exits generally into success.
+The [evaluator](../../xtask/src/npm_audit.rs) parses the live npm JSON audit
+result and the committed lockfile. The subprocess adapter captures exit code,
+stdout and stderr only for the fixed JSON audit invocation. A clean report
+requires status zero and zero counts. Status one is accepted only for the
+complete recorded two-entry report, including advisory URL/ID, severity,
+range, affected paths, propagation, fix availability and metadata counts.
+Changed report fields require review rather than broadening the exception.
+
+The lockfile must contain only Deepmerge 4.3.1 through the inspected Svelte
+plugin 7.2.0 dependency; another copy or consumer is refused. Other statuses,
+diagnostics, malformed/unsupported/oversized reports, changed lock bindings,
+additional findings and expiry fail closed. No environment variable or CLI
+argument can extend the exception or inject a clock. It does not omit dev
+dependencies or raise the severity threshold. Accepted findings print an
+explicit temporary-exception diagnostic rather than claiming a clean scan.
 The Rust advisory audit and every other quality gate remain mandatory.
 
 Remove the temporary implementation as soon as npm no longer reports this
-rejected advisory. If this exact implementation is not approved, leave the
-gate blocking until the advisory feed is corrected. This proposal does not
-authorize merging, publishing a release or changing production.
+advisory associated with the rejected CVE. Zero-finding scans pass after the
+deadline; this finding is refused at or after the exact expiry instant.
+Renewal is not automatic. This approval does not authorize merging,
+publishing a release or changing production.
