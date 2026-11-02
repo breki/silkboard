@@ -203,6 +203,21 @@ permissions. Their binaries explicitly identify development provenance.
 Source builds and server validation/in-guest builds remain unchanged. A
 successful server release can deploy independently of later client packaging;
 client packaging failure cannot make an unverified server release eligible.
-Defining these jobs does not establish native Windows execution, public asset
-availability or a production deployment. Those require observed CI and a
-future separately authorized release.
+Native PR execution is recorded below. Public release assets and production
+deployment still require a future separately authorized eligible release.
+
+## Verified PR client builds
+
+On 2026-11-02, [client run 41510399841](https://github.com/breki/silkboard/actions/runs/41510399841)
+passed both native jobs: Ubuntu 22.04 x86-64 GNU and Windows Server 2022 x64
+MSVC with static CRT. The PR head was
+`a19b1a72016c52454782ab8474a09c7122d545f0`; both packaged development
+executables identified the exact tested PR merge revision,
+`4de6d92899e4d689881a338cec822586cec33ea3`.
+
+Each copied executable passed version/notice checks and published events and
+workflow plans across separate processes with an empty `PATH`. Windows also
+passed its ACL policy unit test and three native storage tests: broad access,
+hardlinks/lock contention, and junction aliases. The run retained both named
+client artifacts. These are development CI artifacts, not signed release
+downloads; the tag-triggered publication path has not yet been exercised.

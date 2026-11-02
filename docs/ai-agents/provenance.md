@@ -1043,5 +1043,9 @@ selects x86-64 Linux GNU (Ubuntu 22.04/glibc 2.35 baseline) and Windows MSVC
 [download guide](../client-downloads.md) records installation, verification,
 storage requirements and CI/release evidence limits. Server release admission
 retains its exact three-job contract; client publication follows separately.
+Native Linux/Windows PR build and runtime checks passed in
+[run 41510399841](https://github.com/breki/silkboard/actions/runs/41510399841);
+the guide records both the PR head and tested merge revision. This establishes
+native client evidence, not tagged public release-asset publication.
 No release, production change or credential provisioning is authorized by
 the implementation request.
