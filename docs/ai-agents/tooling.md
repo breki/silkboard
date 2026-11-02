@@ -84,6 +84,12 @@ with `npm run test:codex-title --prefix frontend` and the Bombyx gate.
 | CI dependency-cache keys | `cargo xtask ci-cache-plan` |
 | Verified CI dependency-cache cleanup | `cargo xtask ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY` |
 
+The frontend gate's `check:all` also runs
+`npm run test:dependency-compat --prefix frontend`: actual ESLint file
+discovery/ignores, TypeScript/Svelte/rune-module parser selection, and matcher
+partial-traversal/escaped-pattern behavior. These checks protect the scoped
+Minimatch security override against downstream compatibility regressions.
+
 `cargo xtask --help` documents supported arguments. `validate` is also
 read-only without `--check`. Only standalone `fmt` and `frontend-fmt` rewrite
 files when run without `--check`. Tasks reject unsupported arguments and stop

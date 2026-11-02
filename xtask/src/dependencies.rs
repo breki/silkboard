@@ -316,6 +316,10 @@ fn verify_versions(
             (true, "vitest", "4.1.12") => Some("2026-10-15T14:51:24.991Z"),
             (true, "undici", "7.30.1") => Some("2026-10-15T14:18:31.283Z"),
             (true, "dompurify", "3.4.17") => Some("2026-10-12T12:41:28.880Z"),
+            (true, "minimatch", "11.0.1") => Some("2026-10-27T22:26:03.755Z"),
+            (true, "@isaacs/nonrecursive-glob-match", "1.0.3") => {
+                Some("2026-10-28T19:50:48.349Z")
+            }
             _ => None,
         };
         let security_fix = security_fix_date
@@ -955,6 +959,64 @@ mod tests {
             .is_err()
         );
     }
+    #[test]
+    fn exact_minimatch_security_closure_preserves_age_and_registry_checks() {
+        for (name, version, date) in [
+            ("minimatch", "11.0.1", "2026-10-27T22:26:03.755Z"),
+            (
+                "@isaacs/nonrecursive-glob-match",
+                "1.0.3",
+                "2026-10-28T19:50:48.349Z",
+            ),
+        ] {
+            let published = timestamp(date).unwrap();
+            let (doc, claims) = npm_security_document(name, version, date);
+            let request = [(true, name.into(), version.into())];
+            assert_eq!(
+                verify_versions(&doc, &request, &claims, published + 86400),
+                Ok(1),
+            );
+            assert!(
+                verify_versions(&doc, &request, &claims, published - 1)
+                    .is_err()
+            );
+            let mut changed = doc.clone();
+            changed["time"][version] = json!("2026-10-29T00:00:00Z");
+            assert!(
+                verify_versions(&changed, &request, &claims, published + 86400)
+                    .is_err()
+            );
+            for (other_name, other_version) in
+                [("unlisted", version), (name, "11.0.0")]
+            {
+                let (other, claims) =
+                    npm_security_document(other_name, other_version, date);
+                assert!(
+                    verify_versions(
+                        &other,
+                        &[(true, other_name.into(), other_version.into())],
+                        &claims,
+                        published + 86400,
+                    )
+                    .is_err()
+                );
+            }
+            for field in ["integrity", "tarball"] {
+                let mut changed = doc.clone();
+                changed["versions"][version]["dist"][field] = json!("wrong");
+                assert!(
+                    verify_versions(
+                        &changed,
+                        &request,
+                        &claims,
+                        published + 86400,
+                    )
+                    .is_err()
+                );
+            }
+        }
+    }
+
     #[test]
     fn exact_undici_fix_preserves_cooldown_and_integrity_checks() {
         let date = "2026-10-15T14:18:31.283Z";
