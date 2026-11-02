@@ -363,6 +363,7 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "handoff-test"
                     | "bombyx-test"
                     | "release-check"
+                    | "client-release-check"
                     | "canon-check"
                     | "ci-mode"
                     | "ci-cache-plan"
