@@ -1,0 +1,80 @@
+name: Reporting client binaries
+
+on:
+  pull_request:
+  workflow_call:
+    inputs:
+      release_tag:
+        type: string
+        required: true
+      source_sha:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  clients:
+    name: Standalone client (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            suffix: ""
+            rustflags: ""
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+            suffix: .exe
+            rustflags: -C target-feature=+crt-static
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      SILKBOARD_RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - name: Install pinned Rust toolchain
+        shell: bash
+        run: |
+          rustup toolchain install 1.93.1 --profile minimal --component clippy,rustfmt
+          rustup override set 1.93.1
+      - name: Build exact client revision
+        shell: bash
+        run: |
+          export SILKBOARD_COMMIT="$(git rev-parse HEAD)"
+          echo "SILKBOARD_COMMIT=$SILKBOARD_COMMIT" >> "$GITHUB_ENV"
+          # Empty metadata is not a release tag: PR builds remain development.
+          if [ -z "$SILKBOARD_RELEASE_TAG" ]; then unset SILKBOARD_RELEASE_TAG; fi
+          cargo build --locked --release --target '${{ matrix.target }}' -p silkboard-publish
+          version=$(cargo metadata --locked --no-deps --format-version 1 | jq -r '.packages[] | select(.name == "silkboard-publish") | .version')
+          asset="silkboard-publish-v$version-${{ matrix.target }}${{ matrix.suffix }}"
+          mkdir dist
+          cp 'target/${{ matrix.target }}/release/silkboard-publish${{ matrix.suffix }}' "dist/$asset"
+          echo "SILKBOARD_TEST_PUBLISHER=$GITHUB_WORKSPACE/dist/$asset" >> "$GITHUB_ENV"
+          if [ -n "${SILKBOARD_RELEASE_TAG:-}" ]; then
+            identity="tag $SILKBOARD_RELEASE_TAG; commit $SILKBOARD_COMMIT"
+          else
+            identity="development; commit $SILKBOARD_COMMIT"
+          fi
+          echo "SILKBOARD_TEST_EXPECTED_VERSION=silkboard-publish $version ($identity)" >> "$GITHUB_ENV"
+      - name: Check native storage and standalone event/plan delivery
+        shell: bash
+        run: |
+          # The server is a test-only dependency and rejects commit-only
+          # metadata. The copied PR asset already carries its explicit SHA.
+          if [ -z "$SILKBOARD_RELEASE_TAG" ]; then unset SILKBOARD_RELEASE_TAG SILKBOARD_COMMIT; fi
+          cargo clippy --locked -p silkboard-publish --lib --target '${{ matrix.target }}' -- -D warnings
+          cargo test --locked -p silkboard-publish --lib --test distribution --test windows_storage --target '${{ matrix.target }}'
+      - name: Retain verified client only
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7

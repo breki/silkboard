@@ -1,11 +1,12 @@
 #![allow(dead_code)] // Each integration test imports only the fixture helpers it needs.
 use serde_json::{Value, json};
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 use std::{
     ffi::OsString,
     fs,
     io::{Read, Write},
     net::TcpListener,
-    os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::atomic::{AtomicUsize, Ordering},
     thread,
@@ -49,10 +50,10 @@ impl Fixture {
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir(&root).unwrap();
-        fs::set_permissions(&root, fs::Permissions::from_mode(0o700)).unwrap();
+        private_directory(&root);
         let state = root.join("state");
         fs::create_dir(&state).unwrap();
-        fs::set_permissions(&state, fs::Permissions::from_mode(0o700)).unwrap();
+        private_directory(&state);
         let token = root.join("token");
         private(&token, "a".repeat(64).as_bytes());
         let config = json!({"endpoint":"http://127.0.0.1:9","project":"silkboard","token_file":token,"state_dir":state});
@@ -87,7 +88,35 @@ impl Drop for Fixture {
 }
 pub fn private(path: &Path, bytes: &[u8]) {
     fs::write(path, bytes).unwrap();
+    #[cfg(unix)]
     fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
+}
+
+fn private_directory(path: &Path) {
+    #[cfg(unix)]
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700)).unwrap();
+    #[cfg(windows)]
+    {
+        use windows_permissions::{
+            LocalBox, SecurityDescriptor,
+            constants::{SeObjectType, SecurityInformation},
+            utilities::current_process_sid,
+            wrappers::SetNamedSecurityInfo,
+        };
+        let user = current_process_sid().unwrap();
+        let sd: LocalBox<SecurityDescriptor> =
+            format!("D:P(A;OICI;FA;;;{user})").parse().unwrap();
+        SetNamedSecurityInfo(
+            path.as_os_str(),
+            SeObjectType::SE_FILE_OBJECT,
+            SecurityInformation::Dacl | SecurityInformation::ProtectedDacl,
+            None,
+            None,
+            sd.dacl(),
+            None,
+        )
+        .unwrap();
+    }
 }
 pub fn report() -> Value {
     json!({"hostname":"dev","tool":"codex","session_id":"native-1","message":"Running behavioral tests"})

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Build standalone Linux x86-64 and Windows x64 reporting clients, smoke-test
+  event and workflow publishing, and publish checksummed client downloads
+  after eligible releases without changing server deployment admission.
+- Validate private Windows publisher storage with native ACL/link checks.
 - Update the lint toolchain's Minimatch to 11.0.1 for the pattern-amplification
   security fix, with file-discovery and Svelte/TypeScript compatibility checks.
 - Apply the owner-approved exact exception for the rejected Deepmerge CVE

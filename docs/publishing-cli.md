@@ -3,7 +3,8 @@
 `silkboard-publish` implements [#36](https://github.com/breki/silkboard/issues/36)
 as an installed Rust executable. Target machines need no Rust, Cargo, Node,
 curl, SQLite service or background process. This implementation supports
-Linux GNU on x86-64 and ARM64, with a compatible system runtime. HTTP/TLS
+Linux GNU on x86-64 and ARM64, with a compatible system runtime, plus Windows
+x64 with private local NTFS storage. HTTP/TLS
 dependencies are compiled in. There is no outgoing queue or automatic retry;
 the owner accepts lost messages during outages for this milestone.
 
@@ -30,8 +31,9 @@ install -m 0755 /path/to/silkboard-publish "$HOME/.local/bin/silkboard-publish"
 Ensure that directory is on `PATH`. Third-party attribution texts are embedded
 and available with `--licenses`; preserve/refresh them when dependencies change.
 Upgrade by replacing the executable with another reviewed compatible binary.
-No service or self-updater is installed. This implementation publishes no
-downloadable release binary. Distribution and production installation still
+No service or self-updater is installed. Future eligible releases provide
+[Linux x86-64 and Windows x64 downloads](client-downloads.md) with checksums,
+runtime requirements, private Windows setup and smoke checks. Distribution and production installation still
 follow the normal reviewed release process; a local build is not a release
 or evidence of ARM64 execution.
 
@@ -96,7 +98,9 @@ bounded headers and a 1,024-byte acknowledgement limit.
 Configuration/token files must be regular mode-0600 files without hardlinks,
 in mode-0700 immediate directories. Their paths and the state directory must
 be absolute and free of symlink directory aliases. The operator controls
-the directories and ancestors. Unknown fields and oversized/invalid input
+the directories and ancestors. Those mode checks apply on Unix; Windows uses
+the [native ACL and path policy](client-downloads.md#configure-a-different-project).
+Unknown fields and oversized/invalid input
 are rejected; configuration is limited to 16 KiB and ordinary reports to 64 KiB. Task-plan
 input has its own 256 KiB bound.
 

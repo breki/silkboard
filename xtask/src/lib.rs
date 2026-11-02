@@ -5,6 +5,7 @@ use std::path::Path;
 pub mod ci;
 mod ci_cache;
 mod ci_inputs;
+mod client_release;
 mod dependencies;
 mod npm_audit;
 mod registry_dates;
@@ -24,7 +25,7 @@ pub const USAGE: &str = "Usage: cargo xtask <check|fmt [--check]|clippy \
 [--target TARGET]|doc|test [FILTER]|validate [--check] [--parallel]|coverage|dupes|deny|\
 audit|dep-age-check|frontend|frontend-check|frontend-fmt [--check]|\
 frontend-test|frontend-coverage|frontend-dupes|browser-test|handoff-test|bombyx-test|\
-release-check TAG|canon-check|ci-mode EVENT BASE HEAD|ci-cache-plan|\
+release-check TAG|client-release-check TAG SHA RUN ATTEMPT|canon-check|ci-mode EVENT BASE HEAD|ci-cache-plan|\
 ci-cache-prune RUNNER_TEMP EXPECTED_NORMAL_KEY|ci-publication-dates-check PATH>";
 
 /// Run a supported repository task.
@@ -64,6 +65,9 @@ pub fn dispatch_with_publication_cache(
         }
         ["dep-age-check"] => dependencies::check(root, runner, dates),
         ["release-check", tag] => release::check(root, runner, tag),
+        ["client-release-check", tag, sha, run, attempt] => {
+            client_release::check(root, runner, tag, sha, run, attempt)
+        }
         ["canon-check"] => canon_check(root),
         ["ci-cache-plan"] => ci_cache::print_plan(root, runner),
         ["ci-publication-dates-check", path] => {
@@ -362,6 +366,7 @@ fn check_documented_commands(text: &str) -> Result<(), String> {
                     | "handoff-test"
                     | "bombyx-test"
                     | "release-check"
+                    | "client-release-check"
                     | "canon-check"
                     | "ci-mode"
                     | "ci-cache-plan"

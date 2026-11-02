@@ -86,6 +86,7 @@ with `npm run test:codex-title --prefix frontend` and the Bombyx gate.
 | Private owner handoff | `cargo xtask handoff-test` |
 | Local build/title helpers and Bombyx configuration/secret/trust tests | `cargo xtask bombyx-test` |
 | Signed stable tag/version/checkout checks | `cargo xtask release-check TAG` |
+| Exact upstream release evidence for client publication | `cargo xtask client-release-check TAG SHA RUN ATTEMPT` |
 | Relative Markdown links and tooling command claims | `cargo xtask canon-check` |
 | Conservative PR validation scope | `cargo xtask ci-mode EVENT BASE HEAD` |
 | CI dependency-cache keys | `cargo xtask ci-cache-plan` |
