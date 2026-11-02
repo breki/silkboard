@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "fix": "prettier --write . && eslint . --fix",
-    "check:all": "npm run check && npm run lint && npm run format:check && npm run test && npm run build",
+    "check:all": "npm run check && npm run lint && npm run test:dependency-compat && npm run format:check && npm run test && npm run build",
+    "test:dependency-compat": "node --test dependency-compat.test.mjs",
     "coverage": "vitest run --coverage",
     "dupes": "jscpd src",
     "test:browser": "playwright test",
@@ -51,6 +52,7 @@
     "node": ">=22.12.0"
   },
   "overrides": {
+    "minimatch": "11.0.1",
     "nanoid": "3.3.19",
     "postcss": "8.5.28",
     "undici": "7.30.1"

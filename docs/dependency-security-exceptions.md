@@ -5,6 +5,42 @@ exception to the 14-day cooldown for an urgent security fix. This record
 does not authorize skipping registry, source, license, checksum or audit gates.
 There is no environment flag or configurable general exemption.
 
+## Minimatch pattern-amplification fix, 2026-11-02
+
+The npm audit rejects Minimatch 10.2.5, shared by ESLint, config-array and
+the TypeScript ESLint parser, for
+[GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+The minimum patched version is 11.0.1. Use an exact npm override to replace
+that transitive matcher without downgrading the Svelte ESLint plugin or
+refreshing unrelated packages. Node 24.14.1 meets its runtime requirement.
+
+Admit only these exact security-required npm versions at their observed
+publication seconds:
+
+| Package | Version | Registry publication UTC |
+| --- | --- | --- |
+| minimatch | 11.0.1 | 2026-10-27T22:26:03.755Z |
+| @isaacs/nonrecursive-glob-match | 1.0.3 | 2026-10-28T19:50:48.349Z |
+
+Minimatch 11 replaces regular-expression path matchers with the second
+package; 1.0.3 is the exact resolved compatible release. Both use the already
+allowed BlueOak-1.0.0 license. The existing brace-expansion 5.0.12 and
+balanced-match dependencies remain unchanged and meet ordinary cooldown.
+Registry name/version/source, license, canonical tarball and sha512 integrity
+checks still run before admission. Future dates, different publication
+seconds, adjacent versions and unrelated packages remain refused. The
+cooldown regression test failed before these two cases were added.
+
+The [upstream migration notes](https://github.com/isaacs/minimatch/blob/v11.0.1/changelog.md)
+remove makeRe, regexp, AST and internal matchOne APIs and change matcher-set
+contents. Silkboard's actual lint consumers use Minimatch construction,
+match (including partial traversal) and the exported minimatch function;
+compatibility checks must cover file selection and Svelte/TypeScript parsing.
+Remove obsolete age cases during a future scoped update after fourteen days.
+This admits security fixes; it does not suppress any npm advisory. The
+[Deepmerge assessment and approved disposition](security/npm-audit-assessment.md)
+is separate; its owner-approved exception expires at 2026-11-09T00:00:00Z.
+
 ## Rustls 0.23.46, 2026-10-18
 
 The first full #36 audit found four advisories in the cooldown-eligible

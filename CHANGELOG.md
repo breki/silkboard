@@ -6,6 +6,10 @@
   event and workflow publishing, and publish checksummed client downloads
   after eligible releases without changing server deployment admission.
 - Validate private Windows publisher storage with native ACL/link checks.
+- Update the lint toolchain's Minimatch to 11.0.1 for the pattern-amplification
+  security fix, with file-discovery and Svelte/TypeScript compatibility checks.
+- Apply the owner-approved exact exception for the rejected Deepmerge CVE
+  until 2026-11-09T00:00:00Z; preserve every other advisory and command failure.
 
 ## 0.12.0 - 2026-10-26
 

@@ -7,6 +7,7 @@ mod ci_cache;
 mod ci_inputs;
 mod client_release;
 mod dependencies;
+mod npm_audit;
 mod registry_dates;
 mod release;
 mod validation;
@@ -14,6 +15,8 @@ pub mod workspace;
 
 /// Subprocess adapter shared by real execution and behavioral tests.
 /// Registry checks and explicitly parallel validation may invoke it concurrently.
+/// The exact npm JSON audit command returns an exit-code/stdout/stderr envelope;
+/// the audit gate, rather than the adapter, decides whether it is acceptable.
 pub type Runner<'a> =
     dyn Fn(&str, &[&str], &Path) -> Result<String, String> + Sync + 'a;
 
@@ -128,7 +131,7 @@ pub fn dispatch_with_publication_cache(
         ),
         ["audit"] => {
             cargo(root, runner, &["audit", "--deny", "warnings"])?;
-            npm(root, runner, &["audit", "--audit-level=low"])
+            npm_audit::check(root, runner)
         }
         ["coverage"] => coverage(root, runner),
         ["dupes"] => {
