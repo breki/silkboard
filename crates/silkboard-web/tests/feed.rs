@@ -15,6 +15,67 @@ use tower::ServiceExt;
 
 const ORIGIN: &str = "https://silkboard.example";
 
+#[tokio::test]
+async fn agent_filters_search_complete_history_and_exact_identity() {
+    let store = ProgressStore::open_memory().unwrap();
+    let (app, cookie) = owner(store.clone()).await;
+    let token = store.issue_token("alpha", "agent").unwrap();
+    for index in 0..25 {
+        let mut report =
+            event(&format!("e-{index}"), &format!("native-{index}"), 1);
+        report.session_name = Some(format!("Task {index}"));
+        store.publish("alpha", &token, &report).unwrap();
+    }
+    let other = store.issue_token("bravo", "agent").unwrap();
+    store
+        .publish("bravo", &other, &event("other", "native-0", 1))
+        .unwrap();
+    let child_token = store.issue_token("child-only", "agent").unwrap();
+    let mut child = event("child", "child-native", 1);
+    child.subagent_id = Some("review".to_owned());
+    store.publish("child-only", &child_token, &child).unwrap();
+    for query in [
+        "project=alpha&q=TASK%200",
+        "project=alpha&hostname=dev&tool=codex&session_id=native-0",
+        "q=ALPHA&hostname=dev&tool=codex&session_id=native-0",
+    ] {
+        let (status, page) =
+            read(app.clone(), &format!("/api/owner/agents?{query}"), &cookie)
+                .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(page["items"].as_array().unwrap().len(), 1);
+        assert_eq!(page["items"][0]["session_id"], "native-0");
+    }
+    for query in ["project=other", "q=%25"] {
+        let (status, page) =
+            read(app.clone(), &format!("/api/owner/agents?{query}"), &cookie)
+                .await;
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(page["items"], json!([]));
+    }
+    assert_eq!(
+        read(app.clone(), "/api/owner/agents?q=Task", "").await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    for query in ["project=BAD", "hostname=bad%20host", "q=%0A", "session_id="]
+    {
+        assert_eq!(
+            read(app.clone(), &format!("/api/owner/agents?{query}"), &cookie)
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+    let (status, choices) = read(
+        app,
+        "/api/owner/filter-options?view=agents&kind=project",
+        &cookie,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(choices["items"], json!(["alpha", "bravo"]));
+}
+
 async fn owner(store: ProgressStore) -> (Router, String) {
     set_password_from_reader(&store, b"private test owner password".as_slice())
         .unwrap();

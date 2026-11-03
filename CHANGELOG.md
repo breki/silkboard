@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Apply the approved controls-at-scale design with a desktop project index,
+  searchable phone and exact-agent choices, compact cards with identity
+  disclosures, and received-time presets/custom range editing.
+
 - Add private serialized dependency reuse to the production build-helper source,
   rebuilding candidate workspace code and bounding retained cache size;
   operator installation and ARM64 acceptance remain separate.

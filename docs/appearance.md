@@ -44,3 +44,13 @@ and System preferences continue to apply to controls and focus states.
 This control styling implements [#122](https://github.com/breki/silkboard/issues/122).
 Four-page navigation comes from #121. The keyboard editor (#124) remains
 separate; existing todo editing and deletion behavior is retained.
+
+The owner approved the revised ten-project/twenty-agent proposal in
+[PR #142](https://github.com/breki/silkboard/pull/142) on 2026-11-03. Its quieter
+neutral/green palette, compact cards with identity disclosures, desktop
+project index, searchable phone choices and received-time panel supersede the
+earlier styling-only direction. The [feed guide](owner-feed.md) describes the
+working controls. This implementation preserves local time, System appearance,
+existing navigation and owner-only reads; the proposal's UTC sample clock is
+not a production setting. A repository implementation does not establish a
+release, live deployment or owner phone acceptance.

@@ -30,9 +30,18 @@ available in Workflows and its received history.
 
 Cards use one column on narrow phones and an adaptive grid on larger screens.
 Each card shows its readable name or tool/host fallback, tool/host context,
-project, full native session, latest activity and browser-local receipt date
-and time including seconds and year. Long labels, titles and IDs wrap within
-the card. Values remain visible without the former narrow table columns.
+project, latest activity and browser-local receipt date and time including
+seconds and year. Expand Report & identity to see the exact native session.
+Long labels, titles and IDs wrap within the card.
+
+Agents, Events and the Workflows list use a desktop project index. Phones use
+a searchable Project chooser instead. Selecting a project resets the dependent
+agent choice and returns to the latest page. More projects loads the next
+bounded set of choices; project counts are not inferred from the current page.
+The Agents chooser searches the complete main-session history by latest
+readable name, project, activity text, tool or host. Its choices include project,
+tool/host and native session identity so equal names remain distinguishable.
+Selecting one filters by project, host, tool and native session together.
 
 Latest activity is selected across all stored events and workflow snapshots
 before pagination, using server receipt time rather than session counters.
@@ -45,7 +54,7 @@ main agent cards use descending full identity to break receipt-time ties.
 An event card opens Events with its exact full identity in the URL. The visible
 Exact agent session scope distinguishes the primary session from each child,
 remains through paging and view switching, and survives reload and browser
-Back/Forward. Time filters still apply immediately. Clear session filter
+Back/Forward. Applied time ranges still narrow this exact scope. Clear session filter
 removes that scope and restores Project/Agent selection. Incomplete identity
 links show an error and fetch no event data until cleared.
 
@@ -112,10 +121,15 @@ from the complete Events dataset, with More projects/agents for longer lists,
 not just the displayed page. Agent labels show tool and host. Escape closes
 a picker and returns focus to its button; Tab and Enter reach and choose items.
 
-From and To apply valid received-time changes immediately in the browser's
-local timezone. An invalid range shows a warning and retains the last valid
-time bounds; Project and Agent can still change independently. Clear filters
-resets all controls and returns to the latest page. There is no Apply button.
+Open All time (or the current range) beside the clock icon to show the
+Received time dialog, with recent-period presets and a custom range editor.
+Presets apply immediately and end at their selection time. Custom From/To dates use
+YYYY-MM-DD and 24-hour HH:mm in the browser's local timezone; Apply range
+applies both endpoints together. Leave both fields of an endpoint empty for
+no bound. Invalid dates, nonexistent local daylight-saving times and reversed
+ranges show a warning and retain the last valid bounds. Cancel and Escape
+discard unapplied edits. Project and Agent can still change independently.
+Clear filters resets all controls and returns to the latest page.
 Failed choice loading offers Retry; existing selections remain active.
 
 Flat list displays events newest-received first. Time is server receipt time, displayed
@@ -183,6 +197,12 @@ It contains `project`, `hostname`, `tool`, `session_id`, nullable
 a workflow activity has `kind: "workflow"`, `task_id`, string `sequence`,
 `title` and reported `state`. Return its opaque JSON cursor unchanged,
 URL-encoded as `before`; it contains receipt time and full native identity.
+The Agents API accepts optional `project`, `hostname`, `tool` and `session_id`
+exact filters and a bounded, case-insensitive literal `q` search over the
+project, latest name, activity text, tool and host. Filtering occurs after latest-main
+activity selection and before pagination. Agent project choices use
+`/api/owner/filter-options?view=agents&kind=project` across event and workflow
+history; subagent-only projects are excluded from that view.
 
 Exact Events scope requires `project`, `hostname`, `tool`, `session_id` and
 `subagent_id` together. Use an explicit empty `subagent_id=` for a primary

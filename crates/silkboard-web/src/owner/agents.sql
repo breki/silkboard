@@ -24,6 +24,11 @@ WITH activity AS (
 SELECT project,hostname,tool,session_id,NULLIF(child_id,''),parent_id,session_name,
   received_at,kind,item_key,sequence,title,state
 FROM ranked WHERE rank=1 AND child_id='' AND parent_id IS NULL
+  AND (?7 IS NULL OR project=?7)
+  AND (?8 IS NULL OR hostname=?8)
+  AND (?9 IS NULL OR tool=?9)
+  AND (?10 IS NULL OR session_id=?10)
+  AND (?11 IS NULL OR instr(lower(project || ' ' || coalesce(session_name,'') || ' ' || tool || ' ' || hostname || ' ' || title),lower(?11))>0)
   AND (received_at,project,hostname,tool,session_id,child_id)<(?1,?2,?3,?4,?5,?6)
 ORDER BY received_at DESC,project DESC,hostname DESC,tool DESC,session_id DESC,child_id DESC
 LIMIT 21

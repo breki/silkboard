@@ -10,6 +10,14 @@ import {
   type Page,
 } from "./feed-api";
 import { taskId } from "./plan-model";
+import { filterQuery } from "./list-filters";
+export interface AgentFilters {
+  project?: string;
+  hostname?: string;
+  tool?: string;
+  session_id?: string;
+  q?: string;
+}
 export interface AgentActivity extends AgentIdentity {
   project: string;
   subagent_id: null;
@@ -61,10 +69,11 @@ export const agentKey = (item: AgentActivity) =>
 export async function agents(
   before: string | null,
   signal: AbortSignal,
+  filters: AgentFilters = {},
 ): Promise<Page<AgentActivity>> {
   const result = page(
     await request(
-      `/api/owner/agents${before === null ? "" : `?before=${encodeURIComponent(before)}`}`,
+      `/api/owner/agents${filterQuery(before, filters)}`,
       {},
       signal,
     ),

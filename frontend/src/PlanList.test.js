@@ -162,7 +162,9 @@ test("empty workflows distinguish unfiltered history from matching filters", asy
   expect(
     screen.getByText("No workflow reports have arrived yet."),
   ).toBeTruthy();
-  await fireEvent.submit(screen.getByRole("form"));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "All statuses", exact: true }),
+  );
   await settle();
   expect(
     screen.getByText("No workflow reports have arrived yet."),

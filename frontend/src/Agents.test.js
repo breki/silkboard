@@ -14,6 +14,32 @@ afterEach(() => {
   vi.useRealTimers();
 });
 const settle = () => vi.advanceTimersByTimeAsync(0);
+test("project changes query all agents, reset pagination and explain empty filtered results", async () => {
+  const fetch = vi.fn(async (path) => {
+    if (path.startsWith("/api/owner/filter-options"))
+      return response(page(["alpha"]));
+    return response(path.includes("?") ? page([]) : page([agent], "older"));
+  });
+  vi.stubGlobal("fetch", fetch);
+  render(Agents, { onexpire: vi.fn() });
+  await settle();
+  await fireEvent.click(screen.getByText("Older agents"));
+  await settle();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Project: All projects" }),
+  );
+  await vi.advanceTimersByTimeAsync(200);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "alpha", exact: true }),
+  );
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toBe("/api/owner/agents?project=alpha");
+  expect(screen.getByText("No main agents match these filters.")).toBeTruthy();
+  await fireEvent.click(screen.getByText("Clear filters"));
+  await settle();
+  expect(fetch.mock.calls.at(-1)[0]).toBe("/api/owner/agents");
+  expect(screen.getByRole("article")).toBeTruthy();
+});
 test("links reported workflow snapshots and exact event identities without merging equal names", async () => {
   vi.stubGlobal(
     "fetch",

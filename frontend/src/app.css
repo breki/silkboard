@@ -526,3 +526,109 @@ a {
     max-width: 100%;
   }
 }
+
+/* Approved controls-at-scale layout: content first, with a quiet project index. */
+main {
+  max-width: 96rem;
+  padding: 0 clamp(1rem, 3vw, 2rem) 2rem;
+}
+.masthead {
+  min-height: 5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--line);
+  gap: 2rem;
+}
+.masthead h1 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.3rem;
+  letter-spacing: -0.035em;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.5rem;
+  background: #24684b;
+  color: #fff;
+  font:
+    italic 1.5rem Georgia,
+    serif;
+}
+.private-label {
+  font-size: 0.55rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-left: 0.4rem;
+}
+.primary-navigation {
+  margin-left: 0;
+  gap: 1.5rem;
+  margin-right: auto;
+}
+.navigation {
+  margin-left: auto;
+}
+.project-layout {
+  display: grid;
+  grid-template-columns: 11.5rem minmax(0, 1fr);
+  gap: 2rem;
+  margin-block: 1.5rem;
+}
+.project-layout.unscoped {
+  grid-template-columns: minmax(0, 1fr);
+}
+.project-results {
+  min-width: 0;
+}
+.events-table {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+}
+.events-table th,
+.events-table td {
+  padding: 0.85rem 0.65rem;
+}
+@media (max-width: 700px) {
+  .project-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .masthead.with-navigation {
+    gap: 0.25rem 0.5rem;
+    min-height: 7rem;
+    padding-block: 0.75rem 0;
+    margin-bottom: 1.5rem;
+  }
+  .primary-navigation {
+    gap: 0.25rem;
+    margin-right: 0;
+  }
+  .primary-navigation a {
+    font-size: 0.8rem;
+  }
+  .events-table th,
+  .events-table td {
+    padding: 0.6rem 0.25rem;
+  }
+}
+
+.masthead h1 {
+  min-width: 0;
+  white-space: normal;
+  flex-wrap: wrap;
+}
+@media (max-width: 700px) {
+  .masthead.with-navigation {
+    min-height: 6rem;
+    padding-top: 0.5rem;
+  }
+  .private-label {
+    display: none;
+  }
+}

@@ -1,5 +1,16 @@
 # Canon provenance
 
+## Approved controls at scale, 2026-11-03
+
+After reopening #122, the owner reviewed the private interactive preview with
+ten projects and twenty agents, stated that they liked the proposal, and
+requested implementation. [Proposal PR #142](https://github.com/breki/silkboard/pull/142)
+records that design. The revised [appearance](../appearance.md) and
+[feed guide](../owner-feed.md) adopt its layout and controls, with real bounded
+queries and the application's existing browser-local time contract. The UTC
+fixture is not an approved deployment setting. This approval covers the app
+implementation; merge, release and production installation remain separate.
+
 ## Focused local feedback, 2026-10-26
 
 The owner selected [#67](https://github.com/breki/silkboard/issues/67).

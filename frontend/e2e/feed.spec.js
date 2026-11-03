@@ -365,7 +365,10 @@ async function checkHierarchy(page) {
     .getByRole("button", { name: "Latest events", exact: true })
     .click();
   await expect(page.locator("tr.event-row")).toHaveCount(20);
-  await page.getByLabel("From", { exact: true }).fill("2099-01-01T00:00");
+  await page.getByRole("button", { name: /^Received time:/ }).click();
+  await page.getByLabel("From date", { exact: true }).fill("2099-01-01");
+  await page.getByLabel("From time", { exact: true }).fill("00:00");
+  await page.getByRole("button", { name: "Apply range" }).click();
   await expect(
     page.getByText("No events match these filters on this page."),
   ).toBeVisible();
