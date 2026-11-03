@@ -1076,3 +1076,14 @@ accepts only the rejected advisory's recorded low finding and plugin
 propagation, bound to the inspected versions/consumer and expiring at
 2026-11-09T00:00:00Z. Unknown or changed evidence and every other finding
 remain blocking; no general ignore flag or automatic extension is added.
+
+## Local Rust test profile evaluation, 2026-11-03
+
+The owner selected [#68](https://github.com/breki/silkboard/issues/68) after
+#67 merged. The [measurement report](../test-profile-measurements.md) compares
+workspace optimization levels 0 and 1 with fixed dependency settings on the
+development VM. It retains the existing split profile based on cold-build
+cost and overlapping warm-suite timings, while recording the alternative's
+faster single edit probe. No profile, release behavior, dependency, test
+selection or quality threshold is changed. Local measurements do not prove
+hosted CI or production performance.
