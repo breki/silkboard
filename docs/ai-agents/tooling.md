@@ -226,8 +226,8 @@ not an independent comparison of commit age.
 The owner authorized CI caching after gate-tool installation took 6m 42s in
 run 39044784280. CI restores only four pinned gate executables from a
 dedicated temporary tool root. An exact key includes OS, architecture,
-Ubuntu/Rust versions and the CI workflow hash, which binds the pinned tool
-versions and installation logic. There are no broad restore prefixes. PR
+Ubuntu/Rust versions and the [dedicated installer](../../dev/ci-install-gate-tools)
+hash, which binds the pinned tool versions and installation logic. There are no broad restore prefixes. PR
 keys include the PR number and are distinct from main/tag keys; GitHub also
 scopes PR caches to their merge refs. PRs first try the matching trusted cache
 from main, then their own isolated entry. A PR cannot populate the trusted

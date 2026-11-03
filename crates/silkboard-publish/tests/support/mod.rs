@@ -163,6 +163,9 @@ pub fn server_projects(
                     Err(e) => panic!("accept: {e}"),
                 }
             };
+            // Windows inherits the listener's nonblocking mode on accept.
+            // Request reads use the existing bounded blocking timeout.
+            stream.set_nonblocking(false).unwrap();
             stream
                 .set_read_timeout(Some(Duration::from_secs(4)))
                 .unwrap();
