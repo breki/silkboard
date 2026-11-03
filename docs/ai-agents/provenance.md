@@ -1121,5 +1121,9 @@ explicitly chose PR preparation with operator-run production measurements.
 The [cache and rollout guide](../production-build-cache.md) records the
 private serialized cache, fresh workspace/artifact requirements, retained-size
 bound, local fixture evidence and separate ARM64/operator acceptance.
-This changes the reviewed source helper, not the independently installed
-production helper or its trust, credentials, timer, admission or activation.
+PR preparation changed only the source helper. The owner subsequently
+authorized isolated production-VM measurements, merging PR #139 and narrow
+helper installation. The [live record](../production-build-cache-trial.md)
+separates measured ARM64 reuse and installation from the still-pending normal
+release build and activation acceptance. Trust, credentials, updater policy,
+binary, units and timer remained unchanged.
