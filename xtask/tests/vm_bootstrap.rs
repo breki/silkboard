@@ -17,6 +17,16 @@ fn updater_snapshots_and_credential_transport_preserve_boundaries() {
     run_fixture("updater.sh");
 }
 
+#[test]
+fn production_cache_retains_dependencies_and_bounds_cleanup() {
+    run_fixture("build-cache.sh");
+}
+
+#[test]
+fn production_cache_uses_current_source_with_real_cargo() {
+    run_fixture("build-cache-real.sh");
+}
+
 fn run_fixture(name: &str) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let output = Command::new("bash")

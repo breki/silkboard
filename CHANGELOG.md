@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add private serialized dependency reuse to the production build-helper source,
+  rebuilding candidate workspace code and bounding retained cache size;
+  operator installation and ARM64 acceptance remain separate.
+
 - Add the `optimize-builds` agent workflow and Codex skill for measured local,
   CI and release diagnosis using existing helpers and quality requirements.
 

@@ -214,3 +214,10 @@ are broader proposals. An [initial in-repository toolkit](deployment-toolkit.md)
 now implements the engine/policy/CLI boundary; it has not replaced the
 installed updater. Its state-format and privileged-installation compatibility
 requirements apply before adopting that version.
+
+## Production compilation cache
+
+[Issue #63’s helper source](production-build-cache.md) adds private dependency
+reuse with fresh workspace builds. Installation and ARM64 measurements are
+separate operator work; an application release does not update that helper.
+The guide records cache retention, trial isolation and rollout/recovery limits.

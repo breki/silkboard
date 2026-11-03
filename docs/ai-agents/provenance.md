@@ -1113,3 +1113,13 @@ behavior already documented in the catalog.
 The [evaluation record](../build-optimization-skill-evaluation.md) separates
 independent artifact-based skill exercises and structural checks from live
 pipeline measurements or production verification.
+
+## Production build dependency reuse, 2026-11-03
+
+The owner selected [#63](https://github.com/breki/silkboard/issues/63) and
+explicitly chose PR preparation with operator-run production measurements.
+The [cache and rollout guide](../production-build-cache.md) records the
+private serialized cache, fresh workspace/artifact requirements, retained-size
+bound, local fixture evidence and separate ARM64/operator acceptance.
+This changes the reviewed source helper, not the independently installed
+production helper or its trust, credentials, timer, admission or activation.
