@@ -1,8 +1,10 @@
 # Production dependency-build reuse
 
 Implementation for [#63](https://github.com/breki/silkboard/issues/63).
-The operator selected PR preparation with operator-run production measurements.
-Local tests do not establish ARM64 timing, installed-helper behavior or rollout.
+The owner subsequently authorized production-VM trials and narrow helper
+installation. The [trial and installation record](production-build-cache-trial.md)
+reports ARM64 measurements and the installed helper's exact identity. A normal
+release build with the installed helper and rollout acceptance remain pending.
 An application tag/release does not install this separately managed helper.
 
 ## Cache and identity contract
