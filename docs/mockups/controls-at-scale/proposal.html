@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <title>Silkboard · Controls at scale proposal</title>
+    <link rel="stylesheet" href="proposal.css" />
+    <script src="proposal.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <a class="brand" href="#agents"
+        ><span class="brand-mark">s</span>silkboard<span class="private"
+          >PRIVATE</span
+        ></a
+      >
+      <nav aria-label="Primary pages">
+        <a href="#agents" data-view="agents">Agents</a>
+        <a href="#events" data-view="events">Events</a>
+        <span class="context-nav">Workflows</span
+        ><span class="context-nav">Todos</span>
+      </nav>
+      <button id="theme" class="icon-button" aria-label="Switch to dark theme">
+        ◐
+      </button>
+    </header>
+    <div class="workspace">
+      <aside aria-label="Projects" class="project-rail">
+        <div class="rail-title">PROJECTS <span>10</span></div>
+        <div id="projects"></div>
+        <p class="rail-note">Private workspace<br />Latest received reports</p>
+      </aside>
+      <main>
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">YOUR WORKSPACE, AT A GLANCE</p>
+            <h1 id="page-title">Agents</h1>
+          </div>
+          <span class="sample-label">Design proposal</span>
+        </div>
+        <p id="intro" class="intro">
+          20 main agents across 10 projects. Expand Report &amp; identity for
+          session details.
+        </p>
+        <div class="toolbar" aria-label="Filters">
+          <button id="project-trigger" class="filter mobile-project">
+            Project <strong>All projects</strong><span>⌄</span>
+          </button>
+          <button id="agent-trigger" class="filter">
+            Agent <strong>All agents</strong><span>⌄</span>
+          </button>
+          <button id="range-trigger" class="filter" hidden>
+            <span aria-hidden="true">◷</span><strong>All time</strong
+            ><span>⌄</span>
+          </button>
+          <button id="clear" class="text-button" hidden>Clear filters</button>
+          <span class="toolbar-note" id="toolbar-note">Main sessions only</span>
+        </div>
+        <div class="results-heading">
+          <p id="result-count" role="status" aria-live="polite"></p>
+          <span id="sort-label">Latest received first</span>
+        </div>
+        <section id="results" aria-label="Main agent reports"></section>
+        <p class="data-note">
+          Reported activity, not connection status. Times are received times.
+          Fictional sample data · 2026-11-03 · UTC.
+        </p>
+        <footer class="proposal-note">
+          Proposal for review · Agents and Events are interactive. Workflows and
+          Todos are shown for navigation context.
+        </footer>
+      </main>
+    </div>
+    <dialog id="picker" aria-labelledby="picker-title">
+      <div class="dialog-heading">
+        <h2 id="picker-title">Choose project</h2>
+        <button class="close" aria-label="Close chooser">×</button>
+      </div>
+      <label class="search-label" for="picker-search"
+        >Search <span id="search-kind">projects</span></label
+      >
+      <input
+        id="picker-search"
+        type="search"
+        placeholder="Search by name"
+        autocomplete="off"
+      />
+      <div id="picker-options" class="picker-options"></div>
+    </dialog>
+    <dialog id="range" aria-labelledby="range-title">
+      <div class="dialog-heading">
+        <div>
+          <p class="eyebrow">EVENT FILTER</p>
+          <h2 id="range-title">Received time</h2>
+        </div>
+        <button class="close" aria-label="Close time range">×</button>
+      </div>
+      <p class="range-explanation">
+        Choose a recent period or enter a precise range.
+      </p>
+      <div class="presets" aria-label="Recent periods">
+        <button data-preset="all">All time</button
+        ><button data-preset="hour">Last hour</button
+        ><button data-preset="day">Last 24 hours</button
+        ><button data-preset="week">Last 7 days</button>
+      </div>
+      <form id="range-form" novalidate>
+        <fieldset>
+          <legend>Custom range</legend>
+          <div class="range-endpoint">
+            <span>From</span
+            ><label
+              >Date<input
+                id="from-date"
+                aria-label="From date"
+                placeholder="YYYY-MM-DD"
+                value="2026-11-03"
+                autocomplete="off" /></label
+            ><label
+              >Time<input
+                id="from-time"
+                aria-label="From time"
+                placeholder="HH:mm"
+                value="09:00"
+                inputmode="numeric"
+                autocomplete="off"
+            /></label>
+          </div>
+          <div class="range-endpoint">
+            <span>To</span
+            ><label
+              >Date<input
+                id="to-date"
+                aria-label="To date"
+                placeholder="YYYY-MM-DD"
+                value="2026-11-03"
+                autocomplete="off" /></label
+            ><label
+              >Time<input
+                id="to-time"
+                aria-label="To time"
+                placeholder="HH:mm"
+                value="12:00"
+                inputmode="numeric"
+                autocomplete="off"
+            /></label>
+          </div>
+        </fieldset>
+        <p class="timezone">
+          UTC · Received time, not the agent's reported time.<br />Dates:
+          YYYY-MM-DD. Times: 24-hour HH:mm.
+        </p>
+        <p id="range-error" role="alert" hidden></p>
+        <div class="range-footer">
+          <button type="button" id="cancel-range">Cancel</button
+          ><button class="primary" type="submit">Apply range</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>
