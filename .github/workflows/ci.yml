@@ -204,9 +204,19 @@ jobs:
       - name: Configure Ubuntu package downloads
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: |
-          sudo sed -i -E 's#https?://azure\.archive\.ubuntu\.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/ubuntu.sources
+          if grep -Eq '^[[:space:]]+[^[:space:]#]' /etc/apt/sources.list.d/ubuntu.sources; then
+            echo 'Unsupported continued Ubuntu source fields; update the runner setup.' >&2
+            exit 1
+          fi
+          sudo sed -i -E -e 's#https?://azure\.archive\.ubuntu\.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' -e 's#mirror\+file:/etc/apt/apt-mirrors\.txt#https://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/ubuntu.sources
           printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/80silkboard-ci-network >/dev/null
-          sed -n '/^URIs:/p' /etc/apt/sources.list.d/ubuntu.sources
+          sources=$(sed -n '/^URIs:/Ip' /etc/apt/sources.list.d/ubuntu.sources)
+          printf '%s\n' "$sources"
+          test -n "$sources"
+          if grep -Ev '^URIs:[[:space:]]+https://(archive|security)\.ubuntu\.com/ubuntu/?[[:space:]]*$' <<< "$sources"; then
+            echo 'Unsupported Ubuntu source format; update the runner setup before continuing.' >&2
+            exit 1
+          fi
       - name: Install ARM64 system toolchain
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: |

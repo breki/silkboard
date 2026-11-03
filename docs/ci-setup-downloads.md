@@ -8,11 +8,17 @@ A cache restore step succeeding is not treated as proof of a hit.
 
 ## Observed before the change
 
-| Run | Exact source revision | Event / result |
+| Run | Run head revision | Event / result |
 | --- | --- | --- |
 | [40298305640](https://github.com/breki/silkboard/actions/runs/40298305640) | `a8bb2a5c74d34cacc6923f4250a48558df503236` | PR; cancelled during ARM64 package download |
 | [41544524293](https://github.com/breki/silkboard/actions/runs/41544524293) | `022adb6dbc2b01167e329447fdcf0549a44f0d95` | v0.13.0 tag; full release suite passed |
 | [41578009028](https://github.com/breki/silkboard/actions/runs/41578009028) | `5a7d3fb835adff89dba1ac9ed56d8245fc449906` | main; all validation passed; implementation base |
+
+The historical PR checked synthetic merge
+`b49d7e9aac0c4e73d115d410162324f35d41b306`, combining the listed head with
+base `d5d2b8ebba0bbdd0b1a9251fa7fb3204dff4efdc`. The tag and main runs
+checked their listed exact commits. PR head metadata alone is not the tested
+merge identity; checkout logs establish the distinction.
 
 | Selected validation job phase, seconds | Slow PR | v0.13.0 | Base main |
 | --- | ---: | ---: | ---: |
@@ -77,8 +83,9 @@ regression. No cancelled lint is counted as passing.
 
 ## Selected setup changes
 
-The Ubuntu 24.04 x64 job rewrites only the Azure Ubuntu archive URI in its
-Deb822 source file to `https://archive.ubuntu.com/ubuntu`. Source suites,
+The Ubuntu 24.04 x64 job rewrites direct Azure Ubuntu archive URIs and the
+observed `mirror+file:/etc/apt/apt-mirrors.txt` URI in its Deb822 source file
+to `https://archive.ubuntu.com/ubuntu`. Source suites,
 components, signing-key configuration, third-party repositories and ordinary
 APT verification remain intact. This targets both measured APT consumers.
 APT uses three retries and 30-second HTTP/HTTPS connection/data timeouts;
@@ -86,7 +93,11 @@ these are not a total step deadline or a minimum-throughput guarantee.
 The job retains its 40-minute limit and fails normally on installation errors.
 Ubuntu documents its [primary archive and mirrors](https://ubuntu.com/project/docs/how-ubuntu-is-made/concepts/package-archive/).
 This source-file edit is specific to the selected runner image, not a general
-production/host setup command. A missing expected file fails setup.
+production/host setup command. A missing expected file, empty URI list or
+unsupported remaining Ubuntu URI, continued field or noncanonical URI-field
+casing fails setup rather than
+silently keeping
+an unknown mirror. Existing direct official archive/security URIs are accepted.
 
 ARM64 OS-toolchain installation now precedes validation in its own step.
 The later cross-target lint still runs, using its separate existing Rust
@@ -128,5 +139,57 @@ locked installs and failure propagation. HTTP/HTTPS mirror fixtures preserved
 source suites, signing-key declarations and unrelated sources. Bash syntax
 and workflow parsing with the locked Prettier YAML parser passed. Independent
 artisan, red-team and fresh-reader reviews found no actionable issues.
-Hosted after-change results are pending; these local checks are correctness
-evidence, not a download-performance result.
+The final hosted comparison is maintained in
+[PR #137](https://github.com/breki/silkboard/pull/137); these local checks
+are correctness evidence, not a download-performance result.
+
+### Initial hosted pilot: source-format discovery
+
+[Run 41579699637](https://github.com/breki/silkboard/actions/runs/41579699637)
+passed its full Linux job at PR head
+`71b2830da5fe2c7dac7ef7d8e6fade7fdf192802`, tested as merge
+`1f0eee2559eee2761f2816731cc95b4793b5997e` onto the base listed above.
+Creation-to-job-start was five seconds; job wall time was 743 seconds.
+Gate-tool version-2 trusted and PR lookups missed; installation took 411 s,
+then saved the PR-scoped entry in one second. The npm, all three trusted Rust
+archives and publication-date caches explicitly hit; Rust restores took five
+seconds total, with no new Rust archives saved. Full validation took 244 s
+and ARM64 lint seven seconds. Compiler-system setup took 18 s, npm two
+seconds and browser/system setup 15 s.
+
+This pilot exposed a no-op in the initial direct-URI rewrite: the current
+runner uses `mirror+file:/etc/apt/apt-mirrors.txt`, which still selected Azure.
+APT fetched compiler packages in one second and browser OS packages in less
+than one second, **from Azure**. These timings do not verify primary-archive
+performance. The corrected rewrite handles both observed forms, checks the
+remaining active URIs and was exercised with direct HTTP/HTTPS, mirror-file,
+already-official/security and unsupported-source fixtures. The initial sample
+is retained rather than presented as an improvement caused by the rewrite.
+
+The separate native Windows client workflow
+[41579699603](https://github.com/breki/silkboard/actions/runs/41579699603)
+failed an unchanged distribution fixture with `WouldBlock` / Windows 10035
+on its accepted socket, after 0.14 s. Windows sockets inherit listener
+properties on [accept](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-accept).
+The fixture now explicitly uses blocking reads with its existing four-second
+read timeout; production code, delivery assertions and timeouts are unchanged.
+The existing distribution test passes locally. A fixture-corrected full local
+validation passed in 333.633 s, and separate ARM64 lint passed (Cargo 1.84 s).
+At this report revision, final-head native Windows and corrected-mirror
+verification is pending. Its results will be recorded in
+[PR #137](https://github.com/breki/silkboard/pull/137), separately from this
+pilot. Do not use the pilot as evidence that either correction was verified.
+
+An independent review reproduced an unsupported continuation URI bypassing
+the initial remaining-URI check. The narrowly supported runner format now
+rejects continued source fields explicitly; negative fixtures include both
+unknown and official continuation URIs. The actual source-step fixtures pass
+for eight cases, with suites and signing-key declarations preserved.
+
+At the third correctness-review round, mixed-case Deb822 URI names exposed
+another guard bypass. URI collection is now case-insensitive; noncanonical
+URI-field casing fails the supported-format check. The reproduced mixed-stanza
+negative case passes after the fix, bringing the controlled source-step checks
+to nine cases. The final narrow casing correction was verified by the
+coordinator after the independent review cap; no additional independent
+correctness pass or clean final review is claimed.
