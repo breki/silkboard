@@ -211,3 +211,13 @@ The tag version must match the workspace package version in `Cargo.toml`.
 These inputs label the binary. The release workflow and updater separately
 verify signatures, checkout identity, cleanliness and GitHub evidence before
 admitting a revision. See [release preparation](releases.md).
+
+## Rust test profile
+
+The workspace uses test optimization level 0 with third-party dependencies
+at level 1. The [profile comparison](test-profile-measurements.md) records
+cold builds, warm tests, authentication and a small source-edit tradeoff.
+Keep the default for routine work; the measured alternative reduced the
+single edit rebuild but increased clean compilation without a consistent
+whole-suite execution benefit. Release settings and full validation
+requirements are separate and unchanged.
