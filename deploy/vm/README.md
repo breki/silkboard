@@ -156,3 +156,10 @@ and tailscaled enabled state. A host reboot is outside this test.
 
 Keep the initial release and logs while upgrade/recovery verification is pending.
 Do not delete the trial as an implied provisioning step; cleanup is issue #2.
+
+## Production build-cache helper
+
+The [dependency-reuse guide](../../docs/production-build-cache.md) describes
+the updated helper source, private cache and operator trial/rollout. A normal
+application release does not install that helper; measure ARM64 behavior and
+review the narrow operator update before changing an existing deployment.
