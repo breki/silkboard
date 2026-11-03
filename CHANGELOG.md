@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add the `optimize-builds` agent workflow and Codex skill for measured local,
+  CI and release diagnosis using existing helpers and quality requirements.
+
 ## 0.13.0 - 2026-11-03
 
 - Build standalone Linux x86-64 and Windows x64 reporting clients, smoke-test

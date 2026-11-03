@@ -1098,3 +1098,18 @@ APT network settings, separate setup timings and an installer-bound gate-tool
 key. It preserves full validation, cache trust separation, ARM64 lint and
 signed exact-revision release admission. A new package cache or toolchain
 image is not adopted without measured need.
+
+## Build optimization skill, 2026-11-03
+
+The owner selected [#131](https://github.com/breki/silkboard/issues/131) after
+#130 merged. The [shared procedure](workflows/optimize-builds.md), discoverable
+Codex skill and matching Claude command route optimization requests to existing
+measurements, helpers and authority sources. The workflow distinguishes local,
+hosted and production evidence and preserves independently authorized release
+and operational actions. It does not implement another cache or reopen the
+owner-declined sccache evaluation. Skill discovery follows the client reload
+behavior already documented in the catalog.
+
+The [evaluation record](../build-optimization-skill-evaluation.md) separates
+independent artifact-based skill exercises and structural checks from live
+pipeline measurements or production verification.
