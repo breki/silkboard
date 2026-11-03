@@ -1087,3 +1087,14 @@ cost and overlapping warm-suite timings, while recording the alternative's
 faster single edit probe. No profile, release behavior, dependency, test
 selection or quality threshold is changed. Local measurements do not prove
 hosted CI or production performance.
+
+## CI setup and download efficiency, 2026-11-03
+
+The owner selected [#130](https://github.com/breki/silkboard/issues/130).
+The [investigation](../ci-setup-downloads.md) distinguishes slow Ubuntu
+package downloads from working npm/Rust caches and a workflow-wide tool-key
+invalidation. The implementation uses the official Ubuntu archive, bounded
+APT network settings, separate setup timings and an installer-bound gate-tool
+key. It preserves full validation, cache trust separation, ARM64 lint and
+signed exact-revision release admission. A new package cache or toolchain
+image is not adopted without measured need.

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Bootstrap pinned tools outside all application target directories.
+# This file's content binds the gate-tool cache key.
+set -euo pipefail
+: "${RUNNER_TEMP:?GitHub runner temporary directory is required}"
+cd "$RUNNER_TEMP"
+unset CARGO_TARGET_DIR CARGO_LLVM_COV_TARGET_DIR CI_ARM64_TARGET_DIR
+ci_tools_root="$RUNNER_TEMP/silkboard-ci-tools"
+cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-llvm-cov@0.9.0
+cargo +1.93.1 install --locked --force --root "$ci_tools_root" code-dupes@0.2.1
+cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-deny@0.20.2
+cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-audit@0.22.2

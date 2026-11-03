@@ -77,32 +77,24 @@ jobs:
           rustup component add --toolchain 1.93.1 rustfmt clippy llvm-tools-preview
           rustup target add --toolchain 1.93.1 aarch64-unknown-linux-gnu
       # PR cache entries are distinct from main/release entries. No prefix
-      # fallback: the workflow hash binds tool versions and installation logic.
+      # fallback: the dedicated installer binds versions and installation logic.
       - name: Restore trusted gate tools
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         id: gate-tools
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.temp }}/silkboard-ci-tools/bin
-          key: gate-tools-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-trusted-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: gate-tools-v2-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-trusted-${{ hashFiles('dev/ci-install-gate-tools') }}
       - name: Restore PR gate tools
         id: pr-gate-tools
         if: github.event_name == 'pull_request' && steps.scope.outputs.mode != 'docs' && steps.gate-tools.outputs.cache-hit != 'true'
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: ${{ runner.temp }}/silkboard-ci-tools/bin
-          key: gate-tools-v1-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-pr-${{ github.event.pull_request.number }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: gate-tools-v2-${{ runner.os }}-${{ runner.arch }}-ubuntu24-rust1.93.1-pr-${{ github.event.pull_request.number }}-${{ hashFiles('dev/ci-install-gate-tools') }}
       - name: Install required gate tools
         if: (github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs') && steps.gate-tools.outputs.cache-hit != 'true' && steps.pr-gate-tools.outputs.cache-hit != 'true'
-        working-directory: ${{ runner.temp }}
-        run: |
-          # Tool compilation must not enter the application's build caches.
-          unset CARGO_TARGET_DIR CARGO_LLVM_COV_TARGET_DIR CI_ARM64_TARGET_DIR
-          ci_tools_root="$RUNNER_TEMP/silkboard-ci-tools"
-          cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-llvm-cov@0.9.0
-          cargo +1.93.1 install --locked --force --root "$ci_tools_root" code-dupes@0.2.1
-          cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-deny@0.20.2
-          cargo +1.93.1 install --locked --force --root "$ci_tools_root" cargo-audit@0.22.2
+        run: bash dev/ci-install-gate-tools
       - name: Select pinned gate tools
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: echo "$RUNNER_TEMP/silkboard-ci-tools/bin" >> "$GITHUB_PATH"
@@ -207,12 +199,27 @@ jobs:
         with:
           path: ${{ runner.temp }}/silkboard-ci-metadata/rust-publication-dates.json
           key: ${{ steps.rust_cache.outputs.dates_local }}
-      - name: Install locked frontend tools and Chromium
+      # Ubuntu's Azure mirror stalled both browser dependencies and the cross
+      # compiler in run 40298305640. Keep signed APT metadata/package verification.
+      - name: Configure Ubuntu package downloads
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
+        run: |
+          sudo sed -i -E 's#https?://azure\.archive\.ubuntu\.com/ubuntu#https://archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/ubuntu.sources
+          printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/80silkboard-ci-network >/dev/null
+          sed -n '/^URIs:/p' /etc/apt/sources.list.d/ubuntu.sources
+      - name: Install ARM64 system toolchain
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
+      - name: Install locked frontend tools
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         working-directory: frontend
-        run: |
-          npm ci
-          npm exec -- playwright install --with-deps chromium
+        run: npm ci
+      - name: Install Chromium and system dependencies
+        if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
+        working-directory: frontend
+        run: npm exec -- playwright install --with-deps chromium
       - name: Fetch locked Rust dependencies
         if: github.event_name != 'pull_request' || steps.scope.outputs.mode != 'docs'
         run: cargo fetch --locked
@@ -226,8 +233,6 @@ jobs:
         env:
           CARGO_TARGET_DIR: ${{ env.CI_ARM64_TARGET_DIR }}
         run: |
-          sudo apt-get update
-          sudo apt-get install --no-install-recommends -y gcc-aarch64-linux-gnu libc6-dev-arm64-cross
           cargo xtask clippy --target aarch64-unknown-linux-gnu
       - name: Verify publication evidence archive path
         id: dates_verified
