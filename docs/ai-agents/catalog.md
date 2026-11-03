@@ -30,6 +30,7 @@ directly. See [tooling status](tooling.md) for unavailable build helpers.
 | [short](workflows/short.md) | Restate the last reply or answer a supplied instruction in forty words. | Bombyx, without speech-specific rules |
 | [architect](workflows/architect.md) | Explain or assess Silkboard architecture against its agreed roadmap. | Both |
 | [web-dev](workflows/web-dev.md) | Develop or investigate Silkboard Axum, Svelte, and browser behavior. | rustbase |
+| [optimize-builds](workflows/optimize-builds.md) | Diagnose and improve measured local, CI and release pipeline costs. | Silkboard measurements |
 | [update-deps](workflows/update-deps.md) | Update selected Silkboard dependencies with cooldown and audit checks. | Both |
 | [template-sync](workflows/template-sync.md) | Selectively adapt rustbase updates while preserving Silkboard choices. | Both |
 | [template-improve](workflows/template-improve.md) | Record feedback for rustbase without publishing it upstream. | Both |
