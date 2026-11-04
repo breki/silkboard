@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { PlanLinkHandler, PlanSelector } from "./plan-model";
-  import { onMount } from "svelte";
+  import {
+    locationState,
+    readView,
+    updateQuery,
+    workflowLink,
+  } from "./link-state";
+  const address = locationState;
+  import { onMount, untrack } from "svelte";
   import { ApiError } from "./feed-api";
   import {
     readPlan,
@@ -157,10 +164,32 @@
       }
     }
   }
+  let comparisonKey: string | null = null,
+    comparisonRead: AbortController | null = null;
+  let wasComparing = $state(false);
+  $effect(() => {
+    const requested = readView("workflow", $address.search).value.compare;
+    const target = shown?.summary.sequence;
+    const ready = sequence === null || sequence === target;
+    if (!requested && wasComparing)
+      untrack(() => {
+        comparisonRead?.abort();
+        comparison = null;
+        comparisonEmpty = false;
+        extraFailure = "";
+        comparisonKey = null;
+      });
+    wasComparing = requested;
+    if (requested && ready && target && comparisonKey !== target) {
+      comparisonKey = target;
+      untrack(() => void comparePrevious());
+    }
+  });
   async function comparePrevious() {
     if (!shown) return;
     const target = shown;
     const controller = beginExtra();
+    comparisonRead = controller;
     comparison = null;
     comparisonEmpty = false;
     try {
@@ -220,7 +249,10 @@
 
 <section class="task-plan" aria-label="Workflow">
   <nav aria-label="Workflow breadcrumbs">
-    <a href="/plans" onclick={(event) => onopen(event, "/plans")}>Workflows</a>
+    <a
+      href={workflowLink("/plans", $address.search)}
+      onclick={(event) => onopen(event, "/plans")}>Workflows</a
+    >
     / {project}
   </nav>
   {#if failed}<div class="notice">
@@ -239,7 +271,7 @@
         class="notice"
       >
         Newer reports are available. <a
-          href={routeFor(project, task)}
+          href={workflowLink(routeFor(project, task), $address.search)}
           onclick={(event) => onopen(event, routeFor(project, task))}
           >Return to Current workflow</a
         >
@@ -291,7 +323,7 @@
       <p>
         Definition revision {shown.summary.plan_revision}{#if pinned}
           · <a
-            href={routeFor(project, task)}
+            href={workflowLink(routeFor(project, task), $address.search)}
             onclick={(event) => onopen(event, routeFor(project, task))}
             >Current workflow</a
           >{/if}
@@ -301,7 +333,12 @@
           snapshot does not reconstruct missing updates.
         </p>{/if}
     </div>
-    <PlanGraph detail={shown} {pinned} {onopen} />
+    <PlanGraph
+      detail={shown}
+      {pinned}
+      pending={sequence !== null && shown.summary.sequence !== sequence}
+      {onopen}
+    />
     <PlanHistory
       {project}
       {task}
@@ -310,8 +347,17 @@
       onrevision={(revision) => void chooseRevision(revision)}
     />
     <section class="received-comparison">
-      <button disabled={extraBusy} onclick={() => void comparePrevious()}
-        >Compare with previous received report</button
+      {#if wasComparing}<button
+          class="quiet"
+          onclick={() => updateQuery({ compare: null })}
+          >Close comparison</button
+        >{/if}
+      <button
+        disabled={extraBusy}
+        onclick={() => {
+          if (wasComparing) void comparePrevious();
+          else updateQuery({ compare: "previous" });
+        }}>Compare with previous received report</button
       >
       {#if extraBusy}<p role="status">Loading received snapshot…</p>{/if}
       {#if extraFailure}<p role="alert">{extraFailure}</p>{/if}
@@ -347,7 +393,10 @@
             No step changes between these received snapshots.
           </p>{/if}
         <a
-          href={routeFor(project, task, comparison.previous)}
+          href={workflowLink(
+            routeFor(project, task, comparison.previous),
+            $address.search,
+          )}
           onclick={(event) =>
             onopen(event, routeFor(project, task, comparison!.previous))}
           >View previous received snapshot</a

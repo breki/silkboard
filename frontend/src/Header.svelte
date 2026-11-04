@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { featureLink, locationState } from "./link-state";
+  const address = locationState;
   import ThemeSelector from "./ThemeSelector.svelte";
   let {
     owner,
@@ -46,19 +48,20 @@
   </h1>
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
-      <a href="/" aria-current={currentPage === "agents" ? "page" : undefined}
-        >Agents</a
+      <a
+        href={featureLink("/", $address.search)}
+        aria-current={currentPage === "agents" ? "page" : undefined}>Agents</a
       >
       <a
-        href="/events"
+        href={featureLink("/events", $address.search)}
         aria-current={currentPage === "events" ? "page" : undefined}>Events</a
       >
       <a
-        href="/plans"
+        href={featureLink("/plans", $address.search)}
         aria-current={currentPage === "plans" ? "page" : undefined}>Workflows</a
       >
       <a
-        href="/todos"
+        href={featureLink("/todos", $address.search)}
         aria-current={currentPage === "todos" ? "page" : undefined}>Todos</a
       >
     </nav>
@@ -83,7 +86,9 @@
       </button>
       {#if open}
         <nav id="main-navigation" aria-label="Main navigation">
-          <a href="/status">Application status</a>
+          <a href={featureLink("/status", $address.search)}
+            >Application status</a
+          >
           <ThemeSelector />
           {#if owner}
             <button

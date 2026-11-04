@@ -1,6 +1,13 @@
 <script lang="ts">
   import type { PlanLinkHandler, PlanSelector } from "./plan-model";
-  import { onMount } from "svelte";
+  import {
+    locationState,
+    readView,
+    updateQuery,
+    workflowLink,
+  } from "./link-state";
+  const address = locationState;
+  import { onMount, untrack } from "svelte";
   import { ApiError, type Page } from "./feed-api";
   import { planHistory, type PlanSummary } from "./plan-api";
   import { routeFor } from "./plan-model";
@@ -26,6 +33,19 @@
   let busy = $state(false);
   let retry = $state(0);
   let visible = $state(!document.hidden);
+  let signature = "";
+  $effect(() => {
+    const state = readView("workflow", $address.search).value;
+    const key = JSON.stringify([state.history, state.historyBefore]);
+    if (key === signature) return;
+    signature = key;
+    untrack(() => {
+      opened = state.history !== null;
+      if (state.history) kind = state.history;
+      before = state.historyBefore;
+      page = null;
+    });
+  });
   onMount(() => {
     const visibility = () => (visible = !document.hidden);
     document.addEventListener("visibilitychange", visibility);
@@ -57,15 +77,21 @@
   });
   function change(mode: "history" | "revisions") {
     if (mode === kind) return;
-    kind = mode;
-    before = null;
-    page = null;
+    updateQuery({
+      history: mode === "history" ? "reports" : "revisions",
+      history_before: null,
+    });
   }
 </script>
 
 <section class="plan-history">
-  <button aria-expanded={opened} onclick={() => (opened = !opened)}
-    >Received history and revisions</button
+  <button
+    aria-expanded={opened}
+    onclick={() =>
+      updateQuery({
+        history: opened ? null : kind === "history" ? "reports" : "revisions",
+        history_before: null,
+      })}>Received history and revisions</button
   >
   {#if opened}
     <div class="plan-toolbar">
@@ -98,7 +124,10 @@
                   onclick={() => onrevision(item.plan_revision)}
                   >Revision {item.plan_revision}</button
                 >{:else}<a
-                  href={routeFor(project, task, item.sequence)}
+                  href={workflowLink(
+                    routeFor(project, task, item.sequence),
+                    $address.search,
+                  )}
                   onclick={(event) =>
                     onopen(event, routeFor(project, task, item.sequence))}
                   >Report received {eventTimestamp(item.received_at).full}</a
@@ -120,14 +149,12 @@
         {#if before !== null}<button
             disabled={busy}
             onclick={() => {
-              before = null;
-              page = null;
+              updateQuery({ history_before: null });
             }}>Latest received history</button
           >{/if}{#if page.next_cursor}<button
             disabled={busy}
             onclick={() => {
-              before = page!.next_cursor;
-              page = null;
+              updateQuery({ history_before: page!.next_cursor });
             }}>Older received history</button
           >{/if}
       </div>

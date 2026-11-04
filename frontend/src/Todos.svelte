@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { onMount, tick } from "svelte";
+  import { locationState, readView, updateQuery } from "./link-state";
+  const address = locationState;
+  const linked = $derived(readView("todos", $address.search));
+  import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "./feed-api";
   import {
     loadTodos,
@@ -60,31 +63,47 @@
         : "Unable to confirm this change was saved. Your draft and last loaded todos are kept. Reload todos and check the result before trying again."
       : "Unable to load todos. Existing rows and drafts are kept. Try Reload todos.";
   }
+  function selectionKey() {
+    const state = readView("todos", window.location.search).value;
+    return JSON.stringify([state.todo, state.todoMode]);
+  }
   async function save(
     change: TodoChange,
     finishEdit = false,
     returnFocus?: HTMLElement,
   ) {
     if (!data || busy || uncertain) return;
+    const submittedSelection = selectionKey();
     busy = true;
     notice = "";
     try {
       const value = await changeTodo(data.revision, change, controller.signal);
       if (controller.signal.aborted) return;
       data = value;
-      if (change.kind === "add") {
+      const sameSelection = selectionKey() === submittedSelection;
+      if (sameSelection && change.kind === "add") {
         draft = "";
         parent = null;
       } else if (
+        sameSelection &&
         finishEdit &&
         change.kind === "edit" &&
         editing?.id === change.id
       )
         editing = null;
-      removing = null;
+      if (sameSelection) removing = null;
+      if (
+        sameSelection &&
+        (change.kind === "add" ||
+          finishEdit ||
+          (change.kind === "delete" &&
+            readView("todos", window.location.search).value.todo === change.id))
+      )
+        updateQuery({ todo: null, mode: null }, true);
       busy = false;
       await tick();
-      (returnFocus?.isConnected ? returnFocus : input)?.focus();
+      if (sameSelection)
+        (returnFocus?.isConnected ? returnFocus : input)?.focus();
     } catch (error) {
       if (!controller.signal.aborted) failed(error, true);
     } finally {
@@ -92,6 +111,7 @@
     }
   }
   async function edit(item: Todo) {
+    updateQuery({ todo: item.id, mode: "edit" });
     editing = item;
     editText = item.text;
     removing = null;
@@ -99,6 +119,7 @@
     editInput?.focus();
   }
   async function child(item: Todo) {
+    updateQuery({ todo: item.id, mode: "child" });
     parent = item;
     removing = null;
     await tick();
@@ -109,6 +130,49 @@
     await tick();
     confirmButton?.focus();
   }
+  let selection = "",
+    unavailable = $state(false);
+  $effect(() => {
+    const state = linked.value,
+      loaded = data;
+    if (!loaded) return;
+    const key = JSON.stringify([state.todo, state.todoMode]);
+    if (key === selection) return;
+    selection = key;
+    untrack(() => {
+      editing = null;
+      parent = null;
+      removing = null;
+      unavailable = false;
+      if (!state.todo) return;
+      const item = loaded.items.find((todo) => todo.id === state.todo);
+      if (!item) {
+        unavailable = true;
+        return;
+      }
+      if (state.todoMode === "edit") void edit(item);
+      else if (state.todoMode === "child") {
+        let depth = 1,
+          ancestor = item.parent_id;
+        while (ancestor) {
+          depth++;
+          ancestor =
+            loaded.items.find((todo) => todo.id === ancestor)?.parent_id ??
+            null;
+        }
+        if (depth >= 5) {
+          unavailable = true;
+          return;
+        }
+        void child(item);
+      } else
+        void tick().then(() =>
+          document
+            .getElementById("todo-" + item.id)
+            ?.scrollIntoView({ block: "nearest" }),
+        );
+    });
+  });
   onMount(() => {
     void reload();
     return () => controller.abort();
@@ -124,6 +188,15 @@
   <button class="quiet" disabled={busy} onclick={() => void reload()}
     >Reload todos</button
   >
+  {#if unavailable || (!notice && linked.value.todo && data && !data.items.some((item) => item.id === linked.value.todo))}<p
+      role="alert"
+    >
+      The linked todo is unavailable for this view. <button
+        class="quiet"
+        onclick={() => updateQuery({ todo: null, mode: null })}
+        >Clear todo selection</button
+      >
+    </p>{/if}
   {#if notice}<p role="alert">{notice}</p>{/if}
   {#if busy}<p role="status">
       {data ? "Saving or loading todos…" : "Loading todos…"}
@@ -161,7 +234,10 @@
           type="button"
           class="quiet"
           disabled={busy}
-          onclick={() => (parent = null)}>Use top level</button
+          onclick={() => {
+            parent = null;
+            updateQuery({ todo: null, mode: null });
+          }}>Use top level</button
         >{/if}
     </form>
     {#if editing}
@@ -201,8 +277,13 @@
             !data.items.some((item) => item.id === editing!.id)}
           >Save text</button
         >
-        <button type="button" disabled={busy} onclick={() => (editing = null)}
-          >Cancel edit</button
+        <button
+          type="button"
+          disabled={busy}
+          onclick={() => {
+            editing = null;
+            updateQuery({ todo: null, mode: null });
+          }}>Cancel edit</button
         >
       </form>
     {/if}
@@ -230,6 +311,7 @@
     {#if !data.items.length}<p>No todos yet. Add your first todo above.</p>{/if}
     <TodoList
       items={data.items}
+      selected={linked.value.todo}
       disabled={busy || uncertain}
       onedit={(item) => void edit(item)}
       onchild={(item) => void child(item)}

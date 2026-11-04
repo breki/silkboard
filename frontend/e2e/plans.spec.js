@@ -67,7 +67,7 @@ test("real owner login, direct snapshots, reopening, revision pinning and safe d
   await expect(
     page.getByRole("button", { name: "Build graph page, Done" }),
   ).toBeVisible();
-  expect(new URL(page.url()).search).toBe("?sequence=1");
+  expect(new URL(page.url()).searchParams.get("sequence")).toBe("1");
   await page.getByRole("link", { name: "Return to Current workflow" }).click();
   await expect(
     page.getByText("new-development-vm", { exact: false }).first(),
@@ -89,7 +89,10 @@ test("real owner login, direct snapshots, reopening, revision pinning and safe d
     .getByRole("button", { name: "Definition revisions", exact: true })
     .click();
   await page.getByRole("button", { name: "Revision 1", exact: true }).click();
-  await expect(page).toHaveURL(`${link(task)}?sequence=3`);
+  expect(new URL(page.url()).pathname).toBe(link(task));
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("sequence"))
+    .toBe("3");
   await expect(page.getByText(/Earlier snapshot/).first()).toBeVisible();
   await page
     .getByRole("button", { name: "Compare with previous received report" })
@@ -301,7 +304,7 @@ test("an invalid plan link still expires an idle credential manager", async ({
   await page.clock.install();
   await openPlan(page, "/plans?bad=1");
   await expect(
-    page.getByRole("heading", { name: "Invalid workflow link" }),
+    page.getByRole("region", { name: "Invalid view link" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Navigation menu" }).click();
   await page

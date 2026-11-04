@@ -1,10 +1,20 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+  import {
+    locationState,
+    readView,
+    updateQuery,
+    filterFields,
+    workflowLink,
+  } from "./link-state";
+  import LinkError from "./LinkError.svelte";
+  const address = locationState;
+  const linked = $derived(readView("workflows", $address.search));
   import ListFilters from "./ListFilters.svelte";
   import type { ListFilters as Filters } from "./list-filters";
   let filters = $state<Filters>({});
   function applyFilters(value: Filters) {
-    navigate(null);
-    filters = value;
+    updateQuery(filterFields(value));
   }
   import type { PlanLinkHandler } from "./plan-model";
   import { ApiError, type Page } from "./feed-api";
@@ -27,10 +37,30 @@
   let unsupported = $state(false);
   let busy = $state(false);
   let retry = $state(0);
+  let signature = "";
   $effect(() => {
     if (!active) return;
-    const cursor = before;
-    const selected = filters;
+    const request = linked;
+    const key = JSON.stringify([
+      request.valid,
+      request.value.filters,
+      request.value.before,
+    ]);
+    if (key === signature) return;
+    signature = key;
+    untrack(() => {
+      filters = request.value.filters;
+      before = request.value.before;
+      page = null;
+    });
+  });
+  const requestKey = $derived(
+    JSON.stringify([linked.valid, linked.value.before, linked.value.filters]),
+  );
+  $effect(() => {
+    if (!active) return;
+    const [valid, cursor, selected] = JSON.parse(requestKey);
+    if (!valid) return;
     void retry;
     return poll(async (signal) => {
       busy = true;
@@ -53,13 +83,19 @@
     });
   });
   function navigate(cursor: string | null) {
-    page = null;
-    before = cursor;
+    updateQuery({ before: cursor });
   }
 </script>
 
 <section class="plans" aria-label="Workflows">
-  <ListFilters workflows onapply={applyFilters} {onexpire}>
+  <ListFilters
+    workflows
+    value={filters}
+    disabled={!linked.valid}
+    onapply={applyFilters}
+    {onexpire}
+  >
+    {#if active && !linked.valid}<LinkError />{/if}
     {#snippet heading()}
       <h2>Workflows</h2>
       <p class="muted">
@@ -116,7 +152,10 @@
                 >
                 <td>{item.project}</td><td
                   ><a
-                    href={routeFor(item.project, item.task_id)}
+                    href={workflowLink(
+                      routeFor(item.project, item.task_id),
+                      $address.search,
+                    )}
                     onclick={(event) =>
                       onopen(event, routeFor(item.project, item.task_id))}
                     >{item.title}</a
@@ -148,6 +187,8 @@
             onclick={() => navigate(page!.next_cursor)}>Older workflows</button
           >{/if}
       </nav>
-    {:else if !failed}<p role="status">Loading workflows…</p>{/if}
+    {:else if !failed && linked.valid}<p role="status">
+        Loading workflows…
+      </p>{/if}
   </ListFilters>
 </section>

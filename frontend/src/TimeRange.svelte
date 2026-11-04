@@ -23,8 +23,15 @@
     toTime = $state("");
   let error = $state("");
   let period = $state<Period | "custom">("all");
+  let selectedRange = "";
+  let selectedPeriod: Period | "custom" = "custom";
   $effect(() => {
     if (value.from === undefined && value.to === undefined) period = "all";
+    else
+      period =
+        JSON.stringify([value.from, value.to]) === selectedRange
+          ? selectedPeriod
+          : "custom";
   });
   const label = $derived(
     value.from === undefined && value.to === undefined
@@ -53,8 +60,11 @@
     trigger?.focus();
   }
   function select(selected: Period) {
+    const range = presetRange(selected, Date.now());
+    selectedRange = JSON.stringify([range.from, range.to]);
+    selectedPeriod = selected;
     period = selected;
-    onchange(presetRange(selected, Date.now()));
+    onchange(range);
     close();
   }
   function apply(event: SubmitEvent) {
@@ -64,6 +74,8 @@
         to = parseLocalEndpoint(toDate.trim(), toTime.trim());
       if (from !== undefined && to !== undefined && from > to)
         throw new Error("Reversed range");
+      selectedRange = JSON.stringify([from, to]);
+      selectedPeriod = "custom";
       period = "custom";
       onchange({ from, to });
       close();

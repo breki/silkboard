@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Make applied filters, paging, detail selections, workflow views, todo targets,
+  publisher metadata and appearance bookmarkable through reload, login and
+  browser history, with recovery for invalid or missing targets.
+
 - Apply the approved controls-at-scale design with a desktop project index,
   searchable phone and exact-agent choices, compact cards with identity
   disclosures, and received-time presets/custom range editing.

@@ -47,3 +47,20 @@ test("blocked browser storage does not prevent current-tab switching", () => {
   expect(get(themePreference)).toBe("dark");
   expect(document.documentElement.dataset.theme).toBe("dark");
 });
+
+test("URL appearance wins over storage and history restores each explicit choice", () => {
+  localStorage.setItem("silkboard.theme", "light");
+  window.history.replaceState(null, "", "/?theme=dark");
+  initializeTheme();
+  expect(get(themePreference)).toBe("dark");
+  setTheme("light");
+  expect(new URLSearchParams(window.location.search).get("theme")).toBe(
+    "light",
+  );
+  window.history.replaceState(null, "", "/?theme=dark");
+  window.dispatchEvent(new Event("popstate"));
+  expect(get(themePreference)).toBe("dark");
+  window.history.replaceState(null, "", "/");
+  window.dispatchEvent(new Event("popstate"));
+  expect(get(themePreference)).toBe("light");
+});

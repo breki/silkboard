@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
+  import { navigateUrl, workflowLink, locationEvent } from "./link-state";
   import { parsePlanRoute } from "./plan-model";
   import PlanList from "./PlanList.svelte";
   import TaskPlan from "./TaskPlan.svelte";
@@ -37,19 +38,19 @@
     event.preventDefault();
     if (parsePlanRoute(target).kind === "invalid") return;
     if (route.kind === "list") listScroll = window.scrollY;
-    window.history.pushState(null, "", target);
-    changed();
+    navigateUrl(workflowLink(target));
   }
   function selectSnapshot(target: string) {
-    window.history.pushState(null, "", target);
-    path = window.location.pathname + window.location.search;
+    navigateUrl(workflowLink(target));
   }
   onMount(() => {
     const previous = window.history.scrollRestoration;
     window.history.scrollRestoration = "manual";
     window.addEventListener("popstate", changed);
+    window.addEventListener(locationEvent, changed);
     return () => {
       window.removeEventListener("popstate", changed);
+      window.removeEventListener(locationEvent, changed);
       window.history.scrollRestoration = previous;
     };
   });

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
-  import type { ApplyFilters } from "./list-filters";
-  import type { AgentActivity } from "./agents-api";
+  import { untrack, type Snippet } from "svelte";
+  import type { ApplyFilters, ListFilters as Filters } from "./list-filters";
+  import type { AgentSelection } from "./agents-api";
   import type { ReceivedRange } from "./time-range";
   import FilterPicker from "./FilterPicker.svelte";
   import ProjectSidebar from "./ProjectSidebar.svelte";
@@ -17,6 +17,7 @@
     onclear,
     children,
     heading,
+    value,
   }: {
     workflows?: boolean;
     agentsView?: boolean;
@@ -27,6 +28,7 @@
     onclear?: () => void;
     children?: Snippet;
     heading?: Snippet;
+    value?: Filters;
   } = $props();
   const view = $derived(
     agentsView ? "agents" : workflows ? "workflows" : "events",
@@ -34,8 +36,33 @@
   let project = $state(""),
     agent = $state(""),
     workflowState = $state("");
-  let selected = $state<AgentActivity | null>(null);
+  let selected = $state<AgentSelection | null>(null);
   let range = $state<ReceivedRange>({});
+  $effect(() => {
+    const saved = value;
+    if (saved === undefined) return;
+    untrack(() => {
+      project = saved.project ?? "";
+      agent = saved.agent ?? "";
+      workflowState = saved.state ?? "";
+      range = { from: saved.from, to: saved.to };
+      if (saved.hostname && saved.tool && saved.session_id && saved.project) {
+        if (
+          !selected ||
+          selected.project !== saved.project ||
+          selected.hostname !== saved.hostname ||
+          selected.tool !== saved.tool ||
+          selected.session_id !== saved.session_id
+        )
+          selected = {
+            project: saved.project,
+            hostname: saved.hostname,
+            tool: saved.tool,
+            session_id: saved.session_id,
+          };
+      } else selected = null;
+    });
+  });
   function apply() {
     onapply(
       agentsView

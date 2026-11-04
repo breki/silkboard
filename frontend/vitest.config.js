@@ -8,6 +8,7 @@ export default defineConfig({
     // Validation overlaps a Rust lane; bound CI frontend memory/CPU workers.
     maxWorkers: process.env.CI ? 2 : undefined,
     environment: "jsdom",
+    setupFiles: ["./test/location.js"],
     include: ["src/**/*.test.js"],
     coverage: {
       provider: "v8",

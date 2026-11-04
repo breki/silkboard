@@ -209,3 +209,19 @@ test("a reporter without a readable name still identifies the native session", (
   expect(screen.getByText("native-1")).toBeTruthy();
   expect(screen.queryByText("Session name")).toBeNull();
 });
+
+test("a linked step waits for its requested snapshot and restores when it arrives", async () => {
+  const { updateQuery } = await import("./link-state");
+  const newer = detail({ sequence: "3", steps: [detail().snapshot.steps[0]] });
+  const view = render(PlanGraph, { ...props(newer), pending: true });
+  updateQuery({ sequence: "1", step: "ui" });
+  await flush();
+  expect(
+    screen.queryByText("The selected step is not in this snapshot."),
+  ).toBeNull();
+  await view.rerender({ ...props(detail()), pending: false });
+  await flush();
+  expect(
+    screen.getByRole("heading", { name: "Build graph page" }),
+  ).toBeTruthy();
+});

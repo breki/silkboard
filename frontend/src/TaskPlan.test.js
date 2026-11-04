@@ -291,10 +291,10 @@ test("a comparison received for an older displayed report cannot overwrite a new
   render(TaskPlan, props());
   await settle();
   await vi.advanceTimersByTimeAsync(1000);
-  let resolve;
+  const pending = [];
   fetch.mockImplementation((path) =>
     path.includes("?sequence")
-      ? new Promise((done) => (resolve = done))
+      ? new Promise((done) => pending.push(done))
       : Promise.resolve(
           response(path.includes("/history") ? history : current),
         ),
@@ -303,7 +303,10 @@ test("a comparison received for an older displayed report cannot overwrite a new
   await settle();
   current = detail({ sequence: "4" });
   await vi.advanceTimersByTimeAsync(9000);
-  resolve(response(stored));
+  // The URL keeps comparison selected as new reports arrive. Resolve only
+  // the older request; the new snapshot comparison is still pending.
+  expect(pending).toHaveLength(2);
+  pending[0](response(stored));
   await settle();
   expect(screen.queryByText("Changes between received snapshots")).toBeNull();
 });

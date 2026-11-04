@@ -80,7 +80,9 @@ pub fn create_router(frontend_path: &Path) -> Router {
             "/plans/{project}/{task}",
             ServeFile::new(frontend_path.join("index.html")),
         )
-        .fallback_service(ServeDir::new(frontend_path))
+        .fallback_service(ServeDir::new(frontend_path).not_found_service(
+            ServeFile::new(frontend_path.join("index.html")),
+        ))
 }
 
 #[derive(Serialize)]

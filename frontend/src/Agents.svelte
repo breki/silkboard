@@ -1,17 +1,24 @@
 <script lang="ts">
+  import { untrack } from "svelte";
+  import AgentCard from "./AgentCard.svelte";
+  import LinkError from "./LinkError.svelte";
+  import {
+    locationState,
+    readView,
+    updateQuery,
+    filterFields,
+  } from "./link-state";
+  const address = locationState;
+  const linked = $derived(readView("agents", $address.search));
+  const expanded = $derived(linked.value.agentDetails);
   import { ApiError, type Page } from "./feed-api";
   import { agents, agentKey, type AgentActivity } from "./agents-api";
-  import { eventTimestamp } from "./event-format";
-  import { messagePreview } from "./markdown";
-  import { routeFor } from "./plan-model";
-  import { sessionEvents } from "./event-session";
   import { poll } from "./poll";
   import ListFilters from "./ListFilters.svelte";
   import type { ListFilters as Filters } from "./list-filters";
   let filters = $state<Filters>({});
   function applyFilters(value: Filters) {
-    navigate(null);
-    filters = value;
+    updateQuery(filterFields(value));
   }
   let { onexpire }: { onexpire: () => void } = $props();
   let page = $state<Page<AgentActivity> | null>(null);
@@ -19,9 +26,58 @@
   let failed = $state(false);
   let busy = $state(false);
   let retry = $state(0);
+  let signature = "";
   $effect(() => {
-    const cursor = before;
-    const selected = filters;
+    const request = linked;
+    const key = JSON.stringify([
+      request.valid,
+      request.value.filters,
+      request.value.before,
+    ]);
+    if (key === signature) return;
+    signature = key;
+    untrack(() => {
+      filters = request.value.filters;
+      before = request.value.before;
+      page = null;
+    });
+  });
+  let target = $state<AgentActivity | null>(null),
+    targetUnavailable = $state(false);
+  $effect(() => {
+    const key = expanded;
+    const present = page?.items.some((item) => agentKey(item) === key);
+    void retry;
+    target = null;
+    targetUnavailable = false;
+    if (!linked.valid || !key || !page || present) return;
+    const [project, hostname, tool, session_id] = JSON.parse(key);
+    const controller = new AbortController();
+    void agents(null, controller.signal, {
+      project,
+      hostname,
+      tool,
+      session_id,
+    })
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          target = result.items[0] ?? null;
+          targetUnavailable = !target;
+        }
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        if (error instanceof ApiError && error.status === 401) onexpire();
+        else targetUnavailable = true;
+      });
+    return () => controller.abort();
+  });
+  const requestKey = $derived(
+    JSON.stringify([linked.valid, linked.value.before, linked.value.filters]),
+  );
+  $effect(() => {
+    const [valid, cursor, selected] = JSON.parse(requestKey);
+    if (!valid) return;
     void retry;
     return poll(async (signal) => {
       busy = true;
@@ -40,13 +96,18 @@
     });
   });
   function navigate(cursor: string | null) {
-    page = null;
-    before = cursor;
+    updateQuery({ before: cursor });
   }
 </script>
 
 <section class="agents" aria-label="Agents">
-  <ListFilters agentsView onapply={applyFilters} {onexpire}>
+  <ListFilters
+    agentsView
+    value={filters}
+    disabled={!linked.valid}
+    onapply={applyFilters}
+    {onexpire}
+  >
     {#snippet heading()}
       <h2>Agents</h2>
       <p class="muted">
@@ -54,6 +115,20 @@
       </p>
     {/snippet}
 
+    {#if !linked.valid}<LinkError />{/if}
+    {#if target}<section aria-label="Linked main agent">
+        <AgentCard
+          item={target}
+          expanded={true}
+          onexpand={() => updateQuery({ agent_details: null })}
+        />
+      </section>{/if}
+    {#if targetUnavailable}<p role="alert">
+        The linked agent is unavailable. <button
+          onclick={() => updateQuery({ agent_details: null })}
+          >Clear linked agent</button
+        ><button onclick={() => retry++}>Retry linked agent</button>
+      </p>{/if}
     {#if failed}
       <div class="notice">
         <p role="alert">
@@ -78,64 +153,14 @@
           {page.items.length} agents on this page · Latest received first
         </p>
         <ul class="agent-cards" aria-label="Main agents">
-          {#each page.items as item, index (agentKey(item))}
-            {@const latest = item.latest}
-            {@const stamp = eventTimestamp(item.received_at)}
+          {#each page.items as item (agentKey(item))}
             <li>
-              <article aria-labelledby={`agent-title-${index}`}>
-                <header>
-                  <div class="agent-project">
-                    <span>{item.project}</span
-                    >{#if latest.kind === "workflow"}<strong
-                        class="reported"
-                        data-state={latest.state}
-                        >Reported {latest.state}</strong
-                      >{/if}
-                  </div>
-                  <h3 id={`agent-title-${index}`}>
-                    <a
-                      href={latest.kind === "workflow"
-                        ? routeFor(
-                            item.project,
-                            latest.task_id,
-                            latest.sequence,
-                          )
-                        : sessionEvents(item)}
-                    >
-                      {item.session_name ?? `${item.tool} on ${item.hostname}`}
-                    </a>
-                  </h3>
-                  <p class="agent-context muted">
-                    {item.tool} · {item.hostname}
-                  </p>
-                </header>
-                <div class="activity">
-                  {#if latest.kind === "workflow"}
-                    <p>Workflow: {latest.title}</p>
-                  {:else}
-                    <p>Event: {messagePreview(latest.message)}</p>
-                  {/if}
-                </div>
-                <footer>
-                  <span class="muted">Received · Local time</span>
-                  <time datetime={new Date(item.received_at).toISOString()}
-                    >{stamp.full}</time
-                  >
-                </footer>
-                <details>
-                  <summary>Report &amp; identity</summary>
-                  <dl class="agent-identity">
-                    <div>
-                      <dt>Project</dt>
-                      <dd>{item.project}</dd>
-                    </div>
-                    <div>
-                      <dt>Native session</dt>
-                      <dd><code>{item.session_id}</code></dd>
-                    </div>
-                  </dl>
-                </details>
-              </article>
+              <AgentCard
+                {item}
+                expanded={expanded === agentKey(item)}
+                onexpand={(open) =>
+                  updateQuery({ agent_details: open ? agentKey(item) : null })}
+              />
             </li>
           {/each}
         </ul>
@@ -156,7 +181,7 @@
         activity move toward the latest page. Return to Latest agents while
         paging to see those updates.
       </p>
-    {:else if !failed}
+    {:else if !failed && linked.valid}
       <p role="status">Loading agents…</p>
     {/if}
   </ListFilters>
@@ -174,113 +199,14 @@
   li {
     min-width: 0;
   }
-  article {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    height: 100%;
-    min-width: 0;
-    padding: 1rem;
-    border: 1px solid var(--line);
-    border-radius: 0.75rem;
-    background: var(--panel);
-    overflow-wrap: anywhere;
-  }
-  h3,
-  p,
-  dl,
-  dd {
-    margin: 0;
-  }
-  h3 {
-    font-size: 1rem;
-  }
-  h3 a {
-    display: block;
-    min-height: 2rem;
-    padding-block: 0.35rem;
-  }
-  .agent-identity {
-    display: grid;
-    gap: 0.6rem;
-  }
-  dt,
-  footer span {
-    font-size: 0.85rem;
-    color: var(--muted);
-  }
-  dd {
-    min-width: 0;
-  }
-  code {
-    font-size: 0.85rem;
-  }
-  .reported {
-    display: inline-block;
-    margin-top: 0.6rem;
-    padding: 0.2rem 0.6rem;
-    border: 1px solid var(--line);
-    border-radius: 1rem;
-    font-size: 0.85rem;
-  }
-  footer {
-    margin-top: auto;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--line);
-  }
-  footer span,
-  time {
-    display: block;
-  }
-  time {
-    font-size: 0.9rem;
-  }
   nav {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-block: 1rem;
   }
-  .agent-project {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 0.5rem;
-  }
-  .agent-project .reported {
-    border: 0;
-    padding: 0;
-    margin: 0;
-    color: var(--primary);
-    font-size: 0.7rem;
-    font-weight: 500;
-  }
-  .agent-project .reported[data-state="blocked"] {
-    color: var(--historical-text);
-  }
-  details {
-    font-size: 0.8rem;
-  }
-  summary {
-    color: var(--link);
-    cursor: pointer;
-    min-height: 2rem;
-    padding-block: 0.4rem;
-  }
-  details dl {
-    margin-top: 0.75rem;
-  }
   .result-count {
     font-size: 0.75rem;
     margin: 0;
-  }
-  @media (max-width: 700px), (pointer: coarse) {
-    h3 a,
-    summary {
-      min-height: 2.75rem;
-    }
   }
 </style>

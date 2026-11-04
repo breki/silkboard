@@ -1,0 +1,43 @@
+export const globalKeys = [
+  "panel",
+  "credential_project",
+  "credential_after",
+  "theme",
+];
+export const viewKeys = {
+  agents: [
+    "project",
+    "hostname",
+    "tool",
+    "session_id",
+    "before",
+    "agent_details",
+  ],
+  events: [
+    "project",
+    "agent",
+    "from",
+    "to",
+    "hostname",
+    "tool",
+    "session_id",
+    "subagent_id",
+    "before",
+    "view",
+    "event",
+    "collapsed",
+  ],
+  workflows: ["project", "agent", "state", "before"],
+  workflow: [
+    "sequence",
+    "step",
+    "presentation",
+    "details",
+    "history",
+    "history_before",
+    "compare",
+  ],
+  todos: ["todo", "mode"],
+  status: [],
+  setup: [],
+} as const;

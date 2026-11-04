@@ -18,6 +18,8 @@ production rollout of that navigation change is separate from implementation.
 Open the configured private HTTPS site and enter the owner password. Agents
 is the home page at `/`. Events is at `/events`; Workflows remains at `/plans`,
 and existing workflow snapshot links remain valid.
+Applied filters, paging and selections are [bookmarkable](deep-links.md);
+reload, login and browser Back/Forward restore their URL state.
 
 Agents shows one card per main/root agent session, preserving project, host,
 tool and native session identity. [Issue #120](https://github.com/breki/silkboard/issues/120)
@@ -87,7 +89,8 @@ The [Todos checklist](todos.md) is a primary link, with no duplicate in the menu
 When signed in, the menu also contains Manage publisher credentials and Sign
 out. The credential manager opens inline on the current page; Close credential
 manager removes it and any disclosed token. Logout or expiry also removes the
-manager. Owner actions still require the existing authenticated APIs. The
+manager's private content. Its URL can reopen the panel after signing back in.
+Owner actions still require the existing authenticated APIs. The
 status page does not fetch event data and remains available without signing in.
 While signed in on that page, a visibility-aware session check runs every ten
 seconds to detect expiry or revocation and clear owner controls and any open
@@ -269,8 +272,8 @@ Events initially opens as **Flat list**, preserving chronological receipt
 order. Use **Session hierarchy** beside it to group the current page into
 session rows, with explicitly linked subagent sessions beneath their primary
 session. The owner selected this grouped-row layout from the #109 proposals.
-The view choice lasts while Events remains mounted; it is not saved as a
-browser preference. Switching views keeps the current filters, page and
+The view and collapse choices are saved in the URL and restore on reload
+or browser Back/Forward. Switching views keeps the current filters, page and
 selected event details and does not request additional reports.
 
 All groups initially open. Each session header has its own collapse control,

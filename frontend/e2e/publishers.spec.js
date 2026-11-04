@@ -92,10 +92,9 @@ test("phone owner issues, saves once and revokes a project-scoped publisher toke
     "Saved with mobile token",
   );
   await page.reload();
-  await page.getByRole("button", { name: "Navigation menu" }).click();
-  await page
-    .getByRole("button", { name: "Manage publisher credentials" })
-    .click();
+  await expect(
+    page.getByRole("region", { name: "Publisher credentials" }),
+  ).toBeVisible();
   expect(await page.getByLabel("New publisher token").count()).toBe(0);
   await page.getByLabel("Credential project").fill("token-ui");
   await page.getByRole("button", { name: "Load credentials" }).click();

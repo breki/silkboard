@@ -18,6 +18,10 @@ const app = mount(App, {
   target,
   props: {
     setupPage: window.location.pathname === "/setup",
+    unknownPage:
+      !["/", "/setup", "/status", "/todos", "/events", "/plans"].includes(
+        window.location.pathname,
+      ) && !window.location.pathname.startsWith("/plans/"),
     statusPage: window.location.pathname === "/status",
     todosPage: window.location.pathname === "/todos",
     eventsPage: window.location.pathname === "/events",

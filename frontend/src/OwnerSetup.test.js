@@ -180,3 +180,30 @@ test("unmount and pagehide abandon pending checks and submissions", async () => 
   );
   pending.unmount();
 });
+
+test("setup links retain only a validated appearance while consuming the credential", () => {
+  const history = { replaceState: vi.fn() };
+  expect(
+    takeSetupLink(
+      {
+        pathname: "/setup",
+        hash: `#setup=${credential}`,
+        search: "?theme=dark&token=discard",
+      },
+      history,
+    ),
+  ).toBe(credential);
+  expect(history.replaceState).toHaveBeenLastCalledWith(
+    null,
+    "",
+    "/setup?theme=dark",
+  );
+  for (const search of [
+    "?theme=dark&theme=light",
+    "?theme=invalid",
+    "?password=discard",
+  ]) {
+    takeSetupLink({ pathname: "/setup", hash: "", search }, history);
+    expect(history.replaceState).toHaveBeenLastCalledWith(null, "", "/setup");
+  }
+});

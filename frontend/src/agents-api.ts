@@ -18,6 +18,10 @@ export interface AgentFilters {
   session_id?: string;
   q?: string;
 }
+export type AgentSelection = Pick<
+  AgentActivity,
+  "project" | "hostname" | "tool" | "session_id"
+> & { session_name?: string | null; latest?: AgentActivity["latest"] };
 export interface AgentActivity extends AgentIdentity {
   project: string;
   subagent_id: null;
