@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 enum View {
     Events,
     Workflows,
+    Agents,
 }
 #[derive(Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -75,6 +76,8 @@ fn choices(
     query: &Options,
 ) -> Result<Choices, AuthError> {
     let source = match (&query.view, &query.kind) {
+        (View::Agents, Kind::Project) => include_str!("agent-projects.sql"),
+        (View::Agents, Kind::Agent) => return Err(AuthError::Invalid),
         (View::Events, Kind::Project) => "SELECT project AS value FROM events",
         (View::Events, Kind::Agent) => {
             "SELECT s.tool || ' ' || s.hostname AS value FROM sessions s JOIN events e ON e.session=s.id"

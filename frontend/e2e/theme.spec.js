@@ -13,7 +13,7 @@ const appearance = async (page, mode) =>
         () => getComputedStyle(document.documentElement).backgroundColor,
       ),
     )
-    .toBe(mode === "light" ? "rgb(244, 247, 250)" : "rgb(12, 23, 30)");
+    .toBe(mode === "light" ? "rgb(247, 248, 250)" : "rgb(20, 26, 25)");
 async function choose(page, value) {
   if (
     !(await page.getByRole("combobox", { name: "Theme", exact: true }).count())

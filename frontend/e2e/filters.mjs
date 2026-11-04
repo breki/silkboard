@@ -25,7 +25,7 @@ export async function chooseFilter(page, kind, search, value) {
 export async function checkFilters(page, workflows) {
   await page.setViewportSize({ width: 320, height: 720 });
   await expect(
-    page.getByRole("form", {
+    page.getByRole("group", {
       name: workflows ? "Workflow filters" : "Event filters",
     }),
   ).toBeVisible();
@@ -60,7 +60,10 @@ export async function checkFilters(page, workflows) {
         new URL(r.url()).pathname === endpoint &&
         new URL(r.url()).searchParams.has("from"),
     );
-    await page.getByLabel("From", { exact: true }).fill("2099-01-01T00:00");
+    await page.getByRole("button", { name: /^Received time:/ }).click();
+    await page.getByLabel("From date", { exact: true }).fill("2099-01-01");
+    await page.getByLabel("From time", { exact: true }).fill("00:00");
+    await page.getByRole("button", { name: "Apply range" }).click();
     expect((await timed).status()).toBe(200);
     await expect(
       page.getByText("No events match these filters on this page."),

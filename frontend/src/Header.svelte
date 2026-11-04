@@ -38,7 +38,12 @@
   onkeydown={escape}
 />
 <header class="masthead" class:with-navigation={showMenu}>
-  <h1>Silkboard</h1>
+  <h1>
+    <span class="brand-mark" aria-hidden="true">s</span>Silkboard<span
+      class="private-label"
+      aria-hidden="true">Private</span
+    >
+  </h1>
   {#if showMenu}
     <nav class="primary-navigation" aria-label="Primary navigation">
       <a href="/" aria-current={currentPage === "agents" ? "page" : undefined}

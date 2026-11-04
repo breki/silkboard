@@ -1,5 +1,5 @@
 import { ApiError, page, projectId, request, type Page } from "./feed-api";
-export type FilterView = "events" | "workflows";
+export type FilterView = "events" | "workflows" | "agents";
 export type ChoiceKind = "project" | "agent";
 const agent = (value: unknown): value is string =>
   typeof value === "string" && /^[!-~]{1,256} [!-~]{1,256}$/.test(value);

@@ -108,20 +108,6 @@
   }
 </script>
 
-<div class="event-heading">
-  <h3>Events</h3>
-  <p class="muted">
-    All projects · Updates every 10 seconds while this page is visible.
-  </p>
-</div>
-<div class="event-view-switch" role="group" aria-label="Events view">
-  <button aria-pressed={!hierarchical} onclick={() => (hierarchical = false)}
-    >Flat list</button
-  >
-  <button aria-pressed={hierarchical} onclick={() => (hierarchical = true)}
-    >Session hierarchy</button
-  >
-</div>
 {#if session.kind === "invalid"}
   <p role="alert">
     This agent session link is invalid. Clear it to choose another filter.
@@ -145,86 +131,107 @@
       </dl>
       <button class="quiet" onclick={clearSession}>Clear session filter</button>
     </section>{/if}
-  <ListFilters
-    onapply={applyFilters}
-    {onexpire}
-    sessionScoped={session.kind === "session"}
-    onclear={clearSession}
-  />
 {/if}
-{#if hierarchical}<p class="muted">
-    Relationships use this page only. Parent-session groups come first, ordered
-    by their newest visible family event; unmatched subagents follow. Events
-    within each session retain receipt order. Missing parents are not loaded.
-  </p>{/if}
-{#if failed}
-  <div class="notice">
-    <p role="alert">
-      Unable to update events. Displayed events may be out of date.
-    </p>
-    <button onclick={() => retry++}>Retry events</button>
-  </div>
-{/if}
-{#if page}
-  {#if !page.items.length}
-    <p class="empty">
-      {Object.values(filters).some(
-        (value) => value !== undefined && value !== "",
-      )
-        ? "No events match these filters on this page."
-        : "No events on this page. New reports appear on the latest page."}
-    </p>
-  {:else}
-    <table class="events-table" aria-label="Events from all projects">
-      <colgroup
-        ><col class="event-time" /><col class="event-project" /><col
-          class="event-agent"
-        /><col class="event-summary" /></colgroup
+<ListFilters
+  onapply={applyFilters}
+  {onexpire}
+  sessionScoped={session.kind === "session"}
+  disabled={session.kind === "invalid"}
+  onclear={clearSession}
+>
+  {#snippet heading()}
+    <div class="event-heading">
+      <h3>Events</h3>
+      <p class="muted">
+        All projects · Updates every 10 seconds while this page is visible.
+      </p>
+    </div>
+    <div class="event-view-switch" role="group" aria-label="Events view">
+      <button
+        aria-pressed={!hierarchical}
+        onclick={() => (hierarchical = false)}>Flat list</button
       >
-      <thead
-        ><tr
-          ><th scope="col">Time</th><th scope="col">Project</th><th scope="col"
-            >Agent</th
-          ><th scope="col">Message</th></tr
-        ></thead
+      <button aria-pressed={hierarchical} onclick={() => (hierarchical = true)}
+        >Session hierarchy</button
       >
-      <tbody>
-        {#if hierarchical}
-          {#each sessionGroups as { group, parent } (group.key)}
-            {#if parent === null || !collapsed.has(parent.key)}
-              <SessionRows
-                {group}
-                {collapsed}
-                {expanded}
-                nested={parent !== null}
-                parentName={parent?.name ?? ""}
-                unmatched={parent === null &&
-                  group.identity.subagent_id !== null}
-                ontogglegroup={toggleGroup}
-                ontoggleevent={toggle}
-              />
-            {/if}
-          {/each}
-        {:else}
-          <EventRows
-            items={page.items.map((event, index) => ({ event, index }))}
-            {expanded}
-            ontoggle={toggle}
-          />
-        {/if}
-      </tbody>
-    </table>
+    </div>
+  {/snippet}
+  {#if hierarchical}<p class="muted">
+      Relationships use this page only. Parent-session groups come first,
+      ordered by their newest visible family event; unmatched subagents follow.
+      Events within each session retain receipt order. Missing parents are not
+      loaded.
+    </p>{/if}
+  {#if failed}
+    <div class="notice">
+      <p role="alert">
+        Unable to update events. Displayed events may be out of date.
+      </p>
+      <button onclick={() => retry++}>Retry events</button>
+    </div>
   {/if}
-  <div class="page-controls">
-    {#if before !== null}<button disabled={busy} onclick={() => navigate(null)}
-        >Latest events</button
-      >{/if}
-    {#if page.next_cursor}<button
-        disabled={busy}
-        onclick={() => navigate(page!.next_cursor)}>Earlier events</button
-      >{/if}
-  </div>
-{:else if !failed}<p role="status">Loading events…</p>{/if}
+  {#if page}
+    {#if !page.items.length}
+      <p class="empty">
+        {Object.values(filters).some(
+          (value) => value !== undefined && value !== "",
+        )
+          ? "No events match these filters on this page."
+          : "No events on this page. New reports appear on the latest page."}
+      </p>
+    {:else}
+      <table class="events-table" aria-label="Events from all projects">
+        <colgroup
+          ><col class="event-time" /><col class="event-project" /><col
+            class="event-agent"
+          /><col class="event-summary" /></colgroup
+        >
+        <thead
+          ><tr
+            ><th scope="col">Time</th><th scope="col">Project</th><th
+              scope="col">Agent</th
+            ><th scope="col">Message</th></tr
+          ></thead
+        >
+        <tbody>
+          {#if hierarchical}
+            {#each sessionGroups as { group, parent } (group.key)}
+              {#if parent === null || !collapsed.has(parent.key)}
+                <SessionRows
+                  {group}
+                  {collapsed}
+                  {expanded}
+                  nested={parent !== null}
+                  parentName={parent?.name ?? ""}
+                  unmatched={parent === null &&
+                    group.identity.subagent_id !== null}
+                  ontogglegroup={toggleGroup}
+                  ontoggleevent={toggle}
+                />
+              {/if}
+            {/each}
+          {:else}
+            <EventRows
+              items={page.items.map((event, index) => ({ event, index }))}
+              {expanded}
+              ontoggle={toggle}
+            />
+          {/if}
+        </tbody>
+      </table>
+    {/if}
+    <div class="page-controls">
+      {#if before !== null}<button
+          disabled={busy}
+          onclick={() => navigate(null)}>Latest events</button
+        >{/if}
+      {#if page.next_cursor}<button
+          disabled={busy}
+          onclick={() => navigate(page!.next_cursor)}>Earlier events</button
+        >{/if}
+    </div>
+  {:else if !failed}<p role="status">Loading events…</p>{/if}
+</ListFilters>
 
 <style>
   .event-view-switch {

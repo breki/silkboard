@@ -41,10 +41,15 @@ impl Cursor {
         Ok(cursor)
     }
 }
-#[derive(Deserialize)]
+#[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Before {
+struct AgentQuery {
     before: Option<String>,
+    project: Option<String>,
+    hostname: Option<String>,
+    tool: Option<String>,
+    session_id: Option<String>,
+    q: Option<String>,
 }
 #[derive(Serialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
@@ -78,18 +83,26 @@ pub(super) fn routes() -> Router<OwnerAuth> {
 }
 async fn agents(
     State(auth): State<OwnerAuth>,
-    query: Result<Query<Before>, axum::extract::rejection::QueryRejection>,
+    query: Result<Query<AgentQuery>, axum::extract::rejection::QueryRejection>,
 ) -> Result<Json<Page>, AuthError> {
     let Query(query) = query.map_err(|_| AuthError::Invalid)?;
+    super::filters::validate(query.project.as_deref(), query.q.as_deref())?;
+    for value in [&query.hostname, &query.tool, &query.session_id]
+        .into_iter()
+        .flatten()
+    {
+        validate_identity(value).map_err(|_| AuthError::Invalid)?;
+    }
     let before = query.before.as_deref().map(Cursor::parse).transpose()?;
     Ok(Json(
-        auth.query(move |store| list(store, before.as_ref()))
+        auth.query(move |store| filtered(store, before.as_ref(), &query))
             .await?,
     ))
 }
-fn list(
+fn filtered(
     store: &ProgressStore,
     before: Option<&Cursor>,
+    query: &AgentQuery,
 ) -> Result<Page, AuthError> {
     let conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
     let mut statement = conn.prepare(include_str!("agents.sql"))?;
@@ -102,6 +115,11 @@ fn list(
                 before.map_or("", |c| c.tool.as_str()),
                 before.map_or("", |c| c.session_id.as_str()),
                 before.map_or("", |c| c.subagent_id.as_str()),
+                query.project,
+                query.hostname,
+                query.tool,
+                query.session_id,
+                query.q,
             ],
             |row| {
                 let latest = if row.get::<_, i64>(8)? == 1 {
@@ -140,6 +158,14 @@ fn list(
         .to_string()
     });
     Ok(Page { items, next_cursor })
+}
+
+#[cfg(test)]
+fn list(
+    store: &ProgressStore,
+    before: Option<&Cursor>,
+) -> Result<Page, AuthError> {
+    filtered(store, before, &AgentQuery::default())
 }
 
 #[cfg(test)]

@@ -111,7 +111,6 @@
 
 <svelte:window onpointerdown={outside} onfocusin={outside} onkeydown={escape} />
 <div class="filter-picker" bind:this={container}>
-  <span>{label}</span>
   <button
     type="button"
     aria-label={`${label}: ${value ? display(value) : `All ${plural}`}`}
@@ -119,7 +118,9 @@
     aria-controls={id}
     bind:this={trigger}
     onclick={() => void toggle()}
-    >{value ? display(value) : `All ${plural}`}</button
+    ><span class="filter-label">{label}</span><span
+      >{value ? display(value) : `All ${plural}`}</span
+    ><span aria-hidden="true">⌄</span></button
   >
   {#if open}
     <section class="picker-options" {id} aria-label={`${label} choices`}>
@@ -168,8 +169,7 @@
 
 <style>
   .filter-picker {
-    display: grid;
-    gap: 0.25rem;
+    display: flex;
     position: relative;
     min-width: 0;
     max-width: 100%;
@@ -177,6 +177,13 @@
   button {
     overflow-wrap: anywhere;
     white-space: normal;
+    justify-content: space-between;
+    text-align: left;
+    gap: 0.6rem;
+  }
+  .filter-label {
+    color: var(--muted);
+    font-size: 0.75rem;
   }
   .picker-options {
     position: absolute;
@@ -210,6 +217,9 @@
     text-align: start;
   }
   @media (max-width: 600px) {
+    .filter-picker > button {
+      width: 100%;
+    }
     .picker-options {
       position: fixed;
       inset-inline: 1rem;
