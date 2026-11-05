@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.14.0 - 2026-11-05
+
 - Make applied filters, paging, detail selections, workflow views, todo targets,
   publisher metadata and appearance bookmarkable through reload, login and
   browser history, with recovery for invalid or missing targets.
