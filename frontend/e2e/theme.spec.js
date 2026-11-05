@@ -143,6 +143,8 @@ test("blocked preference storage does not prevent current-tab switching", async 
     page.getByRole("combobox", { name: "Theme", exact: true }),
   ).toHaveValue("dark");
   await page.reload();
+  await appearance(page, "dark");
+  await page.goto("/");
   await appearance(page, "light");
 });
 
@@ -185,10 +187,16 @@ test.describe("authenticated themes", () => {
       await contrast(page, ".event-preview", ":root");
       await contrast(page, ".muted", ":root");
       await page.getByRole("button", { name: "Navigation menu" }).click();
-      await page
-        .getByRole("button", { name: "Manage publisher credentials" })
-        .click();
+      if (
+        await page
+          .getByRole("button", { name: "Manage publisher credentials" })
+          .count()
+      )
+        await page
+          .getByRole("button", { name: "Manage publisher credentials" })
+          .click();
       await expect(page.getByLabel("Installation label")).toBeVisible();
+      await page.keyboard.press("Escape");
       await contrast(page, "input", "input");
       await page.screenshot({
         path: info.outputPath(`credentials-${theme}.png`),

@@ -305,3 +305,49 @@ test("oversized edit text explains why Save text is disabled", async () => {
     ),
   ).toBeTruthy();
 });
+
+test.each(["edit", "child"])(
+  "a late %s save cannot clear a newer linked selection",
+  async (mode) => {
+    const { fireEvent } = await import("@testing-library/svelte");
+    const { updateQuery } = await import("./link-state");
+    let finish;
+    const other = {
+      id: "3",
+      parent_id: null,
+      text: "Other todo",
+      completed: false,
+    };
+    await start([root, other], () => new Promise((done) => (finish = done)));
+    if (mode === "edit") {
+      await fireEvent.click(
+        screen.getByRole("button", { name: "Edit Parent" }),
+      );
+      await fireEvent.input(screen.getByLabelText("Edit todo text"), {
+        target: { value: "Changed parent" },
+      });
+      await fireEvent.click(screen.getByRole("button", { name: "Save text" }));
+    } else {
+      await fireEvent.click(
+        screen.getByRole("button", { name: "Add child to Parent" }),
+      );
+      await fireEvent.input(screen.getByLabelText("New child of Parent"), {
+        target: { value: "Pending child" },
+      });
+      await fireEvent.click(screen.getByRole("button", { name: "Add todo" }));
+    }
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+    updateQuery({ todo: "3", mode });
+    const label =
+      mode === "edit" ? "Edit todo text" : "New child of Other todo";
+    await screen.findByLabelText(label);
+    finish(response({ revision: "1", items: [root, other] }));
+    await vi.waitFor(() =>
+      expect(screen.queryByText("Saving or loading todos…")).toBeNull(),
+    );
+    expect(new URLSearchParams(window.location.search).get("todo")).toBe("3");
+    expect(screen.getByLabelText(label).value).toBe(
+      mode === "edit" ? "Other todo" : "Pending child",
+    );
+  },
+);

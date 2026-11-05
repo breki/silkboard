@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { workflowLink, locationState } from "./link-state";
+  const address = locationState;
   import type { PlanLinkHandler } from "./plan-model";
   import type { PlanDetail } from "./plan-api";
   import type { PlanStep } from "./plan-model";
@@ -53,10 +55,9 @@
   <p class="notice">
     Previously marked done in received history.
     <a
-      href={routeFor(
-        detail.summary.project,
-        detail.summary.task_id,
-        old.sequence,
+      href={workflowLink(
+        routeFor(detail.summary.project, detail.summary.task_id, old.sequence),
+        $address.search,
       )}
       onclick={(event) =>
         onopen(

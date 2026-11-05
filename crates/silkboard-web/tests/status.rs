@@ -57,7 +57,8 @@ async fn unknown_api_and_mutation_requests_are_rejected() {
 }
 
 #[tokio::test]
-async fn serves_built_assets_without_spa_fallback_or_path_escape() {
+async fn serves_deep_links_and_recoverable_not_found_pages_without_path_escape()
+{
     let directory = std::env::temp_dir().join(format!(
         "silkboard-assets-{}-{}",
         std::process::id(),
@@ -84,11 +85,23 @@ async fn serves_built_assets_without_spa_fallback_or_path_escape() {
             StatusCode::OK,
             "<h1>Silkboard</h1>",
         ),
-        ("/plans/missing", StatusCode::NOT_FOUND, ""),
+        (
+            "/plans/missing",
+            StatusCode::NOT_FOUND,
+            "<h1>Silkboard</h1>",
+        ),
         ("/app.js", StatusCode::OK, "console.log('status')"),
-        ("/missing.js", StatusCode::NOT_FOUND, ""),
-        ("/../Cargo.toml", StatusCode::NOT_FOUND, ""),
-        ("/%2e%2e/Cargo.toml", StatusCode::NOT_FOUND, ""),
+        ("/missing.js", StatusCode::NOT_FOUND, "<h1>Silkboard</h1>"),
+        (
+            "/../Cargo.toml",
+            StatusCode::NOT_FOUND,
+            "<h1>Silkboard</h1>",
+        ),
+        (
+            "/%2e%2e/Cargo.toml",
+            StatusCode::NOT_FOUND,
+            "<h1>Silkboard</h1>",
+        ),
     ] {
         let response = create_router(&directory)
             .oneshot(Request::get(path).body(Body::empty()).unwrap())

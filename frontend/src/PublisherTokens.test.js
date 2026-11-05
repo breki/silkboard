@@ -142,7 +142,11 @@ test("copies only on request and explains clipboard failure", async () => {
 test("downloads a fixed filename via a temporary blob and releases it", async () => {
   const createObjectURL = vi.fn(() => "blob:private-local"),
     revokeObjectURL = vi.fn();
-  vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+  const NativeURL = URL;
+  class DownloadURL extends NativeURL {}
+  DownloadURL.createObjectURL = createObjectURL;
+  DownloadURL.revokeObjectURL = revokeObjectURL;
+  vi.stubGlobal("URL", DownloadURL);
   const click = vi
     .spyOn(HTMLAnchorElement.prototype, "click")
     .mockImplementation(() => {});

@@ -1,16 +1,20 @@
 <script lang="ts">
   import type { PlanLinkHandler } from "./plan-model";
-  import { onMount, tick } from "svelte";
+  import { locationState, readView, updateQuery } from "./link-state";
+  const address = locationState;
+  import { onMount, tick, untrack } from "svelte";
   import type { PlanDetail } from "./plan-api";
   import { graphLayout, stateLabel, stateSymbol } from "./plan-model";
   import StepDetails from "./StepDetails.svelte";
   let {
     detail,
     pinned,
+    pending = false,
     onopen,
   }: {
     detail: PlanDetail;
     pinned: boolean;
+    pending?: boolean;
     onopen: PlanLinkHandler;
   } = $props();
   const uid = $props.id();
@@ -36,7 +40,26 @@
   function focusSelected() {
     (node(selectedId) ?? heading)?.focus();
   }
+  let signature = "";
+  $effect(() => {
+    const state = readView("workflow", $address.search).value;
+    const key = JSON.stringify([
+      detail.summary.sequence,
+      state.step,
+      state.presentation,
+      state.detailsClosed,
+    ]);
+    if (key === signature) return;
+    signature = key;
+    untrack(() => {
+      selectedId = state.step;
+      presentation = state.presentation;
+      detailOpen = state.step !== null && !state.detailsClosed;
+      removed = "";
+    });
+  });
   $effect.pre(() => {
+    if (pending) return;
     const focused = document.activeElement;
     const focusedId =
       focused instanceof HTMLElement ? focused.dataset.step : undefined;
@@ -49,6 +72,7 @@
     if (removedNode || removedDetails) void tick().then(() => heading?.focus());
   });
   async function select(id: string, locate = false) {
+    updateQuery({ step: id, details: null });
     selectedId = id;
     removed = "";
     detailOpen = mobile;
@@ -59,11 +83,13 @@
     }
   }
   function closeDetails() {
+    if (selectedId !== null) updateQuery({ details: "closed" });
     detailOpen = false;
     dialog?.close();
     void tick().then(focusSelected);
   }
   $effect(() => {
+    if (pending) return;
     if (selectedId !== null && !selected) {
       const lostFocus =
         !!dialog?.open || !!aside?.contains(document.activeElement);
@@ -116,11 +142,11 @@
 <div class="plan-toolbar" aria-label="Workflow presentation">
   <button
     aria-pressed={presentation === "graph"}
-    onclick={() => (presentation = "graph")}>Graph</button
+    onclick={() => updateQuery({ presentation: null })}>Graph</button
   >
   <button
     aria-pressed={presentation === "steps"}
-    onclick={() => (presentation = "steps")}>Steps</button
+    onclick={() => updateQuery({ presentation: "steps" })}>Steps</button
   >
   {#if active.length === 1}<button
       class="quiet"
@@ -145,11 +171,19 @@
   {:else}<span class="muted">No step is marked active in this snapshot.</span
     >{/if}
   {#if mobile && selected && !detailOpen}<button
-      onclick={() => (detailOpen = true)}>View selected step</button
+      onclick={() => {
+        updateQuery({ details: null });
+        detailOpen = true;
+      }}>View selected step</button
     >{/if}
 </div>
 <p class="plan-legend">○ Pending · ● Active · ✓ Done · ! Blocked</p>
-{#if removed}<p role="status">{removed}</p>{/if}
+{#if removed}<p role="status">{removed}</p>
+  <button
+    class="quiet"
+    onclick={() => updateQuery({ step: null, details: null })}
+    >Clear step selection</button
+  >{/if}
 <div class="plan-workspace" bind:this={root}>
   <section class="plan-visual">
     <h3 tabindex="-1" bind:this={heading}>Steps and prerequisites</h3>
@@ -257,7 +291,10 @@
     event.preventDefault();
     closeDetails();
   }}
-  onclose={() => (detailOpen = false)}
+  onclose={() => {
+    // A queued close event may belong to an earlier opening of this dialog.
+    if (!dialog?.open) detailOpen = false;
+  }}
 >
   {#if mobile && selected && detailOpen}<button
       class="close-step"

@@ -606,3 +606,43 @@ test("clear filters can reset an ordinary feed without adding a session URL", as
   await fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
   expect(location.search).toBe("");
 });
+
+test("oversized collapsed identities keep the last valid URL and offer recovery", async () => {
+  const { default: EventFeed } = await import("./EventFeed.svelte");
+  const long = '"\\'.repeat(128);
+  const reports = Array.from({ length: 20 }, (_, i) => ({
+    ...report,
+    event_id: `group-${i}`,
+    hostname: String(i) + long.slice(2),
+    tool: long,
+    session_id: long,
+    session_name: `Group ${i}`,
+  }));
+  window.history.replaceState(null, "", "/events?view=hierarchy");
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => response(page(reports))),
+  );
+  render(EventFeed, { onexpire: vi.fn() });
+  await screen.findByRole("button", { name: "Session group: Group 0" });
+  for (let i = 0; i < 10; i++)
+    await fireEvent.click(
+      screen.getByRole("button", {
+        name: `Session group: Group ${i}`,
+        exact: true,
+      }),
+    );
+  expect(screen.getByRole("alert").textContent).toContain(
+    "bookmark size limit",
+  );
+  expect(
+    window.location.pathname.length + window.location.search.length,
+  ).toBeLessThanOrEqual(60000);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Clear collapsed groups" }),
+  );
+  expect(new URLSearchParams(window.location.search).has("collapsed")).toBe(
+    false,
+  );
+  expect(screen.queryByRole("alert")).toBeNull();
+});

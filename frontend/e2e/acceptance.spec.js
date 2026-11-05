@@ -345,7 +345,8 @@ test("installed Codex adapter, owner graph and existing data survive a real back
   const history = page.getByRole("list", { name: "Received workflow reports" });
   await expect(history.locator(":scope > li")).toHaveCount(3);
   await history.getByRole("link").last().click();
-  await expect(page).toHaveURL(`${origin}${path}?sequence=1`);
+  expect(new URL(page.url()).pathname).toBe(path);
+  expect(new URL(page.url()).searchParams.get("sequence")).toBe("1");
   await expect(page.getByText(/Earlier snapshot/).first()).toBeVisible();
   await page
     .getByRole("button", { name: "Verify combined feature, Blocked" })
@@ -362,6 +363,9 @@ test("installed Codex adapter, owner graph and existing data survive a real back
   await expect(
     page.getByRole("complementary", { name: "Step details" }),
   ).toHaveCount(0);
+  // The URL-selected details move from the desktop aside to the phone dialog.
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
   const active = page.getByRole("button", {
     name: "Verify combined feature, Active",
   });

@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { locationState, credentialState, updateQuery } from "./link-state";
+  const address = locationState;
+  import { onMount, untrack } from "svelte";
   import {
     ApiError,
     publisherCredentials,
@@ -56,12 +58,30 @@
       after = cursor;
     }
   }
-  async function load(cursor: string | null = null, selected = projectInput) {
+  async function load(
+    cursor: string | null = null,
+    selected = projectInput,
+    sync = true,
+  ) {
     if (busy || issued) return;
     if (!/^[a-z0-9-]{1,64}$/.test(selected)) {
       notice =
         "Use a project name with 1–64 lowercase letters, digits or hyphens.";
       return;
+    }
+    if (sync) {
+      const current = credentialState(window.location.search);
+      if (
+        current.credentialProject !== selected ||
+        current.credentialAfter !== cursor
+      ) {
+        updateQuery({
+          panel: "credentials",
+          credential_project: selected,
+          credential_after: cursor,
+        });
+        return;
+      }
     }
     const signal = begin();
     page = null;
@@ -87,6 +107,12 @@
     }
     const selected = projectInput,
       installation = label;
+    signature = JSON.stringify([selected, null]);
+    updateQuery({
+      panel: "credentials",
+      credential_project: selected,
+      credential_after: null,
+    });
     const signal = begin();
     page = null;
     after = null;
@@ -183,6 +209,25 @@
       if (url) URL.revokeObjectURL(url);
     }
   }
+  let signature = "";
+  $effect(() => {
+    const state = credentialState($address.search);
+    const key = JSON.stringify([
+      state.credentialProject,
+      state.credentialAfter,
+    ]);
+    if (key === signature) return;
+    signature = key;
+    untrack(() => {
+      forget();
+      projectInput = state.credentialProject;
+      page = null;
+      project = "";
+      after = null;
+      if (state.credentialProject)
+        void load(state.credentialAfter, state.credentialProject, false);
+    });
+  });
   onMount(() => {
     window.addEventListener("pagehide", forget);
     return () => {

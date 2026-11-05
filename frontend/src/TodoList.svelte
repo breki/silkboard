@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { featureLink, updateQuery } from "./link-state";
   import { SvelteMap } from "svelte/reactivity";
   import type { Todo, TodoAction, TodoCheck } from "./todos-api";
   let {
@@ -8,6 +9,7 @@
     onedit,
     onchild,
     ondelete,
+    selected = null,
   }: {
     items: Todo[];
     disabled: boolean;
@@ -15,6 +17,7 @@
     onedit: TodoAction;
     onchild: TodoAction;
     ondelete: TodoAction;
+    selected?: string | null;
   } = $props();
   const children = $derived.by(() => {
     const groups = new SvelteMap<string | null, Todo[]>();
@@ -30,7 +33,7 @@
 {#snippet branch(parent: string | null, depth: number)}
   <ul>
     {#each children.get(parent) ?? [] as item (item.id)}
-      <li>
+      <li id={`todo-${item.id}`} class:linked={selected === item.id}>
         <div class="todo-row">
           <label class:completed={item.completed}
             ><input
@@ -44,6 +47,15 @@
             /><span>{item.text}</span></label
           >
           <div class="todo-actions">
+            <a
+              class="todo-link"
+              href={featureLink(`/todos?todo=${item.id}`)}
+              aria-label={`Link to ${item.text}`}
+              onclick={(event) => {
+                event.preventDefault();
+                updateQuery({ todo: item.id, mode: null });
+              }}>Link</a
+            >
             <button
               class="quiet"
               {disabled}
@@ -72,6 +84,16 @@
 {@render branch(null, 1)}
 
 <style>
+  .linked > .todo-row {
+    border-inline-start: 3px solid var(--primary);
+    padding-inline-start: 0.5rem;
+  }
+  .todo-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+  }
   ul {
     list-style: none;
     padding-inline-start: 0.75rem;

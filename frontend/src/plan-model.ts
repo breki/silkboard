@@ -1,3 +1,4 @@
+import { globalKeys, viewKeys } from "./link-fields";
 // eslint-disable-next-line no-unused-vars -- Type-only callback parameter names describe the shared interface.
 export type PlanLinkHandler = (event: MouseEvent, path: string) => void;
 // eslint-disable-next-line no-unused-vars -- Type-only callback parameter name describes the shared interface.
@@ -137,23 +138,29 @@ export function parsePlanRoute(path: string): PlanRoute {
   if (
     !path.startsWith("/") ||
     path.startsWith("//") ||
-    path.length > 2048 ||
+    path.length > 65536 ||
     path.includes("\\") ||
     path.includes("#")
   )
     return { kind: "invalid" };
   const url = new URL(path, "https://silkboard.invalid");
-  if (url.pathname === "/plans" && !url.search) return { kind: "list" };
+  const scope =
+    url.pathname === "/plans" ? viewKeys.workflows : viewKeys.workflow;
+  const allowed = new Set<string>([...globalKeys, ...scope]);
+  if (
+    [...url.searchParams.keys()].some(
+      (key) => !allowed.has(key) || url.searchParams.getAll(key).length !== 1,
+    )
+  )
+    return { kind: "invalid" };
+  if (url.pathname === "/plans") return { kind: "list" };
   const parts = url.pathname.split("/");
-  const queries = [...url.searchParams.entries()];
   const sequence = url.searchParams.get("sequence");
   if (
     parts.length !== 4 ||
     parts[1] !== "plans" ||
     !projectId(parts[2]) ||
     !taskId(parts[3]) ||
-    queries.length > 1 ||
-    queries.some(([key]) => key !== "sequence") ||
     (sequence !== null && !positive(sequence))
   )
     return { kind: "invalid" };

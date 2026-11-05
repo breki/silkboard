@@ -1,4 +1,5 @@
 export interface ListFilters {
+  event_id?: string;
   project?: string;
   agent?: string;
   from?: number;

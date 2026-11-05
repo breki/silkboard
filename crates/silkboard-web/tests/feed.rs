@@ -16,6 +16,49 @@ use tower::ServiceExt;
 const ORIGIN: &str = "https://silkboard.example";
 
 #[tokio::test]
+async fn linked_events_resolve_by_project_and_id_outside_the_latest_page() {
+    let store = ProgressStore::open_memory().unwrap();
+    let (app, cookie) = owner(store.clone()).await;
+    let token = store.issue_token("alpha", "agent").unwrap();
+    for i in 0..25 {
+        store
+            .publish(
+                "alpha",
+                &token,
+                &event(&format!("e-{i}"), "native", i + 1),
+            )
+            .unwrap();
+    }
+    let (status, selected) = read(
+        app.clone(),
+        "/api/owner/events?project=alpha&event_id=e-0",
+        &cookie,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(selected["items"].as_array().unwrap().len(), 1);
+    assert_eq!(selected["items"][0]["event_id"], "e-0");
+    assert_eq!(
+        read(
+            app.clone(),
+            "/api/owner/events?project=alpha&event_id=e-0",
+            ""
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+    for query in ["event_id=e-0", "project=alpha&event_id=bad%20id"] {
+        assert_eq!(
+            read(app.clone(), &format!("/api/owner/events?{query}"), &cookie)
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+    }
+}
+
+#[tokio::test]
 async fn agent_filters_search_complete_history_and_exact_identity() {
     let store = ProgressStore::open_memory().unwrap();
     let (app, cookie) = owner(store.clone()).await;

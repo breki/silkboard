@@ -111,6 +111,7 @@ struct Before {
 #[serde(deny_unknown_fields)]
 struct EventQuery {
     before: Option<String>,
+    event_id: Option<String>,
     project: Option<String>,
     agent: Option<String>,
     from: Option<i64>,
@@ -122,6 +123,12 @@ struct EventQuery {
 }
 impl EventQuery {
     fn validate(&self) -> Result<(), AuthError> {
+        if let Some(event_id) = &self.event_id {
+            if self.project.is_none() {
+                return Err(AuthError::Invalid);
+            }
+            validate_identity(event_id).map_err(|_| AuthError::Invalid)?;
+        }
         super::filters::validate(
             self.project.as_deref(),
             self.agent.as_deref(),
@@ -217,6 +224,7 @@ fn list_events(
            AND (?6 IS NULL OR e.received_at>=?6)
            AND (?7 IS NULL OR e.received_at<=?7)
            AND (?8 IS NULL OR (s.hostname=?8 AND s.tool=?9 AND s.native_id=?10 AND s.child_id=?11))
+           AND (?12 IS NULL OR e.event_id=?12)
          ORDER BY e.received_at DESC,e.project DESC,e.event_id DESC
          LIMIT 21",
     )?;
@@ -234,6 +242,7 @@ fn list_events(
                 filters.tool,
                 filters.session_id,
                 filters.subagent_id,
+                filters.event_id,
             ],
             |row| {
                 Ok(FeedEvent {

@@ -97,11 +97,19 @@ test("invalid links recover locally and Back restores the previous list position
   await fireEvent.click(
     screen.getByRole("button", { name: "Revision 1", exact: true }),
   );
-  expect(window.location.search).toBe("?sequence=1");
+  expect(new URLSearchParams(window.location.search).get("sequence")).toBe("1");
+  expect(new URLSearchParams(window.location.search).get("history")).toBe(
+    "revisions",
+  );
   await fireEvent.click(
     await screen.findByRole("link", { name: "Current workflow", exact: true }),
   );
-  expect(window.location.search).toBe("");
+  expect(new URLSearchParams(window.location.search).has("sequence")).toBe(
+    false,
+  );
+  expect(new URLSearchParams(window.location.search).get("history")).toBe(
+    "revisions",
+  );
   window.history.replaceState(null, "", "/plans");
   window.dispatchEvent(new PopStateEvent("popstate"));
   await screen.findByRole("table");

@@ -7,6 +7,10 @@ keep their links. [Issue #121](https://github.com/breki/silkboard/issues/121)
 moves Todos out of the hamburger menu and keeps it directly available from
 each primary page. Todos do not sync with GitHub or drive agents, workflows or execution.
 
+Each item has a Link action for its [bookmark](deep-links.md). Edit and
+Add child also update the URL; opening it restores stored text or an empty child
+form without saving a change. Unsaved text never appears in the URL.
+
 ## Editing the list
 
 Enter a single-line task in New todo and choose Add todo. Add child on any

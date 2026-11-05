@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { agents, agentKey, type AgentActivity } from "./agents-api";
+  import {
+    agents,
+    agentKey,
+    type AgentActivity,
+    type AgentSelection,
+  } from "./agents-api";
   import { ApiError } from "./feed-api";
   import Modal from "./Modal.svelte";
   let {
@@ -9,9 +14,9 @@
     onexpire,
   }: {
     project: string;
-    value: AgentActivity | null;
+    value: AgentSelection | null;
     // eslint-disable-next-line no-unused-vars -- Callback parameter describes the contract.
-    onselect: (value: AgentActivity | null) => void;
+    onselect: (value: AgentSelection | null) => void;
     onexpire: () => void;
   } = $props();
   let open = $state(false),
@@ -23,9 +28,9 @@
     next = $state<string | null>(null),
     items = $state<AgentActivity[]>([]);
   let trigger = $state<HTMLButtonElement>();
-  const title = (item: AgentActivity) =>
+  const title = (item: AgentSelection) =>
     item.session_name ??
-    (item.latest.kind === "workflow"
+    (item.latest?.kind === "workflow"
       ? item.latest.title
       : `${item.tool} on ${item.hostname}`);
   $effect(() => {
@@ -75,7 +80,7 @@
     open = false;
     trigger?.focus();
   }
-  function choose(item: AgentActivity | null) {
+  function choose(item: AgentSelection | null) {
     onselect(item);
     close();
   }
@@ -119,7 +124,11 @@
         <button
           class="quiet agent-option"
           type="button"
-          aria-pressed={value !== null && agentKey(value) === agentKey(item)}
+          aria-pressed={value !== null &&
+            value.project === item.project &&
+            value.hostname === item.hostname &&
+            value.tool === item.tool &&
+            value.session_id === item.session_id}
           onclick={() => choose(item)}
           ><span>{title(item)}</span><small
             >{item.project} · {item.tool} / {item.hostname}</small

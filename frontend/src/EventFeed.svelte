@@ -1,38 +1,67 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { readSession, clearSessionUrl } from "./event-session";
-  let session = $state(readSession(window.location.search));
-  function clearSession() {
-    if (session.kind === "none") return;
-    window.history.pushState(null, "", clearSessionUrl());
-    session = readSession(window.location.search);
-    navigate(null);
+  import { untrack } from "svelte";
+  import { readSession } from "./event-session";
+  import {
+    locationState,
+    readView,
+    updateQuery,
+    filterFields,
+  } from "./link-state";
+  import LinkError from "./LinkError.svelte";
+  const address = locationState;
+  const linked = $derived(readView("events", $address.search));
+  const session = $derived(readSession($address.search));
+  function clearSession(replace = false) {
+    updateQuery(
+      {
+        project: null,
+        hostname: null,
+        tool: null,
+        session_id: null,
+        subagent_id: null,
+        before: null,
+        event: null,
+        collapsed: null,
+      },
+      replace,
+    );
   }
-  onMount(() => {
-    const changed = () => {
-      session = readSession(window.location.search);
-      navigate(null);
-    };
-    window.addEventListener("popstate", changed);
-    return () => window.removeEventListener("popstate", changed);
-  });
   import type { SessionGroup } from "./event-hierarchy";
   import { SvelteSet } from "svelte/reactivity";
   import EventRows from "./EventRows.svelte";
   import SessionRows from "./SessionRows.svelte";
   import { eventKey as key, groupEvents, sessionKey } from "./event-hierarchy";
-  let hierarchical = $state(false);
+  const hierarchical = $derived(linked.value.hierarchical);
   const collapsed = new SvelteSet<string>();
+  let groupLimit = $state(false);
   function toggleGroup(id: string) {
-    if (collapsed.has(id)) collapsed.delete(id);
-    else collapsed.add(id);
+    const visible = new Set(page?.items.map(sessionKey) ?? []);
+    const next = new SvelteSet(
+      linked.value.collapsed.filter((key) => visible.has(key)),
+    );
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    try {
+      updateQuery({ collapsed: next.size ? JSON.stringify([...next]) : null });
+      groupLimit = false;
+    } catch {
+      groupLimit = true;
+    }
   }
   import ListFilters from "./ListFilters.svelte";
   import type { ListFilters as Filters } from "./list-filters";
   let filters = $state<Filters>({});
   function applyFilters(value: Filters) {
-    navigate(null);
-    filters = value;
+    const next =
+      session.kind === "session"
+        ? {
+            from: value.from,
+            to: value.to,
+            ...session.value,
+            subagent_id: session.value.subagent_id ?? "",
+          }
+        : value;
+    updateQuery(filterFields(next));
   }
   import { ApiError, events, type Page, type FeedEvent } from "./feed-api";
   import { poll } from "./poll";
@@ -55,22 +84,61 @@
   let failed = $state(false);
   let busy = $state(false);
   let retry = $state(0);
-  let expanded = $state<string | null>(null);
+  const expanded = $derived(linked.value.event);
+  let signature = "";
   $effect(() => {
-    const cursor = before;
-    if (session.kind === "invalid") {
-      page = null;
-      return;
+    const state = linked.value;
+    const key = JSON.stringify([linked.valid, state.filters, state.before]);
+    if (key !== signature) {
+      signature = key;
+      untrack(() => {
+        filters = state.filters;
+        before = state.before;
+        page = null;
+      });
     }
-    const selected =
-      session.kind === "session"
-        ? {
-            from: filters.from,
-            to: filters.to,
-            ...session.value,
-            subagent_id: session.value.subagent_id ?? "",
-          }
-        : filters;
+  });
+  $effect(() => {
+    const groups = linked.value.collapsed;
+    untrack(() => {
+      collapsed.clear();
+      for (const key of groups) collapsed.add(key);
+    });
+  });
+  let target = $state<FeedEvent | null>(null),
+    targetUnavailable = $state(false);
+  const onPage = $derived(page?.items.find((event) => key(event) === expanded));
+
+  $effect(() => {
+    const selected = expanded,
+      present = onPage,
+      loaded = page;
+    void retry;
+    target = null;
+    targetUnavailable = false;
+    if (!linked.valid || !selected || !loaded || present) return;
+    const [project, event_id] = JSON.parse(selected);
+    const controller = new AbortController();
+    void events(null, controller.signal, { project, event_id })
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          target = result.items[0] ?? null;
+          targetUnavailable = !target;
+        }
+      })
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        if (error instanceof ApiError && error.status === 401) onexpire();
+        else targetUnavailable = true;
+      });
+    return () => controller.abort();
+  });
+  const request = $derived(
+    JSON.stringify([linked.valid, linked.value.before, linked.value.filters]),
+  );
+  $effect(() => {
+    const [valid, cursor, selected] = JSON.parse(request);
+    if (!valid) return;
     void retry;
     return poll(async (signal) => {
       busy = true;
@@ -78,16 +146,7 @@
         const value = await events(cursor, signal, selected);
         if (signal.aborted) return;
         page = value;
-        const visible = new Set(value.items.map(sessionKey));
-        for (const id of collapsed) {
-          if (!visible.has(id)) collapsed.delete(id);
-        }
         failed = false;
-        if (
-          expanded !== null &&
-          !value.items.some((event) => key(event) === expanded)
-        )
-          expanded = null;
       } catch (error) {
         if (signal.aborted) return;
         if (error instanceof ApiError && error.status === 401) onexpire();
@@ -98,13 +157,10 @@
     });
   });
   function navigate(cursor: string | null) {
-    page = null;
-    collapsed.clear();
-    expanded = null;
-    before = cursor;
+    updateQuery({ before: cursor, collapsed: null, event: null });
   }
   function toggle(event: FeedEvent) {
-    expanded = expanded === key(event) ? null : key(event);
+    updateQuery({ event: expanded === key(event) ? null : key(event) });
   }
 </script>
 
@@ -112,7 +168,9 @@
   <p role="alert">
     This agent session link is invalid. Clear it to choose another filter.
   </p>
-  <button class="quiet" onclick={clearSession}>Clear session filter</button>
+  <button class="quiet" onclick={() => clearSession()}
+    >Clear session filter</button
+  >
 {:else}
   {#if session.kind === "session"}<section
       class="session-filter"
@@ -129,15 +187,18 @@
         <dt>Subagent</dt>
         <dd>{session.value.subagent_id ?? "Primary session"}</dd>
       </dl>
-      <button class="quiet" onclick={clearSession}>Clear session filter</button>
+      <button class="quiet" onclick={() => clearSession()}
+        >Clear session filter</button
+      >
     </section>{/if}
 {/if}
 <ListFilters
+  value={filters}
   onapply={applyFilters}
   {onexpire}
   sessionScoped={session.kind === "session"}
-  disabled={session.kind === "invalid"}
-  onclear={clearSession}
+  disabled={!linked.valid || session.kind === "invalid"}
+  onclear={() => clearSession(true)}
 >
   {#snippet heading()}
     <div class="event-heading">
@@ -149,13 +210,44 @@
     <div class="event-view-switch" role="group" aria-label="Events view">
       <button
         aria-pressed={!hierarchical}
-        onclick={() => (hierarchical = false)}>Flat list</button
+        onclick={() => updateQuery({ view: null })}>Flat list</button
       >
-      <button aria-pressed={hierarchical} onclick={() => (hierarchical = true)}
+      <button
+        aria-pressed={hierarchical}
+        onclick={() => updateQuery({ view: "hierarchy" })}
         >Session hierarchy</button
       >
     </div>
   {/snippet}
+  {#if !linked.valid && session.kind !== "invalid"}<LinkError />{/if}
+  {#if groupLimit}<p role="alert">
+      This group change exceeds the bookmark size limit. Expand another group or
+      clear collapsed groups. <button
+        onclick={() => {
+          updateQuery({ collapsed: null });
+          groupLimit = false;
+        }}>Clear collapsed groups</button
+      >
+    </p>{/if}
+  {#if targetUnavailable}<p role="alert">
+      The linked event is unavailable. <button
+        onclick={() => updateQuery({ event: null })}>Clear linked event</button
+      ><button onclick={() => retry++}>Retry linked event</button>
+    </p>{/if}
+  {#if target}<section aria-label="Linked event">
+      <p class="muted">
+        Linked event outside the current page or collapsed groups.
+      </p>
+      <table class="events-table">
+        <tbody
+          ><EventRows
+            items={[{ event: target, index: -1 }]}
+            {expanded}
+            ontoggle={toggle}
+          /></tbody
+        >
+      </table>
+    </section>{/if}
   {#if hierarchical}<p class="muted">
       Relationships use this page only. Parent-session groups come first,
       ordered by their newest visible family event; unmatched subagents follow.
@@ -230,7 +322,7 @@
           onclick={() => navigate(page!.next_cursor)}>Earlier events</button
         >{/if}
     </div>
-  {:else if !failed}<p role="status">Loading events…</p>{/if}
+  {:else if !failed && linked.valid}<p role="status">Loading events…</p>{/if}
 </ListFilters>
 
 <style>

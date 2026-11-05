@@ -1,5 +1,13 @@
 # Canon provenance
 
+## Deep links across owner views, 2026-11-04
+
+The owner requested work on [#140](https://github.com/breki/silkboard/issues/140).
+The [deep-link contract](../deep-links.md) records URL-backed applied filters,
+paging, stable selections and read-only feature views, retaining owner login
+and excluding secrets, drafts and mutation confirmations. This is local
+implementation scope; merge, release and production rollout remain separate.
+
 ## Approved controls at scale, 2026-11-03
 
 After reopening #122, the owner reviewed the private interactive preview with

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { locationState, readView, updateQuery } from "./link-state";
+  import LinkError from "./LinkError.svelte";
+  const address = locationState;
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
   import Todos from "./Todos.svelte";
@@ -20,7 +23,21 @@
     eventsPage?: boolean;
     todosPage?: boolean;
   } = $props();
-  let managing = $state(false);
+  const context = $derived(
+    statusPage
+      ? "status"
+      : todosPage
+        ? "todos"
+        : plansPage
+          ? $address.pathname === "/plans"
+            ? "workflows"
+            : "workflow"
+          : eventsPage
+            ? "events"
+            : "agents",
+  );
+  const linked = $derived(readView(context, $address.search));
+  const managing = $derived(linked.valid && linked.value.panel);
 
   type Phase =
     | "checking"
@@ -74,7 +91,6 @@
     }
   }
   function expired() {
-    managing = false;
     begin();
     password = "";
     notice = "Your session expired. Sign in again.";
@@ -102,7 +118,6 @@
     }
   }
   async function logout() {
-    managing = false;
     const signal = begin();
     phase = "signing-out";
     notice = "";
@@ -139,7 +154,12 @@
   owner={phase === "signed-in"
     ? {
         managing,
-        onmanage: () => (managing = !managing),
+        onmanage: () =>
+          updateQuery({
+            panel: managing ? null : "credentials",
+            credential_project: null,
+            credential_after: null,
+          }),
         onlogout: () => void logout(),
       }
     : undefined}
@@ -147,10 +167,11 @@
 {#if phase === "signed-in" && managing}<PublisherTokens
     onexpire={expired}
   />{/if}
-{#if !statusPage || phase === "logout-failed"}
+{#if !statusPage || phase === "logout-failed" || (managing && phase !== "signed-in")}
   <section class="feed" aria-label="Progress feed">
     {#if phase === "signed-in"}
-      {#if todosPage}
+      {#if !linked.valid}<LinkError />
+      {:else if todosPage}
         <Todos onexpire={expired} />
       {:else if plansPage}
         <TaskPlans onexpire={expired} />
@@ -165,7 +186,10 @@
           {todosPage ? "Sign in to Todos" : "Sign in to your progress feed"}
         </h2>
         <p>Follow what your development agents are working on.</p>
-        {#if notice}<p role="alert">{notice}</p>{/if}
+        {#if notice}<p role="alert">
+            {notice}{#if statusPage}
+              <a href="/">Return to sign in</a>{/if}
+          </p>{/if}
         <form onsubmit={login}>
           <label for="owner-password">Owner password</label><input
             id="owner-password"
@@ -208,7 +232,8 @@
 {/if}
 
 {#if statusPage}
-  {#if notice}<p role="alert">
+  {#if !linked.valid}<LinkError />{/if}
+  {#if notice && !managing}<p role="alert">
       {notice} <a href="/">Return to sign in</a>
     </p>{/if}
   <StatusCard />
