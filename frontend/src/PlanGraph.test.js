@@ -225,3 +225,29 @@ test("a linked step waits for its requested snapshot and restores when it arrive
     screen.getByRole("heading", { name: "Build graph page" }),
   ).toBeTruthy();
 });
+
+test("a delayed close event cannot close a newly reopened step dialog", async () => {
+  media.matches = true;
+  render(PlanGraph, props(detail()));
+  await flush();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Build graph page, Active" }),
+  );
+  await flush();
+  const dialog = screen.getByRole("dialog", { name: "Step details" });
+  // Native close events are queued, unlike the synchronous default test mock.
+  dialog.close = vi.fn(function () {
+    this.open = false;
+  });
+  await fireEvent.click(within(dialog).getByText("Close step details"));
+  await flush();
+  await fireEvent.click(screen.getByText("View selected step"));
+  await flush();
+  expect(dialog.open).toBe(true);
+  await fireEvent(dialog, new Event("close"));
+  await flush();
+  expect(dialog.open).toBe(true);
+  expect(
+    within(dialog).getByRole("heading", { name: "Build graph page" }),
+  ).toBeTruthy();
+});

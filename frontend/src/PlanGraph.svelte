@@ -291,7 +291,10 @@
     event.preventDefault();
     closeDetails();
   }}
-  onclose={() => (detailOpen = false)}
+  onclose={() => {
+    // A queued close event may belong to an earlier opening of this dialog.
+    if (!dialog?.open) detailOpen = false;
+  }}
 >
   {#if mobile && selected && detailOpen}<button
       class="close-step"
