@@ -153,7 +153,7 @@ pub(super) fn lock(directory_path: &Path, key: &str) -> Result<File, Error> {
     options.mode(0o600);
     let file = options.open(&path).map_err(|_| Error::State)?;
     check(&file, &path)?;
-    file.try_lock().map_err(|_| Error::Busy)?;
+    file.try_lock().map_err(|error| lock_error(&error))?;
     Ok(file)
 }
 
@@ -191,4 +191,30 @@ pub(super) fn replace(path: &Path, bytes: &[u8]) -> Result<(), Error> {
         let _ = fs::remove_file(&temporary);
     }
     result
+}
+
+fn lock_error(error: &std::fs::TryLockError) -> Error {
+    match error {
+        std::fs::TryLockError::WouldBlock => Error::Busy,
+        std::fs::TryLockError::Error(_) => Error::State,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{fs::TryLockError, io};
+
+    #[test]
+    fn only_contention_is_busy() {
+        assert_eq!(lock_error(&TryLockError::WouldBlock), Error::Busy);
+        for kind in
+            [io::ErrorKind::PermissionDenied, io::ErrorKind::Unsupported]
+        {
+            assert_eq!(
+                lock_error(&TryLockError::Error(io::Error::from(kind))),
+                Error::State
+            );
+        }
+    }
 }

@@ -149,8 +149,11 @@ The private state directory contains hashed-identity counter/lock files per
 endpoint/project/host/tool/native-session/child key. Each counter stores only
 its schema, last allocated sequence and optional parent ID. It stores no
 report or credential. Allocation uses a nonblocking file lock, atomic replace
-and filesystem synchronization before sending. Busy callers return promptly.
-Failed attempts consume sequences; gaps/out-of-order arrival are valid.
+and filesystem synchronization before sending. The allocation lock is released
+before HTTP delivery. Busy callers return promptly without consuming a sequence;
+only native lock contention is Busy, while other locking failures report
+unavailable working state. Failed delivery attempts consume sequences;
+gaps/out-of-order arrival are valid.
 
 Keep counters when upgrading or resuming sessions. Use local filesystems and
 do not replace counter/lock files during use. Do not restore old counters
@@ -170,6 +173,25 @@ are verified. Remaining rollout evidence is tracked in
 
 `cargo test -p silkboard-publish` checks real HTTP/ingestion, process restarts,
 concurrency, revocation, malformed responses and private files.
+
+### Concurrency test evidence (#146)
+
+[Release run 42116475237](https://github.com/breki/silkboard/actions/runs/42116475237)
+failed the eight-writer test and passed an unchanged rerun. Its old test-only
+100-retry loop slept 2 ms between Busy results, assuming synchronized writes
+would finish within that budget. The original test also failed locally. A
+controlled 350 ms delay on fixture counter flushes reproduced the same failure
+in normal and instrumented builds. This demonstrates a fragile test deadline;
+the original hosted runner's storage/scheduling latency was not measured.
+
+The test now starts outstanding writers together and waits for all attempts
+to finish before its next contention round. At least one writer completes per
+round, so eight rounds suffice for eight writers without assuming disk speed.
+Separate tests require a Busy response while another caller still holds the
+lock, unchanged state on Busy, and lock release while HTTP acknowledgement is
+withheld. These test-only rounds add no CLI retry or network retry policy.
+Native non-contention lock errors are separately checked as storage failures;
+there is no evidence that they caused the recorded release failure.
 
 ## Explicit event workflow association
 

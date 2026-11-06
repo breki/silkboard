@@ -228,37 +228,43 @@ fn fifo_configuration_is_rejected_instead_of_blocking_agent_work() {
 }
 
 #[test]
-fn concurrent_callers_allocate_unique_sequences_and_busy_calls_return_promptly()
-{
+fn concurrent_callers_allocate_unique_sequences() {
     let mut f = Fixture::new();
     let (origin, handle) = server(8, |event| ack(&event));
     f.config["endpoint"] = json!(origin);
     let args = f.args();
     let bytes = serde_json::to_vec(&report()).unwrap();
+    let round = std::sync::Barrier::new(8);
     std::thread::scope(|scope| {
         let mut children = Vec::new();
         for _ in 0..8 {
             let args = &args;
             let bytes = &bytes;
+            let round = &round;
             children.push(scope.spawn(move || {
-                // Test callers retry local lock contention explicitly; the CLI
-                // itself never schedules work or retries a network request.
-                for _ in 0..100 {
-                    match silkboard_publish::run(args, bytes.as_slice()) {
-                        Err(Error::Busy) => {
-                            std::thread::sleep(Duration::from_millis(2));
-                        }
-                        result => {
-                            assert_eq!(result, Ok("Progress acknowledged"));
-                            return;
+                let mut result = None;
+                // All outstanding callers contend in each round. Wait for every
+                // attempt to finish before retrying Busy: at least one writer
+                // completes per round, regardless of disk or scheduler speed.
+                for _ in 0..8 {
+                    round.wait();
+                    if result.is_none() {
+                        let attempt =
+                            silkboard_publish::run(args, bytes.as_slice());
+                        if attempt != Err(Error::Busy) {
+                            result = Some(attempt);
                         }
                     }
+                    round.wait();
                 }
-                panic!("persistent local contention");
+                result
             }));
         }
         for child in children {
-            child.join().unwrap();
+            assert_eq!(
+                child.join().unwrap(),
+                Some(Ok("Progress acknowledged"))
+            );
         }
     });
     let mut sequences = handle
@@ -269,15 +275,72 @@ fn concurrent_callers_allocate_unique_sequences_and_busy_calls_return_promptly()
         .collect::<Vec<_>>();
     sequences.sort_unstable();
     assert_eq!(sequences, (1..=8).collect::<Vec<_>>());
+}
+
+#[test]
+fn busy_call_returns_before_the_allocation_lock_is_released() {
+    let f = Fixture::new();
+    assert_eq!(f.run(&report()), Err(Error::Network));
     let lock = fs::OpenOptions::new()
         .read(true)
         .write(true)
         .open(&f.state_files("lock")[0])
         .unwrap();
     lock.lock().unwrap();
-    let start = Instant::now();
-    assert_eq!(f.run(&report()), Err(Error::Busy));
-    assert!(start.elapsed() < Duration::from_millis(100));
+    let args = f.args();
+    let bytes = serde_json::to_vec(&report()).unwrap();
+    std::thread::scope(|scope| {
+        let (send, receive) = std::sync::mpsc::channel();
+        let caller = scope.spawn(move || {
+            let _ = send.send(silkboard_publish::run(&args, bytes.as_slice()));
+        });
+        // The lock stays held until the caller responds. Release it even if
+        // this check fails, so a regression to blocking acquisition can unwind.
+        let result = receive.recv_timeout(Duration::from_secs(1));
+        drop(lock);
+        caller.join().unwrap();
+        assert_eq!(result.unwrap(), Err(Error::Busy));
+    });
+    assert_eq!(
+        fs::read_to_string(&f.state_files("json")[0])
+            .unwrap()
+            .parse::<serde_json::Value>()
+            .unwrap()["sequence"],
+        1
+    );
+}
+
+#[test]
+fn allocation_lock_is_released_before_http_acknowledgement() {
+    let mut f = Fixture::new();
+    let (entered, waiting) = std::sync::mpsc::channel();
+    let (release, held) = std::sync::mpsc::channel();
+    let (origin, server) = server(1, move |event| {
+        entered.send(()).unwrap();
+        held.recv_timeout(Duration::from_secs(3)).unwrap();
+        ack(&event)
+    });
+    f.config["endpoint"] = json!(origin);
+    let args = f.args();
+    let bytes = serde_json::to_vec(&report()).unwrap();
+    std::thread::scope(|scope| {
+        let caller =
+            scope.spawn(|| silkboard_publish::run(&args, bytes.as_slice()));
+        waiting.recv_timeout(Duration::from_secs(3)).unwrap();
+        let lock = fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&f.state_files("lock")[0])
+            .unwrap();
+        let acquired = lock.try_lock();
+        release.send(()).unwrap();
+        assert!(
+            acquired.is_ok(),
+            "HTTP delivery retained the allocation lock"
+        );
+        assert_eq!(caller.join().unwrap(), Ok("Progress acknowledged"));
+    });
+    server.join().unwrap();
 }
 
 #[test]
