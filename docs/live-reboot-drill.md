@@ -1,18 +1,24 @@
-# Proposed guest reboot and updater recovery drill
+# Guest reboot and updater recovery drill
 
-Preparation for [#18](https://github.com/breki/silkboard/issues/18), not live
-acceptance evidence. The issue requires agreement on the concrete drill before
-production reboots or interruptions. Approve each phase after its baseline is
-recorded. Preparing this document does not authorize a release, a reboot,
-credential relocation, process signals or changes to SSH trust.
+Procedure for [#18](https://github.com/breki/silkboard/issues/18). Both phases
+were separately approved and passed on 2026-11-06; the
+[live evidence](live-reboot-evidence.md) records exact identities, automatic
+invocations and restoration. This procedure alone is not acceptance evidence.
+Any repeat requires agreement on the concrete drill before production reboots
+or interruptions, with each phase approved after its baseline is recorded.
+The document itself does not authorize publication, reboot, credential
+relocation, process signals or changes to SSH trust.
 
 ## Current evidence and access
 
 On 2026-11-06, certificate-validated private HTTPS reported healthy v0.14.0,
 commit `8d4c6ca4c9038c8567e794c4d5ccf44bba10f5fc`. This proves the running
-application identity only. Strict operator SSH failed because this workspace
-has no trusted ED25519 host key for the production hostname. No guest command
-ran and no production state was changed.
+application identity only. Initial preparation could not use strict SSH because
+that workspace lacked the production hostname's trusted ED25519 host key. The
+later approved verification used the independently trusted malina guest agent
+to obtain the guest's public host key and pin a temporary strict SSH route.
+Both administrative routes passed before each disruptive phase. The live
+record supersedes the initial access limitation without changing global trust.
 
 Restore the existing operator-approved, pinned SSH route; obtain any missing
 pin through the independently trusted operator channel. Never trust an
@@ -97,10 +103,11 @@ It tests interruption before candidate activation. Candidate-start rollback
 is separate [#17 evidence](live-rollback-drill.md), not a result of this phase.
 
 A newer, valid signed release with a successful exact tag-triggered suite is
-required. v0.14.1 containing the merged publisher fix is a proposed candidate;
-its preparation/publication and precise tag/commit are not authorized by this
-document. Do not publish a deliberately broken build, reuse an old tag,
-manufacture pending state or bypass ordinary admission.
+required. The completed drill used separately approved `v0.14.1` at
+`ac4c80da0ce15761d95c54255f5509aff9c42ab8`, containing the merged publisher
+fix. That tag remains blocked after the drill; any repeat needs a new agreed
+candidate and publication decision. Do not publish a deliberately broken build,
+reuse an old tag, manufacture pending state or bypass ordinary admission.
 
 1. Prepare the exact signed candidate through the
    [release procedure](ai-agents/workflows/release.md), leaving it unpublished.

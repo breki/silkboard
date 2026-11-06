@@ -72,8 +72,10 @@ Follow
 the [rollout procedure](docs/dogfood-rollout.md), and keep production claims
 separate from local snapshot/process tests. CI/release workflows are configured.
 The minimal application runs in its dedicated production VM with private
-HTTPS; automatic upgrades and live rollback/retry are verified. Updater reboot
-recovery remains pending. Workflow wrappers are instructions, not executable
+HTTPS; automatic upgrades, live rollback/retry and
+[guest/updater reboot recovery](docs/live-reboot-evidence.md) are verified.
+Live pending-check reconsideration remains separate work.
+Workflow wrappers are instructions, not executable
 implementations of missing helpers.
 [Tooling status](docs/ai-agents/tooling.md) distinguishes current checks
 from pending commands. Never report a skipped prerequisite as a pass.
