@@ -3,9 +3,13 @@
 The records below verify updater installation, polling and activation of
 `v0.2.2`. Use the live `/api/status` endpoint for the current running version.
 Live rollback/retry and newer-release acceptance are verified for
-[#17](https://github.com/breki/silkboard/issues/17); updater reboot recovery
-remains in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
-issue [#6](https://github.com/breki/silkboard/issues/6) is closed.
+[#17](https://github.com/breki/silkboard/issues/17). Ordinary guest reboot and
+credential-free interrupted-upgrade recovery passed on 2026-11-06 for
+[#18](https://github.com/breki/silkboard/issues/18); see the
+[live evidence](live-reboot-evidence.md) and
+[reusable procedure](live-reboot-drill.md). Original implementation issue
+[#6](https://github.com/breki/silkboard/issues/6) is closed. Live pending-check
+reconsideration remains separate evidence; milestone 1 is not yet complete.
 
 ## Release admission
 
@@ -203,8 +207,13 @@ remained blocked. Both guest endpoints and private HTTPS confirmed healthy
 identity. Original enabled/active polling was restored, and a separate
 scheduled 04:50 UTC poll passed with the old block and no pending transaction.
 See the [newer-release evidence](live-rollback-drill.md#observed-phase-2-2026-10-18).
-Issue #17's verification is complete; updater reboot recovery remains #18.
-Milestone 1 is not yet complete.
+Issue #17's verification is complete. The owner subsequently approved both
+[reboot/recovery phases](live-reboot-evidence.md) for #18; both passed on
+2026-11-06 with the installed updater unchanged. Production remained healthy
+at exact `v0.14.0`; interrupted `v0.14.1` remains blocked alongside `v0.2.1`,
+with no pending work and a successful scheduled poll after credential/timer
+restoration. Live pending-check reconsideration still leaves milestone 1
+incomplete.
 
 ## Reuse assessment
 

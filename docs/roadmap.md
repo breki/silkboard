@@ -2,7 +2,8 @@
 
 Status: Milestone 1 in progress; the minimal application is implemented.
 Release gates, production deployment, automatic upgrades and live rollback/retry
-are verified. Updater reboot recovery and the remaining evidence below are pending.
+and guest/updater reboot recovery are verified. Live pending-check
+reconsideration and the remaining evidence below are pending.
 Milestone 2 is agreed independently: agent progress dogfooding.
 Milestone 3 covers the owner-agreed basic UI improvements. Milestone 4 covers
 build efficiency; milestone 5 adds evolving task-progress graphs. Milestone 6
@@ -90,7 +91,8 @@ the dedicated guest, initial release, private access, and guest reboot recovery.
 
 Selected with the owner on 2026-10-16. Initial provisioning is verified;
 the updater is installed and polling; live upgrade and rollback/retry are verified.
-Updater reboot recovery remains pending.
+Ordinary guest reboot and credential-free interrupted-upgrade recovery passed
+on 2026-11-06; see the [live record](live-reboot-evidence.md).
 
 - Target malina with a dedicated QEMU/KVM guest managed by libvirt, running
   minimal Debian 13 ARM64. A live KVM API and VM-creation check succeeded.
@@ -134,10 +136,12 @@ Updater reboot recovery remains pending.
   polling activated v0.2.0, and the controlled drill verified rollback, retry
   and newer v0.2.2 activation while v0.2.1 remained blocked. See
   [updater evidence](automatic-upgrades.md#verification-status).
-- Live pending-check reconsideration and updater reboot recovery still need
-  demonstration. Reboot/interrupted recovery is tracked in
-  [#18](https://github.com/breki/silkboard/issues/18). The complete automatic
-  delivery pipeline is not verified yet; local tests do not fill these gaps.
+- Live pending-check reconsideration still needs demonstration. Both approved
+  reboot/interrupted-recovery phases for
+  [#18](https://github.com/breki/silkboard/issues/18) have
+  [live acceptance evidence](live-reboot-evidence.md). The complete automatic
+  delivery pipeline is not verified yet; local tests do not fill the remaining
+  live evidence gap.
 
 ## 2. Agent progress dogfooding
 

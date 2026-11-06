@@ -27,11 +27,12 @@ and [the roadmap](docs/roadmap.md) for agreed scope and remaining evidence.
 
 ## Status
 
-Production runs `v0.7.0` with private HTTPS, persistent private storage and
-owner phone access. [Task-plan rollout evidence](docs/task-plan-rollout.md)
+Production was verified healthy at `v0.14.0` on 2026-11-06 over private HTTPS.
+[Task-plan rollout evidence](docs/task-plan-rollout.md)
 records real native reporting, preserved data and confirmed phone acceptance.
-Automatic upgrades and live rollback/retry are verified; updater reboot
-recovery and live pending-check reconsideration remain separate work.
+Automatic upgrades, live rollback/retry and
+[guest/updater reboot recovery](docs/live-reboot-evidence.md) are verified.
+Live pending-check reconsideration remains separate work.
 [Production evidence](docs/production-vm.md) records the original installation.
 
 The progress API, owner feed/setup, token manager, standalone publisher and

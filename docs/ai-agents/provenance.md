@@ -1,5 +1,21 @@
 # Canon provenance
 
+## Guest reboot recovery preparation and live evidence, 2026-11-06
+
+The owner requested work on
+[#18](https://github.com/breki/silkboard/issues/18). Its explicit requirement
+to agree a concrete disruptive drill remains in force. The
+[procedure](../live-reboot-drill.md) records inspection, recovery checks and
+approval gates; the document does not itself grant disruptive authority.
+The owner subsequently approved Phase A after its private baseline, then
+separately approved the exact signed `v0.14.1` publication and Phase B drill.
+The [live record](../live-reboot-evidence.md) derives from retained guest state,
+boot journals, installed-source/hash comparisons, both trusted admin routes,
+strict SSH and certificate-validated health/status. It distinguishes real
+credential-free interrupted recovery and completed restoration from offline
+networking, candidate activation and the still-unverified live pending-check
+reconsideration. Issue #18 remains open pending review of this evidence.
+
 ## Publisher contention tests, 2026-11-06
 
 The owner requested implementation of
