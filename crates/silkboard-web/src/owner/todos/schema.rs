@@ -6,7 +6,12 @@ pub(crate) fn validate_optional(
 ) -> Result<bool, ProgressError> {
     let count:i64=conn.query_row("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('todo_schema','todos')",[],|r|r.get(0))?;
     if count == 0 {
-        return Ok(false);
+        let layout:i64=conn.query_row("SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN ('todo_layout_schema','todo_layout')",[],|r|r.get(0))?;
+        return if layout == 0 {
+            Ok(false)
+        } else {
+            Err(ProgressError::Invalid)
+        };
     }
     if count != 2 {
         return Err(ProgressError::Invalid);
@@ -40,12 +45,33 @@ pub(crate) fn validate_optional(
     if count > 1000 || depth > 5 || reachable != count {
         return Err(ProgressError::Invalid);
     }
+    let mut query = conn.prepare("SELECT id,text,completed FROM todos")?;
+    let rows = query.query_map([], |r| {
+        Ok((
+            r.get::<_, i64>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, i64>(2)?,
+        ))
+    })?;
+    for row in rows {
+        let (id, text, completed) = row?;
+        if id <= 0 || !super::valid_text(&text) || !matches!(completed, 0 | 1) {
+            return Err(ProgressError::Invalid);
+        }
+    }
+    let revision = version.expect("validated component").1;
+    super::layout::validate_optional(conn, revision)?;
     Ok(true)
 }
 pub(crate) fn initialize(conn: &Connection) -> Result<(), ProgressError> {
     if !validate_optional(conn)? {
         conn.execute_batch(include_str!("schema.sql"))?;
     }
+    let revision =
+        conn.query_row("SELECT revision FROM todo_schema", [], |r| {
+            r.get::<_, i64>(0)
+        })?;
+    super::layout::initialize(conn, revision)?;
     Ok(())
 }
 
@@ -92,5 +118,95 @@ mod tests {
                 .unwrap();
         }
         assert!(validate_optional(&conn).is_err());
+    }
+}
+
+#[cfg(test)]
+mod editor_migration_tests {
+    use super::*;
+    fn legacy() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("PRAGMA foreign_keys=ON;
+          CREATE TABLE todo_schema(singleton INTEGER PRIMARY KEY,version INTEGER NOT NULL,revision INTEGER NOT NULL);
+          INSERT INTO todo_schema VALUES(1,1,7);
+          CREATE TABLE todos(id INTEGER PRIMARY KEY AUTOINCREMENT,parent_id INTEGER REFERENCES todos(id) ON DELETE RESTRICT CHECK(parent_id<id),text TEXT NOT NULL,completed INTEGER NOT NULL DEFAULT 0);
+          INSERT INTO todos(id,parent_id,text,completed) VALUES(1,NULL,'First',0),(2,NULL,'Second',1),(3,1,'Child',1),(9,NULL,'Removed',0);
+          DELETE FROM todos WHERE id=9;").unwrap();
+        conn
+    }
+    #[test]
+    fn migration_keeps_identity_completion_revision_and_visible_order() {
+        let conn = legacy();
+        initialize(&conn).unwrap();
+        let component: (i64, i64) = conn
+            .query_row("SELECT version,revision FROM todo_schema", [], |r| {
+                Ok((r.get(0)?, r.get(1)?))
+            })
+            .unwrap();
+        assert_eq!(component, (1, 7));
+        let mut query=conn.prepare("SELECT t.id,l.parent_id,t.text,t.completed FROM todos t JOIN todo_layout l ON t.id=l.id ORDER BY l.position").unwrap();
+        let rows = query
+            .query_map([], |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, Option<i64>>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, bool>(3)?,
+                ))
+            })
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(
+            rows,
+            vec![
+                (1, None, "First".into(), false),
+                (3, Some(1), "Child".into(), true),
+                (2, None, "Second".into(), true)
+            ]
+        );
+        conn.execute("INSERT INTO todos(text) VALUES('New')", [])
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), 10);
+        conn.execute("UPDATE todo_schema SET revision=revision+1", [])
+            .unwrap();
+        initialize(&conn).unwrap();
+    }
+    #[test]
+    fn migration_of_an_empty_list_preserves_deleted_id_high_water() {
+        let conn = legacy();
+        conn.execute_batch(
+            "UPDATE todos SET parent_id=NULL;DELETE FROM todos;",
+        )
+        .unwrap();
+        initialize(&conn).unwrap();
+        conn.execute("INSERT INTO todos(text) VALUES('New')", [])
+            .unwrap();
+        assert_eq!(conn.last_insert_rowid(), 10);
+    }
+    #[test]
+    fn failed_migration_restores_the_old_schema_and_hierarchy() {
+        let conn = legacy();
+        conn.execute_batch("CREATE TABLE other(value INTEGER);CREATE INDEX todo_layout_parent ON other(value);").unwrap();
+        assert!(initialize(&conn).is_err());
+        assert_eq!(
+            conn.query_row("SELECT version FROM todo_schema", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            conn.query_row("SELECT parent_id FROM todos WHERE id=3", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            conn.query_row("SELECT count(*) FROM todos", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            3
+        );
+        assert!(conn.prepare("SELECT position FROM todos").is_err());
     }
 }

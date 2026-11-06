@@ -21,6 +21,15 @@ function location(path) {
   window.dispatchEvent(new Event("popstate"));
 }
 beforeEach(() => {
+  Range.prototype.getClientRects ??= () => [];
+  Range.prototype.getBoundingClientRect ??= () => ({
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: 0,
+    height: 0,
+  });
   vi.spyOn(document, "hidden", "get").mockReturnValue(false);
   vi.spyOn(window, "scrollTo").mockImplementation(() => {});
 });
@@ -96,10 +105,11 @@ test.each(["edit", "child", "view"])(
     vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
     render(Todos, { onexpire: vi.fn() });
     await screen.findByRole("checkbox", { name: todo.text });
-    if (mode === "edit")
-      expect(screen.getByLabelText("Edit todo text").value).toBe(todo.text);
+    expect(screen.getByRole("textbox", { name: "Todo document" })).toBeTruthy();
     if (mode === "child")
-      expect(screen.getByLabelText("New child of Stored todo").value).toBe("");
+      expect(
+        await screen.findByRole("checkbox", { name: "Empty todo" }),
+      ).toBeTruthy();
     expect(
       fetch.mock.calls.every(
         ([, opts]) => !opts.method || opts.method === "GET",

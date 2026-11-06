@@ -1,0 +1,436 @@
+.todos-editor {
+  --keyboard-inset: 0px;
+  min-width: 0;
+}
+.todo-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0 1.5rem;
+}
+.todo-heading h2 {
+  margin: 0 0 0.4rem;
+}
+.todo-heading p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.todo-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.todo-phone-done,
+.todo-phone-instruction {
+  display: none;
+}
+.todo-document {
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  background: var(--panel);
+  overflow: hidden;
+}
+.todo-document.todo-loading {
+  visibility: hidden;
+  min-height: 10rem;
+}
+.todo-document-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.todo-document-head > span:first-child {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.todo-document-head > span:first-child > span {
+  padding: 0 0.5rem;
+  color: var(--border);
+}
+.todo-save-state {
+  color: var(--healthy);
+}
+.todo-editor-host {
+  padding: 1rem 1.5rem 1.5rem;
+}
+.todo-editor-host .ProseMirror {
+  outline: 0;
+  min-height: 3rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.todo-task {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  min-height: 2.6rem;
+  margin-left: calc(var(--depth) * 1.65rem);
+  padding: 0.55rem 0.3rem;
+  border-radius: 0.3rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.todo-task.parent {
+  font-weight: 600;
+}
+.todo-task.active {
+  background: var(--control-hover);
+}
+.todo-task.active::before {
+  content: "";
+  position: absolute;
+  inset: 0.5rem auto 0.5rem -0.5rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+.todo-task-text {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+}
+.todo-task[data-empty="true"] .todo-task-text::before {
+  content: "Write a task…";
+  color: var(--muted);
+  opacity: 0.65;
+  pointer-events: none;
+  position: absolute;
+}
+.todo-check-target {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2rem;
+  min-height: 2rem;
+  margin: -0.25rem 0;
+  font-weight: 400;
+  cursor: pointer;
+}
+.todo-check-target input {
+  position: relative;
+  appearance: none;
+  width: 1.15rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  min-height: 1.15rem;
+  margin: 0;
+  padding: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 0.25rem;
+  background: var(--panel);
+  cursor: pointer;
+}
+.todo-check-target input:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+.todo-check-target input:checked::after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 10px;
+  left: 50%;
+  top: 43%;
+  border: solid var(--primary-text);
+  border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.todo-task[data-completed="true"] .todo-task-text {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+.todo-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.6rem 1rem;
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+.todo-tools button {
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  padding-inline: 0.5rem;
+  white-space: nowrap;
+}
+.todo-tools button > span:first-child {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+.todo-tool-divider {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--line);
+  margin-inline: 0.35rem;
+}
+.todo-shortcuts {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.todos-editor kbd,
+.todo-help kbd {
+  font: inherit;
+  font-size: 0.75em;
+  border: 1px solid var(--line);
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+}
+.todo-below,
+.todo-hint,
+.todo-validation {
+  font-size: 0.75rem;
+}
+.todo-validation {
+  color: var(--historical-text);
+}
+.todo-hint {
+  color: var(--muted);
+}
+.todo-more {
+  position: relative;
+}
+.todo-more summary {
+  list-style: none;
+  cursor: pointer;
+  min-width: 2rem;
+  min-height: 2rem;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.todo-more summary::-webkit-details-marker {
+  display: none;
+}
+.todo-more > div {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  min-width: 13rem;
+  padding: 0.4rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.3rem 1rem var(--shadow);
+  z-index: 3;
+}
+.todo-more > div button {
+  width: 100%;
+  justify-content: flex-start;
+}
+.todo-save-error {
+  padding: 1rem 1.5rem;
+  background: light-dark(#fff9eb, #332b1b);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.8rem;
+  color: var(--historical-text);
+}
+.todo-save-error p {
+  margin: 0.4rem 0 0.8rem;
+}
+.todo-recovery-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+.todo-version-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.todo-version-comparison label {
+  font-size: 0.75rem;
+}
+.todo-version-comparison textarea,
+.todo-copy-draft textarea {
+  display: block;
+  width: 100%;
+  min-height: 8rem;
+  max-height: 16rem;
+  resize: vertical;
+  font: inherit;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  color: var(--text);
+}
+.todo-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.todo-help {
+  width: min(31rem, calc(100% - 2rem));
+  max-height: calc(100% - 2rem);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  padding: 1.3rem 1.5rem;
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 1rem 4rem var(--shadow);
+}
+.todo-help::backdrop {
+  background: var(--backdrop);
+}
+.todo-help-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.todo-help-heading h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.todo-help-heading button {
+  font-size: 1.5rem;
+}
+.todo-help p {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.todo-help dl {
+  margin: 1rem 0;
+}
+.todo-help dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+.todo-help dd {
+  margin: 0;
+  white-space: nowrap;
+}
+@media (max-width: 650px) {
+  .todos-editor {
+    padding-bottom: calc(5rem + var(--keyboard-inset));
+  }
+  .todo-heading {
+    margin: 0.6rem 0 1.1rem;
+    align-items: flex-start;
+  }
+  .todo-heading h2 {
+    font-size: 1.6rem;
+  }
+  .todo-heading p {
+    font-size: 0.75rem;
+  }
+  .todo-desktop-help {
+    display: none !important;
+  }
+  .todo-phone-done {
+    display: inline-flex;
+  }
+  .todo-phone-instruction {
+    display: block;
+    font-size: 0.7rem;
+    margin: 0.6rem 0 1rem;
+  }
+  .todo-more summary {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .todo-document-head {
+    padding: 0.9rem;
+    font-size: 0.65rem;
+    gap: 0.4rem;
+  }
+  .todo-document-head > span:first-child > span {
+    padding: 0 0.3rem;
+  }
+  .todo-editor-host {
+    padding: 0.7rem 0.65rem 1rem;
+  }
+  .todo-task {
+    min-height: 3rem;
+    margin-left: calc(var(--depth) * 1rem);
+    padding: 0.6rem 0.15rem;
+    gap: 0.3rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .todo-check-target {
+    flex-basis: 44px;
+    min-height: 44px;
+    margin: -0.5rem 0;
+  }
+  .todo-check-target input {
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    min-height: 20px;
+  }
+  .todo-task.active::before {
+    left: -0.25rem;
+  }
+  .todo-tools {
+    position: fixed;
+    gap: 0;
+    bottom: calc(1rem + var(--keyboard-inset));
+    left: 1rem;
+    right: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    box-shadow: 0 0.3rem 1.5rem var(--shadow);
+    justify-content: space-around;
+    padding: 0.25rem;
+    z-index: 2;
+  }
+  .todo-tools button {
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.6rem;
+    min-width: 44px;
+    min-height: 48px;
+    padding: 0.25rem;
+  }
+  .todo-tools button > span:first-child {
+    font-size: 1.2rem;
+  }
+  .todo-tools .todo-redo-tool:disabled {
+    display: none;
+  }
+  .todo-shortcuts {
+    display: none;
+  }
+  .todo-tool-divider {
+    height: 1.9rem;
+    margin: 0 0.1rem;
+  }
+  .todo-save-error {
+    padding: 1rem;
+  }
+  .todo-version-comparison {
+    grid-template-columns: 1fr;
+  }
+  .todo-help {
+    padding: 1rem;
+  }
+  .todo-help-heading button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

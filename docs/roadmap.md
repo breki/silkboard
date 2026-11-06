@@ -260,7 +260,9 @@ owner-read boundaries remain in force.
 The owner requested [#116](https://github.com/breki/silkboard/issues/116),
 tracked in [milestone 7](https://github.com/breki/silkboard/milestone/7): a private
 owner-editable checklist with indented children. Checkboxes are independent;
-deleting a parent promotes its children after explicit confirmation. The
+deleting a parent promotes its children. The owner-approved #124 editor uses
+document-style splitting/joining and undo instead of routine delete confirmation.
+The
 [Todos guide](todos.md) records the implemented limits, ordering, concurrency
 and persistence behavior. This grants agents no todo read/write or execution
 authority. GitHub synchronization, workflow linkage and further scope require

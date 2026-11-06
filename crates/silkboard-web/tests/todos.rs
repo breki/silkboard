@@ -34,7 +34,7 @@ async fn call(
         .unwrap();
     let status = response.status();
     let headers = response.headers().clone();
-    let bytes = to_bytes(response.into_body(), 16384).await.unwrap();
+    let bytes = to_bytes(response.into_body(), 3_000_000).await.unwrap();
     (
         status,
         headers,
@@ -503,12 +503,8 @@ fn private_backups_remain_valid_during_concurrent_checklist_edits() {
             .unwrap();
         let mut count = 0;
         while active.load(Ordering::Acquire) {
-            conn.execute(
-                "INSERT INTO todos(text) VALUES('Concurrent task')",
-                [],
-            )
-            .unwrap();
-            conn.execute("DELETE FROM todos", []).unwrap();
+            conn.execute_batch("BEGIN IMMEDIATE;INSERT INTO todos(text) VALUES('Concurrent task');UPDATE todo_schema SET revision=revision+1;COMMIT;").unwrap();
+            conn.execute_batch("BEGIN IMMEDIATE;DELETE FROM todos;UPDATE todo_schema SET revision=revision+1;COMMIT;").unwrap();
             count += 1;
         }
         count
@@ -531,4 +527,441 @@ fn private_backups_remain_valid_during_concurrent_checklist_edits() {
     running.store(false, Ordering::Release);
     assert!(writer.join().unwrap() > 0);
     assert!(results.into_iter().all(|result| result.is_ok()));
+}
+
+#[tokio::test]
+async fn document_save_reorders_reparents_and_commits_one_revision() {
+    let (_, app, cookie, csrf) = owner().await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    for (revision, parent, text) in [
+        ("0", None, "Parent"),
+        ("1", Some("1"), "Child"),
+        ("2", None, "Other"),
+    ] {
+        assert_eq!(
+            call(
+                app.clone(),
+                "POST",
+                "/api/owner/todos",
+                &headers,
+                json!({"revision":revision,"parent_id":parent,"text":text})
+            )
+            .await
+            .0,
+            StatusCode::CREATED
+        );
+    }
+    let body = json!({"revision":"3","items":[
+        {"key":"other","id":"3","parent_key":null,"text":" Other ","completed":false},
+        {"key":"new","id":null,"parent_key":"other","text":"New parent","completed":true},
+        {"key":"parent","id":"1","parent_key":"new","text":"Parent","completed":false},
+        {"key":"child","id":"2","parent_key":"parent","text":"Child","completed":true}
+    ]});
+    let result = call(
+        app.clone(),
+        "PUT",
+        "/api/owner/todos/document",
+        &headers,
+        body.clone(),
+    )
+    .await;
+    assert_eq!(result.0, StatusCode::OK);
+    assert_eq!(result.2["revision"], "4");
+    assert_eq!(
+        result.2["keys"],
+        json!({"other":"3","new":"4","parent":"1","child":"2"})
+    );
+    assert_eq!(
+        result.2["items"],
+        json!([
+            {"id":"3","parent_id":null,"text":" Other ","completed":false},
+            {"id":"4","parent_id":"3","text":"New parent","completed":true},
+            {"id":"1","parent_id":"4","text":"Parent","completed":false},
+            {"id":"2","parent_id":"1","text":"Child","completed":true}
+        ])
+    );
+    assert_eq!(
+        call(
+            app.clone(),
+            "PUT",
+            "/api/owner/todos/document",
+            &headers,
+            body
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    let loaded =
+        call(app, "GET", "/api/owner/todos", &headers, Value::Null).await;
+    assert_eq!(loaded.2["revision"], "4");
+    assert_eq!(loaded.2["items"], result.2["items"]);
+}
+
+#[tokio::test]
+async fn document_save_rejects_invalid_trees_and_requires_owner_integrity() {
+    let (store, app, cookie, csrf) = owner().await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    let row = json!({"key":"a","id":null,"parent_key":null,"text":"Task","completed":false});
+    for items in [
+        json!([row.clone(), row.clone()]),
+        json!([{ "key":"a","id":null,"parent_key":"a","text":"Cycle","completed":false}]),
+        json!([{ "key":"a","id":null,"parent_key":"missing","text":"Orphan","completed":false}]),
+        json!([{ "key":"a","id":"01","parent_key":null,"text":"Invalid id","completed":false}]),
+        json!([{ "key":"a","id":null,"parent_key":null,"text":" ","completed":false}]),
+        json!([{ "key":"a","id":null,"parent_key":null,"text":"x\ny","completed":false}]),
+        json!([{ "key":"a","id":null,"parent_key":null,"text":"Task","completed":false,"extra":true}]),
+        json!([
+            {"key":"a","id":null,"parent_key":null,"text":"A","completed":false},
+            {"key":"b","id":null,"parent_key":null,"text":"B","completed":false},
+            {"key":"c","id":null,"parent_key":"a","text":"Closed subtree","completed":false}
+        ]),
+    ] {
+        assert_eq!(
+            call(
+                app.clone(),
+                "PUT",
+                "/api/owner/todos/document",
+                &headers,
+                json!({"revision":"0","items":items})
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            call(
+                app.clone(),
+                "GET",
+                "/api/owner/todos",
+                &headers,
+                Value::Null
+            )
+            .await
+            .2,
+            json!({"revision":"0","items":[]})
+        );
+    }
+    let valid = json!({"revision":"0","items":[row]});
+    for bad in [
+        vec![("cookie", cookie.as_str()), ("origin", ORIGIN)],
+        vec![
+            ("cookie", cookie.as_str()),
+            ("origin", "https://evil.example"),
+            ("x-silkboard-csrf", csrf.as_str()),
+        ],
+    ] {
+        assert_eq!(
+            call(
+                app.clone(),
+                "PUT",
+                "/api/owner/todos/document",
+                &bad,
+                valid.clone()
+            )
+            .await
+            .0,
+            StatusCode::FORBIDDEN
+        );
+    }
+    let token = store.issue_token("alpha", "test").unwrap();
+    assert_eq!(
+        call(
+            app,
+            "PUT",
+            "/api/owner/todos/document",
+            &[("authorization", &format!("Bearer {token}"))],
+            valid
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+}
+
+#[tokio::test]
+async fn document_limits_and_missing_ids_never_change_the_saved_revision() {
+    let (_, app, cookie, csrf) = owner().await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    let entry = |key: String, parent: Option<String>| json!({"key":key,"id":null,"parent_key":parent,"text":"Task","completed":false});
+    let mut invalid = vec![
+        (
+            json!({"revision":"0","items":[{"key":"missing","id":"1","parent_key":null,"text":"Task","completed":false}]}),
+            StatusCode::NOT_FOUND,
+        ),
+        (
+            json!({"revision":"0","items":[entry(String::new(),None)]}),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            json!({"revision":"0","items":[entry("x".repeat(65),None)]}),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            json!({"revision":"0","items":[entry("unicode-é".into(),None)]}),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            json!({"revision":"0","items":(0..1001).map(|n|entry(format!("n{n}"),None)).collect::<Vec<_>>()}),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            json!({"revision":"0","items":(0..6).map(|n|entry(format!("n{n}"),if n==0 {None}else{Some(format!("n{}",n-1))})).collect::<Vec<_>>()}),
+            StatusCode::BAD_REQUEST,
+        ),
+    ];
+    for text in ["é".repeat(501), "x\u{2028}y".into(), "x\u{feff}y".into()] {
+        invalid.push((json!({"revision":"0","items":[{"key":"a","id":null,"parent_key":null,"text":text,"completed":false}]}),StatusCode::BAD_REQUEST));
+    }
+    for (body, status) in invalid {
+        assert_eq!(
+            call(
+                app.clone(),
+                "PUT",
+                "/api/owner/todos/document",
+                &headers,
+                body
+            )
+            .await
+            .0,
+            status
+        );
+    }
+    assert_eq!(
+        call(app, "GET", "/api/owner/todos", &headers, Value::Null)
+            .await
+            .2,
+        json!({"revision":"0","items":[]})
+    );
+}
+
+fn legacy_text_edit(path: &Path, id: i64, text: &str) {
+    let mut conn = rusqlite::Connection::open(path).unwrap();
+    assert_eq!(
+        conn.query_row("SELECT version FROM todo_schema", [], |r| r
+            .get::<_, i64>(0))
+            .unwrap(),
+        1,
+        "an older app must still admit the checklist after an upgrade"
+    );
+    assert_eq!(
+        conn.query_row(
+            "SELECT count(*) FROM todos WHERE parent_id>=id",
+            [],
+            |r| r.get::<_, i64>(0)
+        )
+        .unwrap(),
+        0
+    );
+    let tx = conn.transaction().unwrap();
+    tx.execute(
+        "UPDATE todos SET text=?1 WHERE id=?2",
+        rusqlite::params![text, id],
+    )
+    .unwrap();
+    tx.execute("UPDATE todo_schema SET revision=revision+1", [])
+        .unwrap();
+    tx.commit().unwrap();
+}
+
+#[tokio::test]
+async fn document_reordering_survives_restart_backup_and_restore() {
+    use silkboard_web::progress::database_command;
+    let dir = Directory::new();
+    let live = dir.0.join("document.sqlite");
+    let backup = dir.0.join("backup.sqlite");
+    let restored = dir.0.join("restored.sqlite");
+    let (store, app, cookie, csrf) =
+        owner_for(ProgressStore::open(&live).unwrap()).await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    for (revision, text) in [("0", "First"), ("1", "Second")] {
+        assert_eq!(
+            call(
+                app.clone(),
+                "POST",
+                "/api/owner/todos",
+                &headers,
+                json!({"revision":revision,"text":text})
+            )
+            .await
+            .0,
+            StatusCode::CREATED
+        );
+    }
+    let mut expected =call(app.clone(),"PUT","/api/owner/todos/document",&headers,json!({"revision":"2","items":[
+        {"key":"second","id":"2","parent_key":null,"text":"Second","completed":false},
+        {"key":"first","id":"1","parent_key":"second","text":"First","completed":true}
+    ]})).await;
+    assert_eq!(expected.0, StatusCode::OK);
+    legacy_text_edit(&live, 1, "Legacy edit");
+    expected = call(
+        app.clone(),
+        "GET",
+        "/api/owner/todos",
+        &headers,
+        Value::Null,
+    )
+    .await;
+    assert_eq!(expected.2["items"][0]["id"], "2");
+    assert_eq!(expected.2["items"][1]["parent_id"], "2");
+    assert_eq!(expected.2["items"][1]["text"], "Legacy edit");
+    drop(app);
+    drop(store);
+    let restarted = ProgressStore::open(&live).unwrap();
+    let app =
+        create_owner_router(Path::new("missing"), restarted.clone(), ORIGIN)
+            .unwrap();
+    assert_eq!(
+        call(app, "GET", "/api/owner/todos", &headers, Value::Null)
+            .await
+            .2["items"],
+        expected.2["items"]
+    );
+    drop(restarted);
+    database_command(
+        &live,
+        &["backup".into(), backup.to_str().unwrap().into()],
+    )
+    .unwrap();
+    database_command(
+        &restored,
+        &["restore".into(), backup.to_str().unwrap().into()],
+    )
+    .unwrap();
+    let (_, app, cookie, csrf) =
+        owner_for(ProgressStore::open(&restored).unwrap()).await;
+    assert_eq!(
+        call(
+            app,
+            "GET",
+            "/api/owner/todos",
+            &[
+                ("cookie", &cookie),
+                ("origin", ORIGIN),
+                ("x-silkboard-csrf", &csrf)
+            ],
+            Value::Null
+        )
+        .await
+        .2["items"],
+        expected.2["items"]
+    );
+}
+
+#[tokio::test]
+async fn document_allocation_failure_rolls_back_partial_reordering_and_deletion()
+ {
+    let dir = Directory::new();
+    let live = dir.0.join("failure.sqlite");
+    let (_, app, cookie, csrf) =
+        owner_for(ProgressStore::open(&live).unwrap()).await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    for (revision, parent, text) in
+        [("0", None, "Parent"), ("1", Some("1"), "Child")]
+    {
+        call(
+            app.clone(),
+            "POST",
+            "/api/owner/todos",
+            &headers,
+            json!({"revision":revision,"parent_id":parent,"text":text}),
+        )
+        .await;
+    }
+    let before = call(
+        app.clone(),
+        "GET",
+        "/api/owner/todos",
+        &headers,
+        Value::Null,
+    )
+    .await
+    .2;
+    let conn = rusqlite::Connection::open(&live).unwrap();
+    conn.execute(
+        "UPDATE sqlite_sequence SET seq=9223372036854775807 WHERE name='todos'",
+        [],
+    )
+    .unwrap();
+    let result=call(app.clone(),"PUT","/api/owner/todos/document",&headers,json!({"revision":"2","items":[
+        {"key":"child","id":"2","parent_key":null,"text":"Changed","completed":true},
+        {"key":"new","id":null,"parent_key":null,"text":"Cannot allocate","completed":false}
+    ]})).await;
+    assert_eq!(result.0, StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(
+        call(app, "GET", "/api/owner/todos", &headers, Value::Null)
+            .await
+            .2,
+        before
+    );
+}
+
+#[tokio::test]
+async fn complete_bounded_document_can_exceed_the_small_owner_form_limit() {
+    let (_, app, cookie, csrf) = owner().await;
+    let headers = [
+        ("cookie", cookie.as_str()),
+        ("origin", ORIGIN),
+        ("x-silkboard-csrf", csrf.as_str()),
+    ];
+    let text = "\"".repeat(1000);
+    let items:Vec<_>=(0..1000).map(|n|json!({"key":format!("task-{n}"),"id":null,"parent_key":null,"text":text,"completed":false})).collect();
+    let body = json!({"revision":"0","items":items});
+    assert!(body.to_string().len() > 2_000_000);
+    let saved = call(
+        app.clone(),
+        "PUT",
+        "/api/owner/todos/document",
+        &headers,
+        body,
+    )
+    .await;
+    assert_eq!(saved.0, StatusCode::OK);
+    assert_eq!(saved.2["items"].as_array().unwrap().len(), 1000);
+    assert_eq!(saved.2["items"][999]["text"], text);
+    let request = Request::builder()
+        .method("PUT")
+        .uri("/api/owner/todos/document")
+        .header("cookie", &cookie)
+        .header("origin", ORIGIN)
+        .header("x-silkboard-csrf", &csrf)
+        .header("content-type", "application/json")
+        .body(Body::from(vec![b' '; 3_000_001]))
+        .unwrap();
+    assert_eq!(
+        app.clone().oneshot(request).await.unwrap().status(),
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        call(
+            app,
+            "POST",
+            "/api/auth/login",
+            &[("origin", ORIGIN)],
+            json!({"password":"x".repeat(5000)})
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
 }

@@ -1,5 +1,17 @@
 # Canon provenance
 
+## Approved Todos document editor, 2026-11-06
+
+The owner requested [#124](https://github.com/breki/silkboard/issues/124), selected
+document-style splitting/joining with undo, requested GitHub-viewable mockups,
+and approved the [proposal](../mockups/todo-editor/README.md). The owner then
+asked to continue implementation. The [Todos guide](../todos.md) records the
+editor, subtree moves, independent checks, volatile draft recovery and additive
+rollback-compatible order metadata. Routine hierarchy edges are implementation
+details within that approval. This updates #116's forms, creation ordering and
+delete-confirmation behavior. Local verification does not establish production
+rollout or owner device acceptance; merge and release remain separate.
+
 ## Guest reboot recovery preparation and live evidence, 2026-11-06
 
 The owner requested work on

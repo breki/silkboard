@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { changeTodo, checklist, loadTodos, taskText } from "./todos-api";
+import { saveTodoDocument, checklist, loadTodos, taskText } from "./todos-api";
 import { csrf, response } from "../test/support";
 const row = { id: "1", parent_id: null, text: "Task", completed: false };
 afterEach(() => vi.unstubAllGlobals());
@@ -37,44 +37,53 @@ test("validates hierarchy, safe integers and Unicode byte bounds", () => {
   for (const text of ["é".repeat(501), " ", "x\ny", "x\u0085y"])
     expect(taskText(text)).toBe(false);
 });
-test("uses fresh owner CSRF and exact revision for each mutation", async () => {
+test("uses fresh owner CSRF and exact revision for each document mutation", async () => {
+  let revision = 0;
   const fetch = vi.fn(async (path) =>
     response(
       path.endsWith("/session")
         ? { authenticated: true, csrf_token: csrf }
-        : { revision: "1", items: [row] },
+        : { revision: String(++revision), items: [row], keys: { task: "1" } },
     ),
   );
   vi.stubGlobal("fetch", fetch);
   const signal = new AbortController().signal;
   await loadTodos(signal);
-  for (const change of [
-    { kind: "add", text: "Task", parent_id: null },
-    { kind: "edit", id: "1", text: "Changed", completed: true },
-    { kind: "delete", id: "1" },
-  ])
-    await changeTodo("0", change, signal);
-  const calls = fetch.mock.calls.filter(([, opts]) => opts.method);
+  revision = 0;
+  for (const revision of ["0", "1", "2"])
+    await saveTodoDocument(
+      revision,
+      [
+        {
+          key: "task",
+          id: "1",
+          parent_key: null,
+          text: "Task",
+          completed: false,
+        },
+      ],
+      signal,
+    );
+  const calls = fetch.mock.calls.filter(([, options]) => options.method);
   expect(
-    calls.map(([path, opts]) => [path, opts.method, JSON.parse(opts.body)]),
+    calls.map(([path, options]) => [
+      path,
+      options.method,
+      JSON.parse(options.body).revision,
+    ]),
   ).toEqual([
-    [
-      "/api/owner/todos",
-      "POST",
-      { revision: "0", parent_id: null, text: "Task" },
-    ],
-    [
-      "/api/owner/todos/1",
-      "PATCH",
-      { revision: "0", text: "Changed", completed: true },
-    ],
-    ["/api/owner/todos/1", "DELETE", { revision: "0" }],
+    ["/api/owner/todos/document", "PUT", "0"],
+    ["/api/owner/todos/document", "PUT", "1"],
+    ["/api/owner/todos/document", "PUT", "2"],
   ]);
   expect(
+    fetch.mock.calls.filter(([path]) => path.endsWith("/session")),
+  ).toHaveLength(3);
+  expect(
     calls.every(
-      ([, opts]) =>
-        opts.headers["X-Silkboard-CSRF"] === csrf &&
-        opts.credentials === "same-origin",
+      ([, options]) =>
+        options.headers["X-Silkboard-CSRF"] === csrf &&
+        options.credentials === "same-origin",
     ),
   ).toBe(true);
 });

@@ -455,3 +455,85 @@ test("ordinary owner entry starts on Agents without replacing explicit views", a
       .getAttribute("href"),
   ).toBe("/events");
 });
+test("Todos sign-out guards an unsaved draft and forced expiry retains it privately", async () => {
+  const { clearRetainedDraft } = await import("./todo-document-session");
+  clearRetainedDraft();
+  Range.prototype.getClientRects = () => [];
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+  let expired = false;
+  const fetch = vi.fn(
+    routes({
+      "/api/owner/session": () =>
+        response(
+          expired ? {} : { authenticated: true, csrf_token: csrf },
+          expired ? 401 : 200,
+        ),
+      "/api/owner/todos": response({
+        revision: "0",
+        items: [
+          { id: "1", parent_id: null, text: "Private task", completed: false },
+        ],
+      }),
+      "/api/owner/todos/document": () => response({}, expired ? 401 : 503),
+      "/api/owner/logout": response(null, 204),
+    }),
+  );
+  vi.stubGlobal("fetch", fetch);
+  window.history.replaceState(null, "", "/todos");
+  window.dispatchEvent(new Event("popstate"));
+  render(OwnerFeed, { todosPage: true });
+  await screen.findByRole("checkbox", { name: "Private task" });
+  await fireEvent.click(screen.getByRole("checkbox", { name: "Private task" }));
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+  await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  expect(confirm).toHaveBeenCalledOnce();
+  expect(screen.getByRole("checkbox", { name: "Private task" })).toBeTruthy();
+  expired = true;
+  await screen.findByLabelText("Owner password");
+  await screen.findByText(
+    "Your unsaved Todos draft is kept in this tab. Sign in to recover it.",
+  );
+  expect(screen.queryByText("Private task")).toBeNull();
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  expect(event.defaultPrevented).toBe(true);
+  cleanup();
+  clearRetainedDraft();
+});
+test("explicit Todos sign-out discards only after owner confirmation", async () => {
+  const { clearRetainedDraft } = await import("./todo-document-session");
+  clearRetainedDraft();
+  Range.prototype.getClientRects = () => [];
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      routes({
+        "/api/owner/session": response({
+          authenticated: true,
+          csrf_token: csrf,
+        }),
+        "/api/owner/todos": response({
+          revision: "0",
+          items: [{ id: "1", parent_id: null, text: "Task", completed: false }],
+        }),
+        "/api/owner/logout": response(null, 204),
+      }),
+    ),
+  );
+  render(OwnerFeed, { todosPage: true });
+  await screen.findByRole("checkbox", { name: "Task" });
+  await fireEvent.click(screen.getByRole("checkbox", { name: "Task" }));
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Navigation menu" }),
+  );
+  await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  await screen.findByLabelText("Owner password");
+  expect(screen.queryByText(/draft is kept/)).toBeNull();
+  cleanup();
+  clearRetainedDraft();
+});

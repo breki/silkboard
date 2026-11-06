@@ -227,30 +227,49 @@ test("workflow filters, selected steps, history and comparison survive reload an
   await page.reload();
   await expect(dialog).not.toBeVisible();
 });
-test("todo and credential links restore read-only views without saving drafts or issuing tokens", async ({
+test("todo and credential links restore selected views without saving drafts or issuing tokens", async ({
   page,
   context,
 }) => {
   await context.addCookies(cookies);
-  await page.goto("/todos");
+  const csrf = (await (await context.request.get("/api/owner/session")).json())
+    .csrf_token;
+  const current = await (await context.request.get("/api/owner/todos")).json();
+  const created = await context.request.post("/api/owner/todos", {
+    headers: { origin: baseURL, "x-silkboard-csrf": csrf },
+    data: { revision: current.revision, text: "Deep-link fixture todo" },
+  });
+  expect(created.status()).toBe(201);
+  const todo = (await created.json()).items.find(
+    (item) => item.text === "Deep-link fixture todo",
+  );
+  await page.goto("/todos?todo=" + todo.id + "&mode=edit");
+  const editor = page.getByRole("textbox", { name: "Todo document" });
+  await expect(editor).toBeFocused();
+  await page.clock.install();
   await page
-    .getByLabel("New todo", { exact: true })
-    .fill("Deep-link fixture todo");
-  await page.getByRole("button", { name: "Add todo", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Edit Deep-link fixture todo", exact: true })
-    .click();
-  await page.getByLabel("Edit todo text").fill("Unsaved private draft");
-  const editUrl = page.url();
-  expect(editUrl).not.toContain("Unsaved");
+    .locator(".todo-task-text")
+    .filter({ hasText: "Deep-link fixture todo" })
+    .evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const selection = getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event("selectionchange"));
+    });
+  await page.keyboard.type("Unsaved private draft");
+  expect(page.url()).not.toContain("Unsaved");
   let mutations = 0;
   page.on("request", (request) => {
     if (request.method() !== "GET") mutations++;
   });
+  page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
-  await expect(page.getByLabel("Edit todo text")).toHaveValue(
-    "Deep-link fixture todo",
-  );
+  await expect(
+    page.getByRole("checkbox", { name: "Deep-link fixture todo", exact: true }),
+  ).toBeVisible();
+  await expect(editor).toBeFocused();
   expect(mutations).toBe(0);
   await page.goto(
     "/status?panel=credentials&credential_project=silkboard&theme=dark",

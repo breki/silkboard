@@ -22,10 +22,11 @@ this appearance change does not rename routes, commands or existing UI labels.
 
 ## Controls and action hierarchy
 
-Commit actions such as Sign in, Add todo and Save text use the green primary
+Commit actions such as Sign in use the green primary
 style. Ordinary actions have a neutral face; maintenance and row actions use
-quieter text treatments. Destructive actions retain explicit labels and
-confirmation, with a distinct alert color. Status badges remain information,
+quieter text treatments. Destructive maintenance actions retain explicit labels and
+confirmation, with a distinct alert color. Todo text editing uses undo/redo
+for routine removal; discarding an unsaved draft still asks for confirmation. Status badges remain information,
 while destination links retain native navigation behavior.
 
 Desktop buttons use compact 32 px base faces and 14 px labels. Narrow screens
@@ -42,8 +43,8 @@ as the current page. Setup retains its navigation-free header. Light, Dark
 and System preferences continue to apply to controls and focus states.
 
 This control styling implements [#122](https://github.com/breki/silkboard/issues/122).
-Four-page navigation comes from #121. The keyboard editor (#124) remains
-separate; existing todo editing and deletion behavior is retained.
+Four-page navigation comes from #121. The owner-approved keyboard editor (#124) uses one continuous document with
+shared tools and independent checkboxes; see the [Todos guide](todos.md).
 
 The owner approved the revised ten-project/twenty-agent proposal in
 [PR #142](https://github.com/breki/silkboard/pull/142) on 2026-11-03. Its quieter

@@ -5,10 +5,6 @@ export interface Todo {
   text: string;
   completed: boolean;
 }
-// eslint-disable-next-line no-unused-vars -- Type-only parameter describes the item action.
-export type TodoAction = (item: Todo) => void;
-// eslint-disable-next-line no-unused-vars -- Type-only parameters describe checkbox focus restoration.
-export type TodoCheck = (item: Todo, checkbox: HTMLInputElement) => void;
 export interface Checklist {
   revision: string;
   items: Todo[];
@@ -37,12 +33,13 @@ export function checklist(value: unknown): Checklist {
   )
     throw new ApiError(0);
   const depths = new Map<string, number>();
-  let previous = BigInt(0);
+  const seen = new Set<string>();
+  let ancestors: string[] = [];
   for (const item of value.items) {
     if (
       !object(item) ||
       !positive(item.id) ||
-      BigInt(item.id) <= previous ||
+      seen.has(item.id) ||
       !taskText(item.text) ||
       typeof item.completed !== "boolean" ||
       !(
@@ -54,44 +51,72 @@ export function checklist(value: unknown): Checklist {
     const depth =
       item.parent_id === null ? 1 : depths.get(item.parent_id as string)! + 1;
     if (depth > 5) throw new ApiError(0);
+    if (item.parent_id === null) ancestors = [];
+    else {
+      const parent = ancestors.indexOf(item.parent_id as string);
+      if (parent < 0) throw new ApiError(0);
+      ancestors = ancestors.slice(0, parent + 1);
+    }
+    ancestors.push(item.id);
     depths.set(item.id, depth);
-    previous = BigInt(item.id);
+    seen.add(item.id);
   }
   return value as unknown as Checklist;
 }
 export async function loadTodos(signal: AbortSignal): Promise<Checklist> {
   return checklist(await request("/api/owner/todos", {}, signal));
 }
-export type TodoChange =
-  | { kind: "add"; text: string; parent_id: string | null }
-  | { kind: "edit"; id: string; text: string; completed: boolean }
-  | { kind: "delete"; id: string };
-export async function changeTodo(
+export interface DocumentEntry {
+  key: string;
+  id: string | null;
+  parent_key: string | null;
+  text: string;
+  completed: boolean;
+}
+export interface SavedDocument extends Checklist {
+  keys: Record<string, string>;
+}
+export async function saveTodoDocument(
   revision: string,
-  change: TodoChange,
+  items: DocumentEntry[],
   signal: AbortSignal,
-): Promise<Checklist> {
+): Promise<SavedDocument> {
   const { csrf_token } = await ownerSession(signal);
-  const { kind, ...fields } = change;
-  const id = "id" in fields ? fields.id : undefined;
-  const body =
-    kind === "add"
-      ? { revision, text: change.text, parent_id: change.parent_id }
-      : kind === "edit"
-        ? { revision, text: change.text, completed: change.completed }
-        : { revision };
-  return checklist(
-    await request(
-      `/api/owner/todos${id === undefined ? "" : `/${encodeURIComponent(id)}`}`,
-      {
-        method: kind === "add" ? "POST" : kind === "edit" ? "PATCH" : "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Silkboard-CSRF": csrf_token,
-        },
-        body: JSON.stringify(body),
+  const value = await request(
+    "/api/owner/todos/document",
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Silkboard-CSRF": csrf_token,
       },
-      signal,
-    ),
+      body: JSON.stringify({ revision, items }),
+    },
+    signal,
   );
+  const data = checklist(value);
+  if (
+    !object(value) ||
+    !object(value.keys) ||
+    Object.keys(value.keys).length !== items.length ||
+    data.items.length !== items.length ||
+    BigInt(data.revision) !== BigInt(revision) + BigInt(1)
+  )
+    throw new ApiError(0);
+  const keys = value.keys;
+  for (const [index, item] of items.entries()) {
+    const row = data.items[index];
+    if (
+      !Object.hasOwn(keys, item.key) ||
+      !positive(keys[item.key]) ||
+      row.id !== keys[item.key] ||
+      (item.id !== null && row.id !== item.id) ||
+      row.text !== item.text ||
+      row.completed !== item.completed ||
+      row.parent_id !==
+        (item.parent_key === null ? null : keys[item.parent_key])
+    )
+      throw new ApiError(0);
+  }
+  return { ...data, keys: keys as Record<string, string> };
 }
