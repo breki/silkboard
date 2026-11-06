@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.14.1 - 2026-11-06
+
 - Distinguish publisher lock failures from contention and make concurrency tests
   tolerate slow synchronized storage without production retries.
 
