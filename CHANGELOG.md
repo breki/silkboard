@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.15.0 - 2026-11-06
+
 - Replace per-item Todos forms with the approved keyboard document editor,
   subtree nesting, independent checks, undo/redo and shared phone tools.
 - Save ordered task documents atomically, retain drafts during failures and
