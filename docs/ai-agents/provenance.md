@@ -1,5 +1,14 @@
 # Canon provenance
 
+## Publisher contention tests, 2026-11-06
+
+The owner requested implementation of
+[#146](https://github.com/breki/silkboard/issues/146). The
+[publisher guide](../publishing-cli.md#concurrency-test-evidence-146) records
+local slow-flush reproduction, synchronized test contention and native lock
+error classification. Hosted runner latency remains unmeasured; this work
+does not add production retries or establish deployment evidence.
+
 ## Deep links across owner views, 2026-11-04
 
 The owner requested work on [#140](https://github.com/breki/silkboard/issues/140).

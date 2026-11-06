@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Distinguish publisher lock failures from contention and make concurrency tests
+  tolerate slow synchronized storage without production retries.
+
 ## 0.14.0 - 2026-11-05
 
 - Make applied filters, paging, detail selections, workflow views, todo targets,
