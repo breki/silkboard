@@ -5,7 +5,9 @@ Release gates, production deployment, automatic upgrades and live rollback/retry
 are verified. Updater reboot recovery and the remaining evidence below are pending.
 Milestone 2 is agreed independently: agent progress dogfooding.
 Milestone 3 covers the owner-agreed basic UI improvements. Milestone 4 covers
-build efficiency; milestone 5 adds evolving task-progress graphs.
+build efficiency; milestone 5 adds evolving task-progress graphs. Milestone 6
+tracks individually agreed general Silkboard features. Milestone 7 adds
+owner-managed hierarchical todo lists.
 
 This roadmap replaces the original milestone list in the architecture proposal.
 Milestones follow the owner's priorities; scope after milestone 7 is not set.
@@ -239,6 +241,16 @@ checks passed; #81's reviewed evidence records the live acceptance too.
   validation/review and a separately authorized release with real phone
   dogfooding. Schema changes need compatible recovery before rollout.
 
+## 6. General Silkboard features
+
+Agreed with the owner on 2026-10-25. The
+[GitHub milestone](https://github.com/breki/silkboard/milestone/6) tracks
+individually agreed general features, starting with
+[#107](https://github.com/breki/silkboard/issues/107): detailed descriptions
+alongside concise event and workflow-step summaries. Further scope and
+priorities are agreed issue by issue. Existing publish-only agent and private
+owner-read boundaries remain in force.
+
 ## 7. Hierarchical todo lists
 
 The owner requested [#116](https://github.com/breki/silkboard/issues/116),
@@ -255,6 +267,6 @@ with responsive placement and a consistent current-page marker.
 
 ## Later milestones
 
-Milestones after 7 are to be defined with the owner. Task coordination and
+Milestones after 7 are to be defined with the owner. Agent task coordination and
 dashboard-hosted handoff uploads remain outside the agreed publish-only scope.
 A local handoff of current reporting state does not add either capability.

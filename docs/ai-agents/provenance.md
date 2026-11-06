@@ -82,6 +82,28 @@ explicit post-handoff selection preserve native/project boundaries without
 transcript scans, dashboard reads or execution authority. This is local
 implementation scope, not an installed upgrade or production rollout claim.
 
+## Hierarchical todo milestone, 2026-10-25
+
+The owner requested a new milestone and issue for an editable Todos page
+with per-item checkboxes, indented child tasks, check/uncheck and deletion.
+[Milestone 7](https://github.com/breki/silkboard/milestone/7) and
+[#116](https://github.com/breki/silkboard/issues/116) capture that scope.
+At initial capture, parent/child completion and parent-deletion semantics
+were unresolved; the later [Owner Todos decision](#owner-todos-2026-10-25)
+records their resolution. This milestone agreement granted no agent todo
+access or execution authority and did not establish implementation or release.
+
+## General feature milestone, 2026-10-25
+
+The owner requested a new general Silkboard feature milestone and an issue
+for detailed descriptions alongside concise summaries for events, steps and
+related entries. [Milestone 6](https://github.com/breki/silkboard/milestone/6)
+and [#107](https://github.com/breki/silkboard/issues/107) capture that scope.
+Further features and priorities remain individual owner decisions. At capture
+time, existing step descriptions/reports and expanded event Markdown were
+implementation context, not completion evidence. The initial capture
+authorized no implementation or release.
+
 ## Owner Todos, 2026-10-25
 
 The owner authorized [#116](https://github.com/breki/silkboard/issues/116)

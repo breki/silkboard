@@ -14,8 +14,9 @@ eligible verified, tagged GitHub revisions, with health checks and recovery.
 Milestone 2 is agreed: publish-only agent progress dogfooding, Codex first.
 GitHub remains the task tracker. Agents never fetch dashboard tasks/content
 or receive execution permission from Silkboard. Milestones 3–5 cover the
-owner-agreed UI, build-efficiency and task-plan work in the roadmap. Milestone 7
-adds owner-managed hierarchical Todos; scope after milestone 7 is unset.
+owner-agreed UI, build-efficiency and task-plan work in the roadmap. Milestone 6
+tracks individually agreed general features. Milestone 7 adds owner-managed
+hierarchical Todos; scope after milestone 7 is unset.
 
 ## Working agreement
 
