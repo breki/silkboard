@@ -5,7 +5,9 @@ The records below verify updater installation, polling and activation of
 Live rollback/retry and newer-release acceptance are verified for
 [#17](https://github.com/breki/silkboard/issues/17); updater reboot recovery
 remains in [#18](https://github.com/breki/silkboard/issues/18). Original implementation
-issue [#6](https://github.com/breki/silkboard/issues/6) is closed.
+issue [#6](https://github.com/breki/silkboard/issues/6) is closed. The
+[proposed reboot drill](live-reboot-drill.md) prepares #18; its disruptive
+phases remain unapproved and unrun.
 
 ## Release admission
 

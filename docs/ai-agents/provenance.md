@@ -1,5 +1,14 @@
 # Canon provenance
 
+## Guest reboot recovery preparation, 2026-11-06
+
+The owner requested work on
+[#18](https://github.com/breki/silkboard/issues/18). Its explicit requirement
+to agree a concrete disruptive drill remains in force. The
+[proposed procedure](../live-reboot-drill.md) records inspection, recovery
+checks and approval gates; it is not reboot evidence or authorization to
+publish a release, change trust or interrupt production.
+
 ## Publisher contention tests, 2026-11-06
 
 The owner requested implementation of
