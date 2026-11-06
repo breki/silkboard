@@ -1,8 +1,23 @@
 # Todos editor proposal — #124
 
 Visual mockups for [issue #124](https://github.com/breki/silkboard/issues/124).
-The application is unchanged. These sample tasks are invented for the proposal.
-This is a design for review, not a working task editor or evidence of saving.
+The owner approved this proposal before implementation. These sample tasks are
+invented; the images remain design references, not evidence of saving or device
+acceptance. See the [Todos guide](../../todos.md) for implemented behavior.
+
+## Implemented editor
+
+These screenshots show the actual application in local Chromium tests with
+invented tasks, after implementation. The phone viewport is 320 pixels wide;
+these are browser checks, not owner device or assistive-technology acceptance.
+
+![Implemented desktop editor](implemented-desktop.png)
+
+![Implemented phone editor](implemented-phone.png)
+
+![Implemented phone editor in dark appearance](implemented-phone-dark.png)
+
+The remaining images and standalone HTML below are the approved proposal.
 
 ## Desktop
 
@@ -29,7 +44,7 @@ the keyboard shown here is a drawing, not an implemented input integration.
 ## Save conflict
 
 A conflict preserves the visible draft and offers Review saved list and Copy
-my draft. The exact recovery interaction remains to be agreed; the mockup's
+my draft. The implemented recovery is documented in the guide; the mockup's
 review button opens an explanatory placeholder, not a merge implementation.
 
 ![Save conflict with the local draft still visible](conflict.png)
@@ -41,21 +56,22 @@ for leaving the editor and reaching other controls.
 
 ![Keyboard help proposal](keyboard-help.png)
 
-## Confirmed and proposed behavior
+## Approved design reference
 
 The owner confirmed Enter splitting at the caret, boundary Backspace/Delete
 joining adjacent tasks, promotion of children when an item is removed, and
 undo/redo replacing delete confirmations. The mockups illustrate this direction.
 
-Additional proposals shown here still need review:
+The approved direction also includes:
 
 - Tab and Shift+Tab move a task's subtree together, within the existing five
-  levels. Exact parent-selection and split-child edge cases remain unsettled.
+  levels. The guide records the implemented parent-selection and split rules.
 - Automatic saving has visible saved, saving and conflict/error states;
-  normal typing keeps its caret and selection. The save cadence, recovery
-  details and navigation/expiry behavior are not yet an agreed contract.
+  normal typing keeps its caret and selection. The guide records save cadence,
+  recovery and navigation/expiry behavior.
 - Esc leaves keyboard editing; Done provides the touch equivalent. Entering
-  the document and assistive-technology navigation need implementation checks.
+  the document and leaving it are covered by implementation checks; actual
+  assistive-technology and owner device acceptance remain separate.
 - Touch actions live in one shared toolbar rather than on every task.
 
 The displayed Saved status is sample UI text. No network requests or browser

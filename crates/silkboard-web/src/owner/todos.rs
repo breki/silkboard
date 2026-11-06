@@ -1,4 +1,6 @@
 //! Owner-managed checklist; mutations are revision checked and reauthenticated.
+mod document;
+mod layout;
 pub(crate) mod schema;
 use super::{AuthError, OwnerAuth, http::OwnerSession, storage};
 use crate::progress::ProgressStore;
@@ -48,26 +50,33 @@ fn number(value: &str, zero: bool) -> Result<i64, AuthError> {
     }
     Ok(n)
 }
-fn text(value: &str) -> Result<String, AuthError> {
-    let value = value.trim();
-    if value.is_empty()
-        || value.len() > 1000
-        || value.chars().any(|c| {
+fn valid_text(value: &str) -> bool {
+    !value.trim().is_empty()
+        && value.len() <= 1000
+        && !value.chars().any(|c| {
             c.is_control() || matches!(c, '\u{2028}' | '\u{2029}' | '\u{feff}')
         })
-    {
+}
+fn text(value: &str) -> Result<String, AuthError> {
+    let value = value.trim();
+    if !valid_text(value) {
         return Err(AuthError::Invalid);
     }
     Ok(value.to_owned())
 }
 fn snapshot(conn: &Connection) -> Result<Checklist, AuthError> {
+    let count: i64 =
+        conn.query_row("SELECT count(*) FROM todos", [], |r| r.get(0))?;
+    if count > 1000 {
+        return Err(AuthError::Unavailable);
+    }
     let revision: i64 = conn.query_row(
         "SELECT revision FROM todo_schema WHERE singleton=1",
         [],
         |r| r.get(0),
     )?;
     let mut query = conn.prepare(
-        "SELECT id,parent_id,text,completed FROM todos ORDER BY id LIMIT 1001",
+        "SELECT t.id,l.parent_id,t.text,t.completed FROM todos t JOIN todo_layout l ON t.id=l.id ORDER BY l.position LIMIT 1001",
     )?;
     let items = query
         .query_map([], |r| {
@@ -97,6 +106,7 @@ fn mutate(
     let mut conn = store.0.lock().map_err(|_| AuthError::Unavailable)?;
     let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
     storage::authenticate_on(&tx, session)?;
+    schema::initialize(&tx).map_err(|_| AuthError::Unavailable)?;
     let current: i64 = tx.query_row(
         "SELECT revision FROM todo_schema WHERE singleton=1",
         [],
@@ -111,6 +121,7 @@ fn mutate(
         "UPDATE todo_schema SET revision=?1 WHERE singleton=1",
         [next],
     )?;
+    tx.execute("UPDATE todo_layout_schema SET revision=?1", [next])?;
     let result = snapshot(&tx)?;
     tx.commit()?;
     Ok(result)
@@ -118,6 +129,7 @@ fn mutate(
 pub(super) fn routes() -> Router<OwnerAuth> {
     Router::new()
         .route("/todos", get(list).post(add))
+        .route("/todos/document", document::route())
         .route("/todos/{id}", axum::routing::patch(edit).delete(delete))
 }
 async fn list(
@@ -127,7 +139,9 @@ async fn list(
         auth.query(|store| {
             let mut conn =
                 store.0.lock().map_err(|_| AuthError::Unavailable)?;
-            let tx = conn.transaction()?;
+            let tx =
+                conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            schema::initialize(&tx).map_err(|_| AuthError::Unavailable)?;
             let result = snapshot(&tx)?;
             tx.commit()?;
             Ok(result)
@@ -177,8 +191,8 @@ fn add_on(
         }
         let depth: i64 = conn.query_row(
             "WITH RECURSIVE ancestors(id,parent_id) AS (
-                SELECT id,parent_id FROM todos WHERE id=?1
-                UNION ALL SELECT t.id,t.parent_id FROM todos t
+                SELECT id,parent_id FROM todo_layout WHERE id=?1
+                UNION ALL SELECT t.id,t.parent_id FROM todo_layout t
                 JOIN ancestors a ON a.parent_id=t.id
              ) SELECT count(*) FROM ancestors",
             [parent],
@@ -188,9 +202,30 @@ fn add_on(
             return Err(AuthError::Invalid);
         }
     }
+    let position: i64 = if let Some(parent) = parent {
+        conn.query_row("WITH RECURSIVE subtree(id,position) AS (
+            SELECT id,position FROM todo_layout WHERE id=?1
+            UNION ALL SELECT t.id,t.position FROM todo_layout t JOIN subtree p ON t.parent_id=p.id
+          ) SELECT max(position)+1 FROM subtree", [parent], |r|r.get(0))?
+    } else {
+        count
+    };
+    conn.execute(
+        "UPDATE todo_layout SET position=position+1001 WHERE position>=?1",
+        [position],
+    )?;
+    conn.execute(
+        "UPDATE todo_layout SET position=position-1000 WHERE position>=?1",
+        [position + 1001],
+    )?;
     conn.execute(
         "INSERT INTO todos(parent_id,text) VALUES(?1,?2)",
         params![parent, task],
+    )?;
+    let id = conn.last_insert_rowid();
+    conn.execute(
+        "INSERT INTO todo_layout(id,parent_id,position) VALUES(?1,?2,?3)",
+        params![id, parent, position],
     )?;
     Ok(())
 }
@@ -232,17 +267,22 @@ async fn delete(
             mutate(store, &session.0, &input.revision, |tx| {
                 let parent: Option<i64> = tx
                     .query_row(
-                        "SELECT parent_id FROM todos WHERE id=?1",
+                        "SELECT parent_id FROM todo_layout WHERE id=?1",
                         [id],
                         |r| r.get(0),
                     )
                     .optional()?
                     .ok_or(AuthError::NotFound)?;
+                let position:i64=tx.query_row("SELECT position FROM todo_layout WHERE id=?1",[id],|r|r.get(0))?;
                 tx.execute(
-                    "UPDATE todos SET parent_id=?1 WHERE parent_id=?2",
+                    "UPDATE todo_layout SET parent_id=?1 WHERE parent_id=?2",
                     params![parent, id],
                 )?;
+                layout::project_legacy(tx)?;
                 tx.execute("DELETE FROM todos WHERE id=?1", [id])?;
+                tx.execute("DELETE FROM todo_layout WHERE id=?1", [id])?;
+                tx.execute("UPDATE todo_layout SET position=position+1001 WHERE position>?1", [position])?;
+                tx.execute("UPDATE todo_layout SET position=position-1002 WHERE position>=?1", [position+1002])?;
                 Ok(())
             })
         })

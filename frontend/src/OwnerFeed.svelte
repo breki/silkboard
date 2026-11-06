@@ -4,7 +4,10 @@
   const address = locationState;
   import { onMount } from "svelte";
   import { ApiError, ownerSession, signIn, signOut } from "./feed-api";
-  import Todos from "./Todos.svelte";
+  import {
+    hasRetainedDraft,
+    type TodoLeaveGuard,
+  } from "./todo-document-session";
   import Agents from "./Agents.svelte";
   import EventFeed from "./EventFeed.svelte";
   import TaskPlans from "./TaskPlans.svelte";
@@ -49,6 +52,8 @@
     | "unavailable"
     | "disabled";
   let phase = $state<Phase>("checking");
+  let todoGuard = $state<TodoLeaveGuard | null>(null);
+  let todoDraftKept = $state(false);
   let password = $state("");
   let notice = $state("");
   let alive = true;
@@ -91,6 +96,8 @@
     }
   }
   function expired() {
+    todoGuard?.keep();
+    todoDraftKept = hasRetainedDraft();
     begin();
     password = "";
     notice = "Your session expired. Sign in again.";
@@ -118,6 +125,9 @@
     }
   }
   async function logout() {
+    if (todoGuard && !todoGuard.confirm()) return;
+    todoGuard?.discard();
+    todoDraftKept = false;
     const signal = begin();
     phase = "signing-out";
     notice = "";
@@ -133,10 +143,18 @@
     }
   }
   onMount(() => {
+    const protectDraft = (event: BeforeUnloadEvent) => {
+      if (hasRetainedDraft()) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", protectDraft);
     void check();
     return () => {
       alive = false;
       active.abort();
+      window.removeEventListener("beforeunload", protectDraft);
     };
   });
 </script>
@@ -172,7 +190,18 @@
     {#if phase === "signed-in"}
       {#if !linked.valid}<LinkError />
       {:else if todosPage}
-        <Todos onexpire={expired} />
+        {#await import("./Todos.svelte")}
+          <p role="status">Loading todos…</p>
+        {:then module}
+          <module.default
+            onexpire={expired}
+            onregister={(guard) => (todoGuard = guard)}
+          />
+        {:catch}
+          <p role="alert">
+            Unable to load the Todos editor. Reload the page to try again.
+          </p>
+        {/await}
       {:else if plansPage}
         <TaskPlans onexpire={expired} />
       {:else if eventsPage}
@@ -185,7 +214,14 @@
         <h2>
           {todosPage ? "Sign in to Todos" : "Sign in to your progress feed"}
         </h2>
-        <p>Follow what your development agents are working on.</p>
+        <p>
+          {todosPage
+            ? "Manage your private task list."
+            : "Follow what your development agents are working on."}
+        </p>
+        {#if todosPage && todoDraftKept}<p role="status">
+            Your unsaved Todos draft is kept in this tab. Sign in to recover it.
+          </p>{/if}
         {#if notice}<p role="alert">
             {notice}{#if statusPage}
               <a href="/">Return to sign in</a>{/if}

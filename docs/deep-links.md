@@ -45,9 +45,10 @@ closed. `history=reports` or `history=revisions` opens received history;
 previous received report for the displayed snapshot. Missing steps or snapshots
 show recovery information rather than substituting invented content.
 
-Todo `mode=edit` opens stored text for editing; `mode=child` selects a parent
-for an empty child form. Neither saves a change. Each item's Link action
-selects it without opening an edit form. Missing or ineligible targets can be
+Todo `mode=edit` focuses stored text in the task document; `mode=child` creates
+an empty child draft under the selected task. Neither saves a change until a
+valid edit is made. Selecting saved task text updates its URL; the shared menu
+can copy its link. Missing or ineligible targets can be
 cleared while keeping the checklist available.
 
 ## Credentials, appearance and recovery

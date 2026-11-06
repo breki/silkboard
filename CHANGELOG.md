@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Replace per-item Todos forms with the approved keyboard document editor,
+  subtree nesting, independent checks, undo/redo and shared phone tools.
+- Save ordered task documents atomically, retain drafts during failures and
+  login expiry, and preserve earlier-app rollback compatibility.
+
 ## 0.14.1 - 2026-11-06
 
 - Distinguish publisher lock failures from contention and make concurrency tests
