@@ -35,6 +35,17 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
   Reruns restore these defaults through Codex's atomic configuration API,
   preserving unrelated settings. Explicit session/profile settings and managed
   organization requirements can still override the user defaults.
+- A standing, publish-only Silkboard progress authorization in Codex's
+  `[auto_review].extra_policy`. It covers the installed publisher and its
+  existing owner-configured destination/credentials, including necessary local
+  reporting-state writes. It does not authorize dashboard reads, deployment,
+  destination changes or unrelated requests. Provisioning preserves other
+  owner policy text, updates only its marked block, and refuses a concurrent
+  configuration change instead of overwriting it. Managed policy still takes
+  precedence; this is reviewer guidance, not a blanket approval guarantee.
+  Existing boolean `codex.plan_reporting` opt-ins in the private publisher
+  configuration are retained during reprovisioning; a fresh configuration
+  still requires the operator to enable reporting explicitly.
 - Kozmotic 2.3.0 at `~/.claude/bin/kozmotic`, required by the repository's
   Git-status hook. Fixed release archive and binary checksums cover x86_64 and
   ARM64; reruns retain the exact installed binary and refuse conflicting files.

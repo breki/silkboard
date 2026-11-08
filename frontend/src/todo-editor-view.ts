@@ -24,6 +24,12 @@ import {
   type TaskAction,
 } from "./todo-editor-model";
 import "prosemirror-view/style/prosemirror.css";
+import {
+  projectRows,
+  tagsIn,
+  mentionAt,
+  type ProjectMention,
+} from "./todo-projects";
 
 const schema = new Schema({
   nodes: {
@@ -52,6 +58,11 @@ const schema = new Schema({
     text: { group: "inline" },
   },
 });
+export interface TodoMention extends ProjectMention {
+  key: string;
+  left: number;
+  top: number;
+}
 export interface EditorCallbacks {
   // eslint-disable-next-line no-unused-vars -- Callback parameters document the editor boundary.
   change: (rows: TaskRow[]) => void;
@@ -66,6 +77,10 @@ export interface EditorCallbacks {
   // eslint-disable-next-line no-unused-vars -- Callback parameters document the editor boundary.
   composing: (value: boolean) => void;
   reveal?: () => void;
+  // eslint-disable-next-line no-unused-vars -- Optional autocomplete boundary.
+  mention?: (value: TodoMention | null) => void;
+  // eslint-disable-next-line no-unused-vars -- Optional autocomplete key handling.
+  keydown?: (event: KeyboardEvent) => boolean;
 }
 function documentOf(rows: TaskRow[]) {
   return schema.node(
@@ -93,7 +108,7 @@ export function editorRows(doc: DocumentNode): TaskRow[] {
   return rows;
 }
 function selectionOf(
-  state: EditorState,
+  state: Pick<EditorState, "doc" | "selection">,
   from = state.selection.anchor,
   to = state.selection.head,
 ): TaskSelection {
@@ -150,6 +165,42 @@ export function createTodoEditor(
   rows: TaskRow[],
   callbacks: EditorCallbacks,
 ) {
+  let knownProjects: readonly string[] = [],
+    projectFilter = "",
+    pinned = "",
+    settingsKey = "";
+  let cachedDoc: DocumentNode | null = null,
+    cachedKey = "";
+  let cachedProjection = {
+    matching: new Set<string>(),
+    visible: new Set<string>(),
+  };
+  const projection = (doc: DocumentNode) => {
+    const cacheKey = settingsKey + pinned;
+    if (cachedDoc === doc && cachedKey === cacheKey) return cachedProjection;
+    const rows = editorRows(doc),
+      result = projectRows(rows, knownProjects, projectFilter);
+    if (pinned && projectFilter) {
+      const ancestors: string[] = [];
+      for (const row of rows) {
+        ancestors.length = row.depth - 1;
+        ancestors.push(row.key);
+        if (row.key === pinned) {
+          for (const key of ancestors) result.visible.add(key);
+          break;
+        }
+      }
+    }
+    cachedDoc = doc;
+    cachedKey = cacheKey;
+    return (cachedProjection = result);
+  };
+  const canEdit = (key: string, doc: DocumentNode) =>
+    !projectFilter || key === pinned || projection(doc).matching.has(key);
+  const fullListHint = () =>
+    callbacks.hint(
+      "Show the full list to add, delete, move items or edit parent context.",
+    );
   // A browser selectionchange can arrive after its next key/input event.
   // Read the native range before structural edits rather than acting on the
   // previous caret while the browser replaces a newly selected task range.
@@ -179,6 +230,19 @@ export function createTodoEditor(
     if (!selection) syncSelection();
     const before = editorRows(view.state.doc),
       current = selection ?? selectionOf(view.state);
+    if (
+      projectFilter &&
+      ((!["toggle", "backspace", "delete"].includes(String(action)) &&
+        !(
+          typeof action === "object" &&
+          !/[\r\n]/.test("insert" in action ? action.insert : action.paste)
+        )) ||
+        current.anchor.key !== current.head.key ||
+        !canEdit(current.head.key, view.state.doc))
+    ) {
+      fullListHint();
+      return true;
+    }
     const result = act(before, current, action, newTaskKey);
     if (result.hint) callbacks.hint(result.hint);
     if (result.rows === before) return true;
@@ -225,11 +289,38 @@ export function createTodoEditor(
         }),
         keymap(baseKeymap),
         new Plugin({
-          filterTransaction: (tr) => !tr.docChanged || validDocument(tr.doc),
+          filterTransaction(tr, state) {
+            if (tr.docChanged && !validDocument(tr.doc)) return false;
+            if (projectFilter && tr.docChanged) {
+              const before = editorRows(state.doc),
+                after = editorRows(tr.doc);
+              const allowed =
+                before.length === after.length &&
+                before.every((row, index) => {
+                  const next = after[index];
+                  return (
+                    row.key === next.key &&
+                    row.depth === next.depth &&
+                    (canEdit(row.key, state.doc) ||
+                      (row.text === next.text &&
+                        row.completed === next.completed))
+                  );
+                });
+              if (!allowed) {
+                fullListHint();
+                return false;
+              }
+              const key = selectionOf(state).head.key;
+              if (canEdit(key, state.doc)) pinned = key;
+            } else if (pinned && selectionOf(tr).head.key !== pinned)
+              pinned = "";
+            return true;
+          },
           props: {
             decorations(state) {
               const decorations: Decoration[] = [],
                 active = selectionOf(state).head.key;
+              const scope = projection(state.doc);
               state.doc.forEach((node, offset, index) => {
                 const parent =
                   index + 1 < state.doc.childCount &&
@@ -237,6 +328,12 @@ export function createTodoEditor(
                 const classes = [
                   node.attrs.key === active ? "active" : "",
                   parent ? "parent" : "",
+                  projectFilter && !scope.visible.has(node.attrs.key)
+                    ? "todo-project-hidden"
+                    : "",
+                  projectFilter && !canEdit(node.attrs.key, state.doc)
+                    ? "todo-project-context"
+                    : "",
                 ]
                   .filter(Boolean)
                   .join(" ");
@@ -245,6 +342,14 @@ export function createTodoEditor(
                     Decoration.node(offset, offset + node.nodeSize, {
                       class: classes,
                     }),
+                  );
+                for (const tag of tagsIn(node.textContent, knownProjects))
+                  decorations.push(
+                    Decoration.inline(
+                      offset + 1 + tag.from,
+                      offset + 1 + tag.to,
+                      { class: "todo-project-tag" },
+                    ),
                   );
               });
               return DecorationSet.create(state.doc, decorations);
@@ -272,6 +377,23 @@ export function createTodoEditor(
         undoDepth(result.state) > 0,
         redoDepth(result.state) > 0,
       );
+      if (
+        view.hasFocus() &&
+        result.state.selection.empty &&
+        callbacks.mention
+      ) {
+        const caret = selectionOf(result.state).head;
+        const row = editorRows(result.state.doc).find(
+          (row) => row.key === caret.key,
+        )!;
+        const mention = mentionAt(row.text, caret.offset);
+        const rect = view.coordsAtPos(result.state.selection.head);
+        callbacks.mention(
+          mention && canEdit(row.key, result.state.doc)
+            ? { ...mention, key: row.key, left: rect.left, top: rect.bottom }
+            : null,
+        );
+      } else callbacks.mention?.(null);
       if (view.hasFocus())
         requestAnimationFrame(() => {
           if (!view.isDestroyed) callbacks.reveal?.();
@@ -299,6 +421,10 @@ export function createTodoEditor(
           dom.dataset.empty = String(!next.textContent);
           dom.style.setProperty("--depth", String(next.attrs.depth - 1));
           input.checked = next.attrs.completed;
+          const editable = canEdit(next.attrs.key, editor.state.doc);
+          input.disabled = !editable;
+          if (editable) dom.removeAttribute("contenteditable");
+          else dom.contentEditable = "false";
           input.setAttribute("aria-label", next.textContent || "Empty todo");
           return true;
         };
@@ -335,6 +461,57 @@ export function createTodoEditor(
     handleKeyDown(_editor, event) {
       if (event.isComposing || view.composing) return false;
       syncSelection();
+      if (callbacks.keydown?.(event)) return true;
+      const mod = (event.ctrlKey || event.metaKey) && !event.altKey;
+      if (mod && event.key === "Enter" && !event.shiftKey) return run("toggle");
+      if (mod && event.shiftKey && event.key === "Backspace")
+        return run("remove");
+      if (
+        ["ArrowUp", "ArrowDown"].includes(event.key) &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        const down = event.key === "ArrowDown";
+        if (view.endOfTextblock(down ? "down" : "up")) {
+          const rows = editorRows(view.state.doc),
+            current = selectionOf(view.state).head;
+          let index =
+            rows.findIndex((row) => row.key === current.key) + (down ? 1 : -1);
+          while (rows[index] && !canEdit(rows[index].key, view.state.doc))
+            index += down ? 1 : -1;
+          const row = rows[index];
+          if (!row) return true;
+          const start = positionOf(view.state.doc, { key: row.key, offset: 0 }),
+            end = start + row.text.length;
+          const caret = view.coordsAtPos(view.state.selection.head),
+            edge = view.coordsAtPos(down ? start : end);
+          const dom = view.nodeDOM(start - 1) as HTMLElement;
+          const rect = dom
+            .querySelector(".todo-task-text")!
+            .getBoundingClientRect();
+          const found = view.posAtCoords({
+            left: Math.max(rect.left + 1, Math.min(caret.left, rect.right - 1)),
+            top: (edge.top + edge.bottom) / 2,
+          });
+          const target = Math.max(
+            start,
+            Math.min(end, found?.pos ?? (down ? start : end)),
+          );
+          view.dispatch(
+            view.state.tr
+              .setSelection(
+                TextSelection.create(
+                  view.state.doc,
+                  event.shiftKey ? view.state.selection.anchor : target,
+                  target,
+                ),
+              )
+              .scrollIntoView(),
+          );
+          return true;
+        }
+      }
       if (event.key === "Escape") {
         event.preventDefault();
         callbacks.leave();
@@ -437,6 +614,42 @@ export function createTodoEditor(
   return {
     view,
     action: run,
+    setProjectFilter(projects: readonly string[], filter: string) {
+      const next = JSON.stringify([projects, filter]);
+      if (next === settingsKey) return;
+      settingsKey = next;
+      knownProjects = projects;
+      projectFilter = filter;
+      pinned = "";
+      let tr = view.state.tr.setMeta("project-filter", true);
+      if (
+        filter &&
+        !canEdit(selectionOf(view.state).head.key, view.state.doc)
+      ) {
+        const first = editorRows(view.state.doc).find((row) =>
+          canEdit(row.key, view.state.doc),
+        );
+        if (first)
+          tr = tr.setSelection(
+            TextSelection.create(
+              view.state.doc,
+              positionOf(view.state.doc, { key: first.key, offset: 0 }),
+            ),
+          );
+      }
+      view.dispatch(tr);
+    },
+    setText(key: string, text: string, offset = text.length) {
+      const row = editorRows(view.state.doc).find((row) => row.key === key);
+      if (!row || !canEdit(key, view.state.doc)) return;
+      const start = positionOf(view.state.doc, { key, offset: 0 });
+      const tr = view.state.tr.insertText(text, start, start + row.text.length);
+      view.dispatch(
+        closeHistory(
+          tr.setSelection(TextSelection.create(tr.doc, start + offset)),
+        ),
+      );
+    },
     selection: () => selectionOf(view.state),
     rows: () => editorRows(view.state.doc),
     focus(key?: string, offset?: number) {

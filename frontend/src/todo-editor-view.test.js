@@ -59,6 +59,120 @@ function input(editor, inputType) {
   editor.view.dom.dispatchEvent(event);
   return event;
 }
+test("completion and removal shortcuts retain children, caret and undo history", () => {
+  const { editor } = start();
+  editor.focus("a", 2);
+  key(editor, "Enter", { ctrlKey: true });
+  expect(editor.rows()).toEqual([{ ...a, completed: true }, b]);
+  key(editor, "Backspace", { ctrlKey: true, shiftKey: true });
+  expect(editor.rows()).toEqual([{ ...b, depth: 1 }]);
+  expect(editor.selection().head.key).toBe("b");
+  editor.undo();
+  expect(editor.rows()).toEqual([{ ...a, completed: true }, b]);
+  editor.undo();
+  expect(editor.rows()).toEqual([a, b]);
+});
+test("filtered editing retains hidden rows and blocks structure, parent edits and hidden-history changes", () => {
+  const rows = [
+    a,
+    { ...b, text: "Beta @silkboard" },
+    { key: "c", depth: 1, text: "Hidden @hoard", completed: false },
+  ];
+  const { editor, host, callbacks } = start(rows);
+  editor.setProjectFilter(["silkboard", "hoard"], "silkboard");
+  expect(
+    host
+      .querySelector("[data-todo-key=c]")
+      .classList.contains("todo-project-hidden"),
+  ).toBe(true);
+  expect(host.querySelector("[data-todo-key=a] input").disabled).toBe(true);
+  editor.focus("b", 2);
+  editor.view.dispatch(editor.view.state.tr.insertText("x"));
+  expect(editor.rows()[1].text).toBe("Bexta @silkboard");
+  key(editor, "Enter");
+  key(editor, "Tab");
+  key(editor, "Backspace", { ctrlKey: true, shiftKey: true });
+  expect(editor.rows()).toHaveLength(3);
+  expect(editor.rows()[0]).toEqual(a);
+  expect(editor.rows()[2]).toEqual(rows[2]);
+  expect(callbacks.hint).toHaveBeenCalledWith(
+    expect.stringMatching(/full list/i),
+  );
+  editor.focus("a", 0);
+  editor.view.dispatch(editor.view.state.tr.insertText("no"));
+  expect(editor.rows()[0]).toEqual(a);
+  editor.setProjectFilter(["silkboard", "hoard"], "");
+  expect(
+    host
+      .querySelector("[data-todo-key=c]")
+      .classList.contains("todo-project-hidden"),
+  ).toBe(false);
+});
+test("filtering permits text replacement and paste, keeps a retagged item while editing, and rejects cross-item deletion", () => {
+  const { editor, host } = start([
+    a,
+    { ...b, text: "Beta @silkboard" },
+    { key: "c", depth: 1, text: "Next @silkboard", completed: false },
+  ]);
+  editor.setProjectFilter(["silkboard", "hoard"], "silkboard");
+  editor.focus("b", 0);
+  editor.setText("b", "Now untagged", 4);
+  expect(
+    host
+      .querySelector("[data-todo-key=b]")
+      .classList.contains("todo-project-hidden"),
+  ).toBe(false);
+  editor.view.dispatch(
+    editor.view.state.tr.setSelection(
+      TextSelection.create(editor.view.state.doc, 8, 11),
+    ),
+  );
+  key(editor, "Backspace");
+  expect(editor.rows()[1].text).not.toBe("Now untagged");
+  editor.action({ paste: "replacement" });
+  expect(editor.rows()[1].text).toContain("replacement");
+  editor.focus("c", 0);
+  expect(
+    host
+      .querySelector("[data-todo-key=b]")
+      .classList.contains("todo-project-hidden"),
+  ).toBe(true);
+  const before = editor.rows();
+  editor.view.dispatch(
+    editor.view.state.tr.setSelection(new AllSelection(editor.view.state.doc)),
+  );
+  key(editor, "Delete");
+  expect(editor.rows()).toEqual(before);
+  editor.setText("a", "Forbidden");
+  expect(editor.rows()[0]).toEqual(a);
+  editor.setText("missing", "Ignored");
+});
+test("arrows use adjacent editable rows even if coordinate hit-testing points at a parent", () => {
+  const { editor } = start([
+    a,
+    b,
+    { key: "c", text: "Next", depth: 1, completed: false },
+  ]);
+  editor.focus("b", 2);
+  vi.spyOn(editor.view, "endOfTextblock").mockReturnValue(true);
+  vi.spyOn(editor.view, "coordsAtPos").mockReturnValue({
+    left: 10,
+    right: 10,
+    top: 10,
+    bottom: 20,
+  });
+  vi.spyOn(editor.view, "posAtCoords").mockReturnValue({ pos: 1, inside: 0 });
+  key(editor, "ArrowDown");
+  expect(editor.selection().head.key).toBe("c");
+  key(editor, "ArrowDown");
+  expect(editor.selection().head.key).toBe("c");
+  key(editor, "ArrowUp", { shiftKey: true });
+  expect(editor.selection().anchor.key).toBe("c");
+  expect(editor.selection().head.key).toBe("b");
+  editor.focus("a", 0);
+  key(editor, "ArrowUp");
+  expect(editor.selection().head.key).toBe("a");
+});
 test("native transactions retain stable row DOM and checkboxes update independently", () => {
   const { editor, host, callbacks } = start();
   const child = host.querySelector("[data-todo-key=b]");
@@ -130,6 +244,7 @@ test("Backspace and Delete join only at boundaries and ordinary editing keys rem
   editor.focus("a", 2);
   expect(key(editor, "Backspace").defaultPrevented).toBe(false);
   expect(key(editor, "Delete").defaultPrevented).toBe(false);
+  vi.spyOn(editor.view, "endOfTextblock").mockReturnValue(false);
   expect(key(editor, "ArrowDown").defaultPrevented).toBe(false);
   expect(key(editor, "Tab", { ctrlKey: true }).defaultPrevented).toBe(false);
 });

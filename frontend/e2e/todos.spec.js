@@ -94,6 +94,134 @@ async function depth(page, value) {
   );
 }
 
+const activeItem = (page) =>
+  page.evaluate(() => {
+    const node = getSelection()?.focusNode;
+    return (node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement)
+      ?.closest(".todo-task")
+      ?.querySelector("input")
+      ?.getAttribute("aria-label");
+  });
+test("compact rows and keyboard commands follow document order across nesting levels", async ({
+  page,
+  context,
+}) => {
+  await open(page, context, [
+    { text: "Parent" },
+    { text: "First child", depth: 2 },
+    { text: "Nested child", depth: 3 },
+    { text: "Second child", depth: 2 },
+    { text: "Next root" },
+  ]);
+  expect(
+    (await text(page, "Parent").locator("..").boundingBox()).height,
+  ).toBeLessThan(35);
+  await select(page, "First child");
+  for (const item of ["Nested child", "Second child", "Next root"]) {
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(() => activeItem(page)).toBe(item);
+  }
+  for (const item of ["Second child", "Nested child", "First child"]) {
+    await page.keyboard.press("ArrowUp");
+    await expect.poll(() => activeItem(page)).toBe(item);
+  }
+  await saved(page, () => page.keyboard.press("ControlOrMeta+Enter"));
+  await expect(box(page, "First child")).toBeChecked();
+  await expect(box(page, "Parent")).not.toBeChecked();
+  await select(page, "Parent");
+  await saved(page, () => page.keyboard.press("ControlOrMeta+Shift+Backspace"));
+  await expect(box(page, "Parent")).toHaveCount(0);
+  expect(await depth(page, "First child")).toBe(1);
+  expect(await depth(page, "Nested child")).toBe(2);
+  await saved(page, () => page.keyboard.press("ControlOrMeta+z"));
+  expect(await depth(page, "Nested child")).toBe(3);
+  await page.screenshot({
+    path: "/tmp/silkboard152-todos-desktop.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const row = await text(page, "Parent").locator("..").boundingBox();
+  expect(row.height).toBeGreaterThanOrEqual(44);
+  expect(row.height).toBeLessThan(48);
+  await page.screenshot({
+    path: "/tmp/silkboard152-todos-phone.png",
+    fullPage: true,
+  });
+});
+
+test("project autocomplete and filtered edits preserve the entire persisted checklist", async ({
+  page,
+  context,
+}) => {
+  await open(page, context, [
+    { text: "Parent" },
+    { text: "Match @silkboard", depth: 2 },
+    { text: "Other child", depth: 2, completed: true },
+    { text: "Hidden" },
+  ]);
+  const filter = page.getByRole("combobox", {
+    name: "Filter todos by project",
+  });
+  await expect(filter).toBeEnabled();
+  await filter.selectOption("silkboard");
+  await expect(page).toHaveURL(/project=silkboard/);
+  await expect(box(page, "Parent")).toBeVisible();
+  await expect(box(page, "Parent")).toBeDisabled();
+  await expect(box(page, "Other child")).toBeHidden();
+  await expect(box(page, "Hidden")).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "New task", exact: true }),
+  ).toBeDisabled();
+  await select(page, "Match @silkboard");
+  await page.keyboard.press("Escape"); // Dismiss project suggestions, if open.
+  await select(page, "Match @silkboard");
+  await saved(page, () => page.keyboard.press("ControlOrMeta+Enter"));
+  await expect(box(page, "Match @silkboard")).toBeChecked();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ControlOrMeta+Shift+Backspace");
+  await expect(box(page, "Match @silkboard")).toBeVisible();
+  await page.getByRole("button", { name: "Show full list" }).click();
+  await expect(
+    page.getByText(
+      "Show the full list to add, delete, move items or edit parent context.",
+    ),
+  ).toHaveCount(0);
+  await expect(box(page, "Other child")).toBeChecked();
+  await expect(box(page, "Hidden")).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await select(page, "Hidden");
+  await page.keyboard.type(" @si");
+  await expect(
+    page.getByRole("listbox", { name: "Project suggestions" }),
+  ).toBeVisible();
+  const menu = await page
+    .getByRole("listbox", { name: "Project suggestions" })
+    .boundingBox();
+  expect(menu.x).toBeGreaterThanOrEqual(0);
+  expect(menu.x + menu.width).toBeLessThanOrEqual(390);
+  expect(menu.y + menu.height).toBeLessThanOrEqual(844);
+  await page.screenshot({
+    path: "/tmp/silkboard152-project-menu-phone.png",
+    fullPage: true,
+  });
+  await saved(page, () => page.keyboard.press("Enter"));
+  await expect(box(page, "Hidden @silkboard")).toBeVisible();
+  await page.reload();
+  await expect(box(page, "Hidden @silkboard")).toBeVisible();
+  await expect(box(page, "Match @silkboard")).toBeChecked();
+  expect(await depth(page, "Other child")).toBe(2);
+  await filter.selectOption("silkboard");
+  await saved(page, async () => {
+    await select(page, "Match @silkboard", true);
+    await page.keyboard.type("Untagged while editing");
+  });
+  await expect(box(page, "Untagged while editing")).toBeVisible();
+  await select(page, "Hidden @silkboard");
+  await expect(box(page, "Untagged while editing")).toBeHidden();
+  await page.getByRole("button", { name: "Show full list" }).click();
+  await expect(box(page, "Untagged while editing")).toBeChecked();
+});
+
 test("document keyboard edits preserve subtrees, checkboxes, undo and saved order", async ({
   page,
   context,
