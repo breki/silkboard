@@ -1,5 +1,18 @@
 # Canon provenance
 
+## Standalone Codex provisioning, 2026-11-08
+
+The owner selected the official standalone installer in
+[#150](https://github.com/breki/silkboard/issues/150), then invoked its issue
+workflow. The [VM guide](../bombyx-development.md#codex-installation-and-upgrades)
+records migration from the custom npm prefix and preservation of subsequent
+upgrades, replacing the original 0.162.1 provisioning pin. OpenAI's official
+[CLI guidance](https://learn.chatgpt.com/docs/cli) and the installer served at
+`https://chatgpt.com/codex/install.sh`, inspected on 2026-11-08, establish the
+standalone layout and installer controls. Local fixtures and disposable
+installer probes are distinct from existing guest migration and authenticated
+native hook verification. Shared Bombyx adoption remains separate scope.
+
 ## Approved Todos document editor, 2026-11-06
 
 The owner requested [#124](https://github.com/breki/silkboard/issues/124), selected
