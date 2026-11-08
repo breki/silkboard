@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reduce page-loading transfers with cached fingerprinted public frontend
+  assets and build-time gzip, preserving private API and HTML no-store policy.
+
 - Persist Codex's Approve for me defaults during Bombyx provisioning while
   preserving unrelated user configuration.
 - Install Codex independently of npm in Bombyx development VMs, migrate known

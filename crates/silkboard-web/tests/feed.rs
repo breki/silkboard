@@ -16,6 +16,45 @@ use tower::ServiceExt;
 const ORIGIN: &str = "https://silkboard.example";
 
 #[tokio::test]
+#[ignore = "diagnostic synthetic-history measurement; run explicitly with --ignored --nocapture"]
+async fn measure_owner_queries_with_retained_history() {
+    for count in [100_i64, 1000, 10_000] {
+        let store = ProgressStore::open_memory().unwrap();
+        let (app, cookie) = owner(store.clone()).await;
+        let token = store.issue_token("alpha", "measurement").unwrap();
+        for index in 0..count {
+            let mut report = event(
+                &format!("event-{index}"),
+                &format!("session-{}", index % 20),
+                index / 20 + 1,
+            );
+            if index < 20 {
+                report.session_name =
+                    Some(format!("Synthetic session {index}"));
+            }
+            store.publish("alpha", &token, &report).unwrap();
+        }
+        for path in [
+            "/api/owner/agents",
+            "/api/owner/events",
+            "/api/owner/filter-options?view=agents&kind=project",
+        ] {
+            let started = std::time::Instant::now();
+            for _ in 0..5 {
+                assert_eq!(
+                    read(app.clone(), path, &cookie).await.0,
+                    StatusCode::OK
+                );
+            }
+            println!(
+                "Synthetic query: events={count} endpoint={path} mean_ms={:.3}",
+                started.elapsed().as_secs_f64() * 1000.0 / 5.0
+            );
+        }
+    }
+}
+
+#[tokio::test]
 async fn linked_events_resolve_by_project_and_id_outside_the_latest_page() {
     let store = ProgressStore::open_memory().unwrap();
     let (app, cookie) = owner(store.clone()).await;

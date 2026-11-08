@@ -3,7 +3,11 @@
 use std::path::Path;
 
 use axum::{
-    Json, Router, http::HeaderValue, middleware, response::Response,
+    Json, Router,
+    extract::Request,
+    http::{HeaderValue, StatusCode},
+    middleware::{self, Next},
+    response::Response,
     routing::get,
 };
 use serde::Serialize;
@@ -13,6 +17,42 @@ pub mod owner;
 pub mod plans;
 pub mod progress;
 mod secrets;
+
+async fn public_asset_cache(request: Request, next: Next) -> Response {
+    // Vite's default fingerprint is eight URL-safe characters. Unversioned
+    // files and all HTML/API responses keep the private no-store policy.
+    let fingerprinted = request.uri().path().rsplit_once('.').is_some_and(
+        |(stem, extension)| {
+            matches!(extension, "js" | "css")
+                && stem
+                    .as_bytes()
+                    .get(stem.len().saturating_sub(9)..)
+                    .is_some_and(|suffix| {
+                        suffix.len() == 9
+                            && suffix[0] == b'-'
+                            && suffix[1..].iter().all(|byte| {
+                                byte.is_ascii_alphanumeric()
+                                    || matches!(byte, b'_' | b'-')
+                            })
+                    })
+        },
+    );
+    let mut response = next.run(request).await;
+    if response.status().is_success()
+        || response.status() == StatusCode::NOT_MODIFIED
+    {
+        response
+            .headers_mut()
+            .insert("vary", HeaderValue::from_static("Accept-Encoding"));
+        if fingerprinted {
+            response.headers_mut().insert(
+                "cache-control",
+                HeaderValue::from_static("public, max-age=31536000, immutable"),
+            );
+        }
+    }
+    response
+}
 
 /// Construct the progress application with the owner's authentication API.
 ///
@@ -33,12 +73,14 @@ pub fn create_owner_router(
         .merge(setup)
         .layer(middleware::map_response(|mut response: Response| async {
             for (key, value) in [
-                ("cache-control", "no-store"),
                 ("referrer-policy", "no-referrer"),
                 ("x-content-type-options", "nosniff"),
                 ("x-frame-options", "DENY"),
                 ("content-security-policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"),
             ] { response.headers_mut().insert(key, HeaderValue::from_static(value)); }
+            // Only the public fingerprinted asset service supplies a reusable
+            // policy. Owner APIs set no-store independently in their router.
+            response.headers_mut().entry("cache-control").or_insert(HeaderValue::from_static("no-store"));
             response
         })))
 }
@@ -58,6 +100,16 @@ pub fn create_progress_router(
 /// Without a configured progress store, no mutation API is exposed.
 pub fn create_router(frontend_path: &Path) -> Router {
     Router::new()
+        .nest(
+            "/assets",
+            Router::new()
+                .fallback_service(
+                    ServeDir::new(frontend_path.join("assets"))
+                        .append_index_html_on_directories(false)
+                        .precompressed_gzip(),
+                )
+                .layer(middleware::from_fn(public_asset_cache)),
+        )
         .route("/health", get(|| async { Json(Health { status: "ok" }) }))
         .route("/api/status", get(status))
         .route_service(

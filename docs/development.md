@@ -6,6 +6,9 @@ pages are Agents, Events, Workflows and Todos; `/status`, `/health` and
 [standalone publisher](publishing-cli.md) builds in the same workspace.
 Production provisioning and automatic upgrades remain separate workflows.
 
+See [page-loading performance](page-loading-performance.md) for public asset
+caching/compression, measured navigation behavior and disposable diagnostics.
+
 ## Install and start once
 
 Use Rust with edition 2024 support, rustfmt and Clippy. The Rust version is
