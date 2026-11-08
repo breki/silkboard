@@ -47,6 +47,8 @@ const equalSaved = (a: Checklist, b: Checklist) =>
       row.completed === b.items[n].completed,
   );
 interface Callbacks {
+  // eslint-disable-next-line no-unused-vars -- Optional document validation boundary.
+  validate?: (rows: TaskRow[]) => string;
   // eslint-disable-next-line no-unused-vars -- Callback argument documents the session boundary.
   change: (session: TodoDocumentSession) => void;
   expire: () => void;
@@ -111,7 +113,15 @@ export class TodoDocumentSession {
     return !equalRows(this.rows, this.savedRows);
   }
   get validation() {
-    return serialize(this.rows, this.ids).error ?? "";
+    return (
+      serialize(this.rows, this.ids).error ??
+      this.callbacks.validate?.(this.rows) ??
+      ""
+    );
+  }
+  revalidate() {
+    this.emit();
+    this.schedule();
   }
   update(rows: TaskRow[]) {
     this.rows = rows;
@@ -170,7 +180,7 @@ export class TodoDocumentSession {
     )
       return;
     const wire = serialize(this.rows, this.ids);
-    if (wire.error) {
+    if (wire.error || this.validation) {
       this.emit();
       return;
     }

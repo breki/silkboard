@@ -27,6 +27,7 @@ beforeEach(() => {
   Range.prototype.getBoundingClientRect = () => new DOMRect();
   vi.stubGlobal("requestAnimationFrame", (fn) => setTimeout(() => fn(0), 0));
   vi.spyOn(window, "scrollBy").mockImplementation(() => {});
+  vi.stubGlobal("matchMedia", () => ({ matches: false }));
 });
 afterEach(() => {
   cleanup();
@@ -39,10 +40,18 @@ async function start({
   save,
   load,
   onregister = () => {},
+  projectLoad,
 } = {}) {
   let data = { revision: "0", items };
   let next = 3;
   const fetch = vi.fn(async (path, options = {}) => {
+    if (path === "/api/owner/projects")
+      return projectLoad
+        ? projectLoad()
+        : response({
+            items: [{ id: "hoard" }, { id: "silkboard" }],
+            next_cursor: null,
+          });
     if (path.endsWith("/session"))
       return response({ authenticated: true, csrf_token: csrf });
     if (options.method === "PUT") {
@@ -77,6 +86,199 @@ test("shows one task document with independent labels and no per-item edit forms
   expect(screen.queryByRole("button", { name: "Edit Parent" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Delete Parent" })).toBeNull();
   expect(screen.getByText("All changes saved")).toBeTruthy();
+});
+async function editText(before, after) {
+  const editor = selectText(before);
+  const element = [...document.querySelectorAll(".todo-task-text")].find(
+    (node) => node.textContent === before,
+  );
+  element.textContent = after;
+  await fireEvent.input(editor, { inputType: "insertText" });
+  await screen.findByRole("checkbox", {
+    name: after.replace(/\s+/g, " ").trim(),
+    exact: true,
+  });
+  selectText(after);
+  await fireEvent.keyDown(editor, { key: "Shift" });
+  return editor;
+}
+test("inline project autocomplete replaces the existing tag, supports keyboard choice and saves the full document", async () => {
+  const { fetch } = await start({
+    items: [{ ...initial[0], text: "Parent @hoard" }, initial[1]],
+  });
+  await screen.findByRole("option", { name: "silkboard", exact: true });
+  const editor = await editText("Parent @hoard", "Parent @hoard @");
+  expect(
+    screen.getByRole("listbox", { name: "Project suggestions" }),
+  ).toBeTruthy();
+  await fireEvent.keyDown(editor, { key: "ArrowDown" });
+  expect(
+    screen
+      .getByRole("option", { name: "@silkboard" })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  await fireEvent.keyDown(editor, { key: "Tab" });
+  await screen.findByRole("checkbox", { name: /Parent\s+@silkboard/ });
+  expect(
+    screen.queryByRole("listbox", { name: "Project suggestions" }),
+  ).toBeNull();
+  await waitFor(() =>
+    expect(
+      fetch.mock.calls.some(([, options]) => options.method === "PUT"),
+    ).toBe(true),
+  );
+  const sent = JSON.parse(
+    fetch.mock.calls.find(([, options]) => options.method === "PUT")[1].body,
+  );
+  expect(sent.items).toHaveLength(2);
+  expect(sent.items[0].text).toBe("Parent  @silkboard");
+  expect(sent.items[1].text).toBe("Child");
+});
+test("Enter after an existing project tag still creates a new task", async () => {
+  await start({
+    items: [{ ...initial[0], text: "Parent @silkboard" }, initial[1]],
+  });
+  await screen.findByRole("option", { name: "silkboard", exact: true });
+  const editor = selectText("Parent @silkboard");
+  await fireEvent.keyDown(editor, { key: "Enter" });
+  await screen.findByRole("checkbox", { name: "Empty todo" });
+});
+test("autocomplete can be dismissed, chosen by pointer, and rejects multiple known project tags", async () => {
+  await start();
+  await screen.findByRole("option", { name: "hoard", exact: true });
+  const editor = await editText("Parent", "Parent @");
+  await fireEvent.keyDown(editor, { key: "Escape" });
+  expect(
+    screen.queryByRole("listbox", { name: "Project suggestions" }),
+  ).toBeNull();
+  expect(document.activeElement).toBe(editor);
+  await editText("Parent @", "Parent @si");
+  await fireEvent.pointerDown(
+    screen.getByRole("option", { name: "@silkboard" }),
+  );
+  await fireEvent.click(screen.getByRole("option", { name: "@silkboard" }));
+  await screen.findByRole("checkbox", { name: "Parent @silkboard" });
+  await editText("Parent @silkboard", "Parent @silkboard @hoard ");
+  await screen.findByText(/Use one project tag per item/);
+});
+test("project filter shows parent context, protects structure and saves hidden items unchanged", async () => {
+  const hidden = {
+    id: "3",
+    parent_id: null,
+    text: "Hidden @hoard",
+    completed: true,
+  };
+  const { fetch } = await start({
+    items: [initial[0], { ...initial[1], text: "Child @silkboard" }, hidden],
+  });
+  const filter = screen.getByRole("combobox", {
+    name: "Filter todos by project",
+  });
+  await screen.findByRole("option", { name: "silkboard", exact: true });
+  await fireEvent.change(filter, { target: { value: "silkboard" } });
+  expect(window.location.search).toContain("project=silkboard");
+  await waitFor(() =>
+    expect(screen.getByRole("checkbox", { name: "Parent" }).disabled).toBe(
+      true,
+    ),
+  );
+  expect(button("New task").disabled).toBe(true);
+  await fireEvent.click(
+    screen.getByRole("checkbox", { name: "Child @silkboard" }),
+  );
+  await waitFor(() =>
+    expect(
+      fetch.mock.calls.some(([, options]) => options.method === "PUT"),
+    ).toBe(true),
+  );
+  const sent = JSON.parse(
+    fetch.mock.calls.find(([, options]) => options.method === "PUT")[1].body,
+  );
+  expect(sent.items).toHaveLength(3);
+  expect(sent.items[2]).toMatchObject({
+    id: "3",
+    text: hidden.text,
+    completed: true,
+  });
+  const editor = selectText("Child @silkboard");
+  await fireEvent.keyDown(editor, { key: "Enter" });
+  await screen.findByText(/Show the full list to add, delete, move items/);
+  await fireEvent.click(button("Show full list"));
+  expect(
+    screen.queryByText(/Show the full list to add, delete, move items/),
+  ).toBeNull();
+  expect(window.location.search).not.toContain("project=");
+  expect(screen.getByRole("checkbox", { name: "Parent" }).disabled).toBe(false);
+});
+test("project loading failure retains the task document and has an explicit retry", async () => {
+  let failed = true;
+  await start({
+    projectLoad: () =>
+      failed
+        ? response({}, 503)
+        : response({ items: [{ id: "silkboard" }], next_cursor: null }),
+  });
+  await screen.findByText(/Unable to load projects/);
+  expect(screen.getByRole("checkbox", { name: "Parent" })).toBeTruthy();
+  failed = false;
+  await fireEvent.click(button("Retry projects"));
+  await screen.findByRole("option", { name: "silkboard", exact: true });
+});
+test("autocomplete supports upward selection and Enter, while completion modifiers keep their meaning", async () => {
+  await start();
+  await screen.findByRole("option", { name: "silkboard", exact: true });
+  const editor = await editText("Parent", "Parent @");
+  await fireEvent.keyDown(editor, { key: "ArrowUp" });
+  expect(
+    screen
+      .getByRole("option", { name: "@silkboard" })
+      .getAttribute("aria-selected"),
+  ).toBe("true");
+  await fireEvent.keyDown(editor, { key: "Enter" });
+  await screen.findByRole("checkbox", { name: "Parent @silkboard" });
+  await editText("Parent @silkboard", "Parent @silkboard @si");
+  await fireEvent.keyDown(editor, { key: "Enter", ctrlKey: true });
+  expect(
+    screen.getByRole("checkbox", { name: "Parent @silkboard @si" }).checked,
+  ).toBe(true);
+  await fireEvent.pointerDown(document.body);
+  expect(
+    screen.queryByRole("listbox", { name: "Project suggestions" }),
+  ).toBeNull();
+  await editText("Parent @silkboard @si", "Parent @unknown");
+  await fireEvent.keyDown(editor, { key: "Escape" });
+  expect(document.activeElement).toBe(editor);
+});
+test("unknown project bookmarks show an empty result and can be cleared without changing tasks", async () => {
+  window.history.replaceState(null, "", "/todos?project=missing");
+  window.dispatchEvent(new Event("popstate"));
+  const { fetch } = await start();
+  await screen.findByText(/No items currently match this project/);
+  expect(screen.getByRole("option", { name: "missing" })).toBeTruthy();
+  await fireEvent.change(
+    screen.getByRole("combobox", { name: "Filter todos by project" }),
+    { target: { value: "" } },
+  );
+  expect(window.location.search).not.toContain("project=");
+  expect(screen.getByRole("checkbox", { name: "Parent" }).disabled).toBe(false);
+  expect(fetch.mock.calls.some(([, options]) => options.method === "PUT")).toBe(
+    false,
+  );
+});
+test("a filtered child bookmark cannot add an item until the full list is shown", async () => {
+  window.history.replaceState(
+    null,
+    "",
+    "/todos?project=silkboard&todo=1&mode=child",
+  );
+  window.dispatchEvent(new Event("popstate"));
+  await start({
+    items: [{ ...initial[0], text: "Parent @silkboard" }, initial[1]],
+  });
+  await screen.findByText(/linked todo is unavailable/);
+  expect(screen.queryByRole("checkbox", { name: "Empty todo" })).toBeNull();
+  await fireEvent.click(button("Show full list"));
+  await screen.findByRole("checkbox", { name: "Empty todo" });
 });
 test("checkbox edits save without replacing the editor and leave descendants independent", async () => {
   const { fetch } = await start();

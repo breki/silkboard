@@ -15,8 +15,10 @@ in the shared menu. Unsaved text never appears in URLs.
 
 ## Editing the list
 
-Click task text and type directly. Native arrows and selection follow wrapped
-lines and neighboring tasks. Enter splits at the caret and creates an unchecked
+Click task text and type directly. Rows use compact spacing; phone checkbox
+targets remain at least 44 pixels high. Up/Down follow wrapped lines first,
+then the adjacent item in document order across nesting levels. Shift extends
+the selection. Enter splits at the caret and creates an unchecked
 sibling after the original task's subtree; children stay with the original.
 Backspace at the start or Delete at the end joins adjacent tasks. Selecting text
 across tasks replaces that range. Removing a parent promotes its surviving
@@ -32,8 +34,12 @@ the same actions on phones. Plain-text multiline paste imports tasks; tabs
 represent nesting and optional `[ ]`/`[x]` markers set completion. Dragging is
 not supported. Every checkbox is independent of its ancestors and descendants.
 
-Escape leaves editing; then Tab moves to other controls. Checkboxes and other
-controls use ordinary Tab and Space. Keyboard help explains the commands.
+While editing text, **Ctrl/Command+Enter** checks or unchecks the current item.
+**Ctrl/Command+Shift+Backspace** deletes that item, promotes its children and
+keeps the caret on a surviving item. Undo restores the deletion. These
+shortcuts affect the current item, leaving other checkboxes independent.
+Escape leaves editing; then Tab moves to other controls. Checkboxes use
+ordinary Tab and Space. Keyboard help explains the commands.
 The list supports five levels, 1,000 tasks and 1,000 UTF-8 bytes of single-line,
 nonempty text per task. Incomplete or invalid text remains an unsaved draft.
 
@@ -54,6 +60,33 @@ about unsaved changes; proceeding can lose the draft. No task
 text is stored in localStorage or sessionStorage. Saved text, order, hierarchy
 and checkboxes survive reload and application restart. The editor does not poll
 and replace an in-progress document.
+
+## Project tags and filtering
+
+Type `@` in task text to choose from existing Silkboard project identifiers.
+Suggestions narrow as you type. Up/Down selects a suggestion; Enter or Tab
+inserts it; Escape dismisses suggestions without leaving the editor. A pointer
+can also choose a suggestion. Choosing another project replaces the current
+tag. Tags are literal `@project` text, so existing save, copy, paste, undo and
+recovery paths retain them without a database migration. Remove the tag text
+to untag an item. Unknown `@names` and email addresses remain ordinary text.
+Only complete tokens naming existing projects are tags; tags do not inherit
+from parents. Multiple recognized tags keep the draft unsaved until corrected.
+
+Choose **Project** above the list to filter. Matching items and their ancestors
+remain visible; unmatched parents provide read-only context. Matching text and
+checkboxes remain editable. **Show full list** restores structural editing:
+adding, deleting, joining, indenting and outdenting. Filtered edits always save
+the complete document, preserving hidden items. Undo that would change hidden
+items or structure requires the full list too. An item whose tag changes stays
+visible while being edited, then leaves the filtered view when the caret moves
+away. A failed project lookup keeps the task text and offers **Retry projects**.
+
+The applied project filter is bookmarkable as `/todos?project=silkboard` and
+restores through reload and Back/Forward. Filtering grants no access beyond
+the owner's existing project and Todos APIs. See [#152](https://github.com/breki/silkboard/issues/152)
+for the owner-selected interaction requirements. Local checks do not establish
+production installation or phone acceptance.
 
 ## Private API and storage
 

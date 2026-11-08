@@ -1,14 +1,35 @@
 # Canon provenance
 
+## Todos usability and project filtering, 2026-11-08
+
+The owner requested implementation of [#152](https://github.com/breki/silkboard/issues/152),
+then selected existing-project autocomplete, one project per item, matching
+items with ancestor context, and text/checkbox edits in filtered views with
+structural editing in the full list. The owner approved Ctrl/Command+Enter for
+completion and Ctrl/Command+Shift+Backspace for item deletion with child
+promotion and Undo. Up/Down follows wrapped lines before adjacent items.
+The [Todos guide](../todos.md) records this contract. Inline literal tags reuse
+the existing text persistence and recovery contract; no schema migration or
+new dashboard/agent authority is introduced. Local fixtures and screenshots
+are separate from a release, live installation and owner phone acceptance.
+
 ## Codex approval defaults, 2026-11-08
 
 The owner requested persistent **Approve for me** defaults in Bombyx
 provisioning. OpenAI's [Auto-review guide](https://learn.chatgpt.com/docs/sandboxing/auto-review)
 documents the interactive approval policy, automatic reviewer and workspace
 permission profile. Its [app-server API](https://learn.chatgpt.com/docs/app-server)
-provides `config/batchWrite` for atomic TOML edits. Provisioning updates only
-these user defaults and preserves unrelated configuration. This source change
+provides `config/batchWrite` for atomic TOML edits. The owner subsequently
+requested standing machine authorization for publish-only progress, including
+Bombyx provisioning. The marked `[auto_review].extra_policy` block preserves
+unrelated owner rules and scopes approval to the installed publisher and
+existing configured destination. A versioned user-layer read prevents lost
+updates if configuration changes concurrently. Disposable real-Codex checks
+verify fresh/existing policy preservation and idempotent reruns. This source change
 does not establish that an existing guest has been reprovisioned.
+The existing boolean publisher `codex.plan_reporting` opt-in is retained;
+provisioning neither enables it by default nor weakens destination, credential,
+workspace or identity conflict checks.
 
 ## Standalone Codex provisioning, 2026-11-08
 

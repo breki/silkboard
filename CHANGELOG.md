@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Tighten Todos spacing, add keyboard completion/deletion shortcuts and move
+  across nesting levels in document order. Add existing-project autocomplete
+  tags and bookmarkable filtering that preserves hidden items during edits.
+- Install standing publish-only Silkboard progress authorization during Bombyx
+  provisioning while preserving existing owner Auto-review policy rules.
 - Persist Codex's Approve for me defaults during Bombyx provisioning while
   preserving unrelated user configuration.
 - Install Codex independently of npm in Bombyx development VMs, migrate known

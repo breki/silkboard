@@ -489,6 +489,24 @@ test("configuration preserves existing choices and rejects unsafe key/config pat
   fs.chmodSync(f.configPath, 0o644);
   assert.notEqual(f.run("configure.mjs", [f.repo]).status, 0);
 });
+test("reprovisioning retains the operator's explicit plan-reporting opt-in without enabling it by default", (t) => {
+  const f = fixture(t);
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+  const config = JSON.parse(fs.readFileSync(f.configPath));
+  assert.equal(Object.hasOwn(config.codex, "plan_reporting"), false);
+  for (const flag of [true, false]) {
+    config.codex.plan_reporting = flag;
+    fs.writeFileSync(f.configPath, JSON.stringify(config), { mode: 0o600 });
+    assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
+    assert.equal(
+      JSON.parse(fs.readFileSync(f.configPath)).codex.plan_reporting,
+      flag,
+    );
+  }
+  config.codex.plan_reporting = "true";
+  fs.writeFileSync(f.configPath, JSON.stringify(config), { mode: 0o600 });
+  assert.equal(f.run("configure.mjs", [f.repo]).status, 1);
+});
 test("refresh shell hook works twice in the exact bare environment and keeps failures opaque", (t) => {
   const f = fixture(t);
   assert.equal(f.run("configure.mjs", [f.repo]).status, 0);
@@ -580,8 +598,12 @@ test("native provisioner reruns with mocked system installers, preserving counte
 read -r initialize
 echo '{"id":1,"result":{}}'
 read -r initialized
+read -r readConfig
+cat <<JSON
+{"id":2,"result":{"layers":[{"name":{"type":"user","file":"$HOME/.codex/config.toml"},"version":"fixture-version","config":{}}]}}
+JSON
 read -r edits
-echo '{"id":2,"result":{}}'
+echo '{"id":3,"result":{}}'
 cat >/dev/null
 exit 0
 fi

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { execFileSync } from "node:child_process";
+import { isDeepStrictEqual } from "node:util";
 import { directory, file, replace, paths } from "./private-files.mjs";
 export function configure(home, checkout, endpoint) {
   if (typeof endpoint !== "string" || !endpoint)
@@ -56,11 +57,16 @@ export function configure(home, checkout, endpoint) {
       session_name: "Silkboard development",
     },
   };
-  if (
-    fs.lstatSync(p.config, { throwIfNoEntry: false }) &&
-    JSON.stringify(JSON.parse(file(p.config))) !== JSON.stringify(config)
-  )
-    throw Error("existing config differs");
+  if (fs.lstatSync(p.config, { throwIfNoEntry: false })) {
+    const existing = JSON.parse(file(p.config));
+    if (existing.codex && Object.hasOwn(existing.codex, "plan_reporting")) {
+      if (typeof existing.codex.plan_reporting !== "boolean")
+        throw Error("invalid existing plan-reporting opt-in");
+      config.codex.plan_reporting = existing.codex.plan_reporting;
+    }
+    if (!isDeepStrictEqual(existing, config))
+      throw Error("existing config differs");
+  }
   for (const [name, value] of [
     ["user.name", settings.author_name],
     ["user.email", settings.author_email],

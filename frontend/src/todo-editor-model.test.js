@@ -13,6 +13,27 @@ const caret = (key, offset) => ({
 const point = (result) => result.selection.head;
 let n = 0;
 const key = () => `new-${++n}`;
+test("completion and whole-item deletion affect only the current item and promote descendants", () => {
+  const rows = [
+    row("a", "Parent"),
+    row("b", "Child", 2, true),
+    row("c", "Next"),
+  ];
+  expect(act(rows, caret("a", 2), "toggle", key).rows).toEqual([
+    { ...rows[0], completed: true },
+    rows[1],
+    rows[2],
+  ]);
+  const removed = act(rows, caret("a", 2), "remove", key);
+  expect(removed.rows).toEqual([{ ...rows[1], depth: 1 }, rows[2]]);
+  expect(point(removed)).toEqual({ key: "b", offset: 0 });
+  expect(act(rows, caret("c", 2), "remove", key).rows).toEqual(
+    rows.slice(0, 2),
+  );
+  const empty = act([rows[0]], caret("a", 1), "remove", key);
+  expect(empty.rows).toHaveLength(1);
+  expect(empty.rows[0]).toMatchObject({ text: "", depth: 1, completed: false });
+});
 test("Enter splits a parent after its subtree and retains children and completion", () => {
   const rows = [
     row("a", "Hello world", 1, true),

@@ -37,7 +37,7 @@ export const viewKeys = {
     "history_before",
     "compare",
   ],
-  todos: ["todo", "mode"],
+  todos: ["todo", "mode", "project"],
   status: [],
   setup: [],
 } as const;

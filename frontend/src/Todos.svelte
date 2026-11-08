@@ -17,6 +17,13 @@
   } from "./todo-document-session";
   import { draftText, fromChecklist, type TaskRow } from "./todo-editor-model";
   import "./todo-editor.css";
+  import {
+    loadProjectNames,
+    assignProject,
+    tagValidation,
+    projectRows,
+    type ProjectMention,
+  } from "./todo-projects";
   // eslint-disable-next-line no-unused-vars -- Registration callback describes the owner lifecycle boundary.
   type Register = (guard: TodoLeaveGuard | null) => void;
   let {
@@ -50,13 +57,35 @@
     copiedDraft = $state("");
   let ready = $state(false),
     unavailable = $state(false);
+  let projectNames = $state<string[]>([]),
+    projectsLoading = $state(true),
+    projectsError = $state("");
+  let mention = $state<
+    (ProjectMention & { key: string; left: number; top: number }) | null
+  >(null);
+  let suggestion = $state(0),
+    dismissedMention = "";
+  const projectFilter = $derived(linked.value.filters.project ?? "");
+  const scope = $derived(projectRows(rows, projectNames, projectFilter));
+  const suggestions = $derived(
+    mention
+      ? projectNames.filter((name) => name.includes(mention!.query)).slice(0, 8)
+      : [],
+  );
   let appliedLink = "",
-    alive = true;
+    alive = true,
+    expired = false;
   const controller = new AbortController();
   const count = $derived(rows.filter((row) => row.text.trim()).length);
   const completed = $derived(
     rows.filter((row) => row.text.trim() && row.completed).length,
   );
+  function expire() {
+    if (expired) return;
+    expired = true;
+    session?.keep();
+    onexpire();
+  }
   function sync(value: TodoDocumentSession) {
     rows = value.rows;
     phase = value.phase;
@@ -77,7 +106,7 @@
     if (!id) return;
     const value = readView("todos", window.location.search).value;
     if (value.todo === id && value.todoMode === "view") return;
-    appliedLink = JSON.stringify([id, "view"]);
+    appliedLink = JSON.stringify([id, "view", projectFilter]);
     updateQuery({ todo: id, mode: null }, true);
   }
   function reveal() {
@@ -117,6 +146,28 @@
       composing: (value) => session?.composition(value),
       leave: finish,
       reveal,
+      mention: (value) => {
+        // Moving to an existing complete tag must not take over Enter.
+        // A suggestion session already opened by typing may still complete it.
+        if (
+          value &&
+          projectNames.includes(value.query) &&
+          (!mention || mention.key !== value.key || mention.from !== value.from)
+        )
+          value = null;
+        const signature = JSON.stringify(
+          value && [value.key, value.query, value.from, value.to],
+        );
+        if (signature === dismissedMention) return;
+        if (
+          JSON.stringify(
+            mention && [mention.key, mention.query, mention.from, mention.to],
+          ) !== signature
+        )
+          suggestion = 0;
+        mention = value;
+      },
+      keydown: suggestionKey,
     });
     selected = value[0].key;
     selectedId = session?.ids.get(selected) ?? null;
@@ -130,10 +181,11 @@
       const data = await loadTodos(controller.signal);
       if (!alive) return;
       session = new TodoDocumentSession(data, {
+        validate: (rows) => tagValidation(rows, projectNames),
         change: sync,
         expire: () => {
           session?.keep();
-          onexpire();
+          expire();
         },
         reset: (value) => {
           mountEditor(value);
@@ -156,7 +208,7 @@
       });
     } catch (error) {
       if (!alive) return;
-      if (error instanceof ApiError && error.status === 401) onexpire();
+      if (error instanceof ApiError && error.status === 401) expire();
       else
         loadError = retainedDraft()
           ? "Unable to load Todos. Your earlier draft is kept in this tab; try again to recover it."
@@ -166,6 +218,7 @@
     }
   }
   function finish() {
+    mention = null;
     editing = false;
     editor?.view.dom.blur();
     footerHelp?.focus();
@@ -207,8 +260,109 @@
     buttons[next].focus();
   }
   function keyboardHelp() {
+    mention = null;
     help.showModal();
   }
+  async function loadProjects() {
+    projectsLoading = true;
+    projectsError = "";
+    try {
+      const names = await loadProjectNames(controller.signal);
+      if (!alive) return;
+      projectNames = names;
+      session?.revalidate();
+    } catch (error) {
+      if (!alive) return;
+      if (error instanceof ApiError && error.status === 401) expire();
+      else
+        projectsError =
+          "Unable to load projects. Existing task text is kept; retry to use project tags and filters.";
+    } finally {
+      if (alive) projectsLoading = false;
+    }
+  }
+  function chooseProject(name: string) {
+    if (!mention || !editor) return;
+    const row = rows.find((row) => row.key === mention!.key);
+    if (!row) return;
+    const assigned = assignProject(row.text, name, projectNames, mention);
+    editor.setText(row.key, assigned.text, assigned.offset);
+    dismissedMention = JSON.stringify([
+      row.key,
+      name,
+      assigned.offset - name.length - 1,
+      assigned.offset,
+    ]);
+    mention = null;
+    editor.focus(row.key, assigned.offset);
+  }
+  function suggestionKey(event: KeyboardEvent) {
+    if (!mention) return false;
+    if (event.key === "Escape") {
+      dismissedMention = JSON.stringify([
+        mention.key,
+        mention.query,
+        mention.from,
+        mention.to,
+      ]);
+      mention = null;
+      event.preventDefault();
+      return true;
+    }
+    if (!suggestions.length) return false;
+    if (
+      (event.key === "ArrowDown" || event.key === "ArrowUp") &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.shiftKey
+    ) {
+      suggestion =
+        (suggestion +
+          (event.key === "ArrowDown" ? 1 : -1) +
+          suggestions.length) %
+        suggestions.length;
+      event.preventDefault();
+      return true;
+    }
+    if (
+      (event.key === "Enter" || event.key === "Tab") &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      !event.shiftKey
+    ) {
+      event.preventDefault();
+      chooseProject(suggestions[suggestion]);
+      return true;
+    }
+    return false;
+  }
+  function dismissOutside(event: PointerEvent) {
+    if (
+      event.target instanceof Element &&
+      !event.target.closest(".ProseMirror, .todo-project-suggestions")
+    )
+      mention = null;
+  }
+  $effect(() => {
+    if (ready && editor) editor.setProjectFilter(projectNames, projectFilter);
+  });
+  $effect(() => {
+    const dom = host?.querySelector(".ProseMirror");
+    if (!dom) return;
+    dom.setAttribute("aria-autocomplete", "list");
+    if (mention && suggestions.length) {
+      dom.setAttribute("aria-controls", "todo-project-suggestions");
+      dom.setAttribute(
+        "aria-activedescendant",
+        `todo-project-option-${suggestion}`,
+      );
+    } else {
+      dom.removeAttribute("aria-controls");
+      dom.removeAttribute("aria-activedescendant");
+    }
+  });
   async function copyDraft() {
     const text = draftText(rows);
     try {
@@ -264,15 +418,25 @@
   }
   $effect(() => {
     const target = linked.value;
-    if (!ready || !editor || !session) return;
-    const key = JSON.stringify([target.todo ?? null, target.todoMode ?? null]);
+    if (!ready || !editor || !session || (projectFilter && projectsLoading))
+      return;
+    const key = JSON.stringify([
+      target.todo ?? null,
+      target.todoMode ?? null,
+      projectFilter,
+    ]);
     if (key === appliedLink) return;
     appliedLink = key;
     unavailable = false;
+    hint = "";
     if (!target.todo) return;
     const local = [...session.ids].find(([, id]) => id === target.todo)?.[0];
     const row = session.rows.find((row) => row.key === local);
-    if (!row) {
+    if (
+      !row ||
+      (projectFilter &&
+        (!scope.matching.has(row.key) || target.todoMode === "child"))
+    ) {
       unavailable = true;
       return;
     }
@@ -288,6 +452,7 @@
   });
   onMount(() => {
     void load();
+    void loadProjects();
     window.addEventListener("beforeunload", beforeUnload);
     window.visualViewport?.addEventListener("resize", viewport);
     window.visualViewport?.addEventListener("scroll", viewport);
@@ -304,6 +469,11 @@
     };
   });
 </script>
+
+<svelte:window
+  onpointerdown={dismissOutside}
+  onscroll={() => (mention = null)}
+/>
 
 <section class="todos-editor" aria-label="Todos">
   <div class="todo-heading">
@@ -343,11 +513,51 @@
   <p class="todo-phone-instruction muted">
     Tap task text to write. Check a box to complete it.
   </p>
+  <div class="todo-project-filter">
+    <label
+      >Project
+      <select
+        aria-label="Filter todos by project"
+        value={projectFilter}
+        disabled={projectsLoading || !!projectsError}
+        onchange={(event) => {
+          mention = null;
+          updateQuery({ project: event.currentTarget.value || null });
+        }}
+      >
+        <option value="">All projects</option>
+        {#if projectFilter && !projectNames.includes(projectFilter)}<option
+            value={projectFilter}>{projectFilter}</option
+          >{/if}
+        {#each projectNames as name (name)}<option value={name}>{name}</option
+          >{/each}
+      </select>
+    </label>
+    {#if projectFilter}<button
+        class="quiet"
+        onclick={() => updateQuery({ project: null })}>Show full list</button
+      >{/if}
+    {#if projectsLoading}<span role="status">Loading projects…</span
+      >{:else if projectsError}<span role="alert"
+        >{projectsError}
+        <button class="quiet" onclick={() => void loadProjects()}
+          >Retry projects</button
+        ></span
+      >{:else}<span class="muted">Type @ to tag an item with one project.</span
+      >{/if}
+  </div>
+  {#if projectFilter}<p class="todo-filter-help">
+      {scope.matching.size} matching {scope.matching.size === 1
+        ? "item"
+        : "items"}. Parents are shown for context. Edit matching text and
+      checkboxes here; use the full list to add, delete or move items.
+    </p>{/if}
   <span id="todo-editor-instructions" class="todo-sr-only"
     >Edit task text directly. Enter splits a task. Tab indents and Shift+Tab
     outdents while editing text. Escape leaves editing; then Tab reaches other
-    controls. Arrow keys follow text and wrapped lines. Checkboxes use ordinary
-    Tab and Space.</span
+    controls. Arrow keys follow text and wrapped lines. Ctrl or Command+Enter
+    checks or unchecks the current item. Ctrl or Command+Shift+Backspace deletes
+    the current item and promotes its children. Type @ for project suggestions.</span
   >
   {#if loading}<p role="status">Loading todos…</p>{/if}
   {#if loadError}<p role="alert">
@@ -411,6 +621,30 @@
           >{/if}
       </div>{/if}
     <div class="todo-editor-host" bind:this={host}></div>
+    {#if projectFilter && !scope.matching.size}<p
+        class="todo-filter-empty"
+        role="status"
+      >
+        No items currently match this project. An item being edited stays
+        visible until you move away.
+      </p>{/if}
+    {#if mention && suggestions.length}<div
+        class="todo-project-suggestions"
+        id="todo-project-suggestions"
+        role="listbox"
+        aria-label="Project suggestions"
+        style:left={`${Math.max(8, Math.min(mention.left, window.innerWidth - 250))}px`}
+        style:top={`${Math.max(8, Math.min(mention.top + 4, window.innerHeight - 240))}px`}
+      >
+        {#each suggestions as name, index (name)}<button
+            id={`todo-project-option-${index}`}
+            role="option"
+            aria-selected={suggestion === index}
+            class:active={suggestion === index}
+            onpointerdown={(event) => event.preventDefault()}
+            onclick={() => chooseProject(name)}>@{name}</button
+          >{/each}
+      </div>{/if}
     <div
       class="todo-tools"
       role="toolbar"
@@ -424,14 +658,20 @@
     >
       <button
         class="quiet todo-new-tool"
-        disabled={!ready}
+        disabled={!ready || !!projectFilter}
         onclick={() => action("new")}
         ><span aria-hidden="true">＋</span><span>New task</span></button
       >
-      <button class="quiet" disabled={!ready} onclick={() => action("outdent")}
+      <button
+        class="quiet"
+        disabled={!ready || !!projectFilter}
+        onclick={() => action("outdent")}
         ><span aria-hidden="true">⇤</span><span>Outdent</span></button
       >
-      <button class="quiet" disabled={!ready} onclick={() => action("indent")}
+      <button
+        class="quiet"
+        disabled={!ready || !!projectFilter}
+        onclick={() => action("indent")}
         ><span aria-hidden="true">⇥</span><span>Indent</span></button
       >
       <span class="todo-tool-divider" aria-hidden="true"></span>
@@ -489,6 +729,18 @@
       <dd><kbd>Backspace</kbd> / <kbd>Delete</kbd></dd>
     </div>
     <div>
+      <dt>Check / uncheck current item</dt>
+      <dd><kbd>Ctrl/⌘ Enter</kbd></dd>
+    </div>
+    <div>
+      <dt>Delete current item; keep its children</dt>
+      <dd><kbd>Ctrl/⌘ Shift Backspace</kbd></dd>
+    </div>
+    <div>
+      <dt>Tag with an existing project</dt>
+      <dd><kbd>@</kbd>, then <kbd>Enter</kbd></dd>
+    </div>
+    <div>
       <dt>Indent task and its children</dt>
       <dd><kbd>Tab</kbd></dd>
     </div>
@@ -507,9 +759,12 @@
   </dl>
   <p>
     Arrow keys follow text, including wrapped lines. On checkboxes and controls,
-    Tab moves focus normally. New tasks start unchecked. Deleting a parent
-    promotes its children. Undo restores text and structure while this editor
-    stays open.
+    Tab and Space move to and toggle checkboxes normally. Project suggestions
+    use Up/Down, Enter or Tab to choose, and Escape to dismiss. Choosing another
+    project replaces the existing tag. Remove its @project text to clear a tag.
+    Unknown @names and email addresses stay ordinary text. New tasks start
+    unchecked. Deleting a parent promotes its children. Undo restores text and
+    structure while this editor stays open.
   </p>
   <p>
     Changes save automatically after typing pauses. Empty or invalid tasks stay

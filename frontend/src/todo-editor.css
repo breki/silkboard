@@ -70,12 +70,12 @@
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  min-height: 2.6rem;
+  min-height: 1.9rem;
   margin-left: calc(var(--depth) * 1.65rem);
-  padding: 0.55rem 0.3rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 0.3rem;
   font-size: 0.95rem;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 .todo-task.parent {
   font-weight: 600;
@@ -107,9 +107,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 2rem;
-  min-height: 2rem;
-  margin: -0.25rem 0;
+  flex: 0 0 1.75rem;
+  min-height: 1.75rem;
+  margin: 0;
   font-weight: 400;
   cursor: pointer;
 }
@@ -145,6 +145,73 @@
 .todo-task[data-completed="true"] .todo-task-text {
   text-decoration: line-through;
   opacity: 0.65;
+}
+.todo-task.todo-project-hidden {
+  display: none;
+}
+.todo-task.todo-project-context {
+  color: var(--muted);
+}
+.todo-project-tag {
+  color: var(--primary);
+  background: var(--control-hover);
+  border-radius: 0.2rem;
+}
+.todo-project-filter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+  font-size: 0.8rem;
+}
+.todo-project-filter label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.todo-project-filter select {
+  font: inherit;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--panel);
+  color: var(--text);
+}
+.todo-filter-help,
+.todo-filter-empty {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.todo-filter-empty {
+  padding: 0 1.5rem 1rem;
+}
+.todo-project-suggestions {
+  position: fixed;
+  z-index: 5;
+  width: 15rem;
+  max-height: 12rem;
+  overflow-y: auto;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--panel);
+  box-shadow: 0 0.3rem 1rem var(--shadow);
+}
+.todo-project-suggestions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 0.25rem;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.todo-project-suggestions button.active {
+  background: var(--control-hover);
 }
 .todo-tools {
   display: flex;
@@ -365,17 +432,17 @@
     padding: 0.7rem 0.65rem 1rem;
   }
   .todo-task {
-    min-height: 3rem;
+    min-height: 44px;
     margin-left: calc(var(--depth) * 1rem);
-    padding: 0.6rem 0.15rem;
+    padding: 0.35rem 0.15rem;
     gap: 0.3rem;
     font-size: 0.875rem;
-    line-height: 1.6;
+    line-height: 1.45;
   }
   .todo-check-target {
     flex-basis: 44px;
     min-height: 44px;
-    margin: -0.5rem 0;
+    margin: -0.35rem 0;
   }
   .todo-check-target input {
     width: 20px;

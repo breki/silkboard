@@ -18,7 +18,7 @@ editing state; they are not applied filters or bookmark contents.
 | Events `/events` | `project`, `agent`, `from`/`to`, exact session, `before`, `view`, `event`, `collapsed` |
 | Workflows `/plans` | `project`, `agent`, `state`, `before` |
 | Workflow `/plans/PROJECT/TASK` | `sequence`, `step`, `presentation`, `details`, `history`, `history_before`, `compare` |
-| Todos `/todos` | `todo`, `mode` |
+| Todos `/todos` | `project`, `todo`, `mode` |
 | Application status `/status` | Public status; optional owner credential panel |
 | Setup `/setup` | Existing one-time setup link; optional `theme` |
 
@@ -50,6 +50,9 @@ an empty child draft under the selected task. Neither saves a change until a
 valid edit is made. Selecting saved task text updates its URL; the shared menu
 can copy its link. Missing or ineligible targets can be
 cleared while keeping the checklist available.
+Project filters keep matching items and their ancestors visible. A linked item
+outside the active filter, or a request to add a child in a filtered view,
+requires returning to the full list before editing that target.
 
 ## Credentials, appearance and recovery
 

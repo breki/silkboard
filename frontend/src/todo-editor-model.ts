@@ -20,6 +20,8 @@ export type TaskAction =
   | "delete"
   | "indent"
   | "outdent"
+  | "toggle"
+  | "remove"
   | { insert: string }
   | { paste: string };
 export interface TaskEdit {
@@ -142,6 +144,26 @@ export function act(
 ): TaskEdit {
   const unchanged = (hint = ""): TaskEdit => ({ rows, selection, hint });
   const [a, b] = range(rows, selection);
+  if (action === "toggle" || action === "remove") {
+    const index = rows.findIndex((row) => row.key === selection.head.key);
+    const row = rows[index];
+    if (action === "toggle")
+      return {
+        rows: rows.map((item) =>
+          item.key === row.key ? { ...item, completed: !item.completed } : item,
+        ),
+        selection,
+        hint: "",
+      };
+    const remaining = remove(rows, new Set([row.key]));
+    if (!remaining.length) remaining.push(empty(key));
+    return {
+      rows: remaining,
+      selection: point(remaining[Math.min(index, remaining.length - 1)].key, 0),
+      hint: "",
+    };
+  }
+
   if (typeof action !== "string") {
     if ("insert" in action) return replace(rows, selection, action.insert, key);
     const lines = action.paste

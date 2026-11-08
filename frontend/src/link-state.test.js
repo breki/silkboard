@@ -8,6 +8,13 @@ import {
   viewKeys,
 } from "./link-state";
 beforeEach(() => window.history.replaceState(null, "", "/"));
+test("Todos project filters compose with task bookmarks and reject malformed project identifiers", () => {
+  expect(readView("todos", "?project=silkboard&todo=7")).toMatchObject({
+    valid: true,
+    value: { filters: { project: "silkboard" }, todo: "7" },
+  });
+  expect(readView("todos", "?project=invalid%20project").valid).toBe(false);
+});
 test("filters and exact native identities survive canonical URL encoding", () => {
   const fields = {
     project: "alpha",
