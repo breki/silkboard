@@ -29,6 +29,12 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
 - Codex through OpenAI's standalone installer, independently of Node/npm.
   Fresh installations and migration select the current stable release;
   repeated provisioning preserves the installed standalone version.
+- Codex's persistent user defaults in `~/.codex/config.toml` select
+  **Approve for me**: `approval_policy = "on-request"`,
+  `approvals_reviewer = "auto_review"` and `default_permissions = ":workspace"`.
+  Reruns restore these defaults through Codex's atomic configuration API,
+  preserving unrelated settings. Explicit session/profile settings and managed
+  organization requirements can still override the user defaults.
 - Kozmotic 2.3.0 at `~/.claude/bin/kozmotic`, required by the repository's
   Git-status hook. Fixed release archive and binary checksums cover x86_64 and
   ARM64; reruns retain the exact installed binary and refuse conflicting files.
@@ -175,8 +181,9 @@ Provisioning installs programs, not authenticated accounts. Inside the guest:
    Start Claude and complete its own `/login` flow. Do not paste credentials,
    one-time codes or login links into repository records or chat.
 3. Review the repository's Codex handlers in native `/hooks` before enabling
-   reporting. Preserve validation/Git-status hooks and normal agent permission
-   settings; provisioning does not enable bypass flags or edit trust records.
+   reporting. Preserve validation/Git-status hooks; provisioning selects
+   **Approve for me** defaults without enabling bypass flags or editing trust
+   records.
    Provisioning installs the informational Git-status handler's Kozmotic
    prerequisite; it does not copy the workstation's binary. Follow the
    [Git-status setup guide](ai-agents/git-status-hook.md#enable) to verify the

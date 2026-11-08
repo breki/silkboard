@@ -574,7 +574,21 @@ test("native provisioner reruns with mocked system installers, preserving counte
   const script = (dir, name, body) =>
     fs.writeFileSync(
       path.join(dir, name),
-      "#!/usr/bin/env bash\nset -eu\n" + body + "\n",
+      "#!/usr/bin/env bash\nset -eu\n" +
+        (name === "codex"
+          ? `if [[ \${1:-} == app-server ]]; then
+read -r initialize
+echo '{"id":1,"result":{}}'
+read -r initialized
+read -r edits
+echo '{"id":2,"result":{}}'
+cat >/dev/null
+exit 0
+fi
+`
+          : "") +
+        body +
+        "\n",
       { mode: 0o755 },
     );
   fs.symlinkSync(node, path.join(runtime, "node"));
@@ -648,7 +662,7 @@ esac`,
     f.home,
     ".codex/packages/standalone/current/bin",
   );
-  fs.mkdirSync(standalone, { recursive: true });
+  fs.mkdirSync(standalone, { recursive: true, mode: 0o700 });
   fs.mkdirSync(path.join(f.home, ".local/bin"), { recursive: true });
   script(standalone, "codex", "echo 'codex-cli 9.0.0'");
   fs.symlinkSync(

@@ -1,5 +1,15 @@
 # Canon provenance
 
+## Codex approval defaults, 2026-11-08
+
+The owner requested persistent **Approve for me** defaults in Bombyx
+provisioning. OpenAI's [Auto-review guide](https://learn.chatgpt.com/docs/sandboxing/auto-review)
+documents the interactive approval policy, automatic reviewer and workspace
+permission profile. Its [app-server API](https://learn.chatgpt.com/docs/app-server)
+provides `config/batchWrite` for atomic TOML edits. Provisioning updates only
+these user defaults and preserves unrelated configuration. This source change
+does not establish that an existing guest has been reprovisioned.
+
 ## Standalone Codex provisioning, 2026-11-08
 
 The owner selected the official standalone installer in

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Persist Codex's Approve for me defaults during Bombyx provisioning while
+  preserving unrelated user configuration.
 - Install Codex independently of npm in Bombyx development VMs, migrate known
   npm launchers and preserve later standalone upgrades during reprovisioning.
 
