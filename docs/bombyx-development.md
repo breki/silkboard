@@ -26,7 +26,9 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
 
 - Rust 1.93.1, rustfmt, Clippy, llvm-tools-preview and ARM64 target support.
 - Node 24.14.1 and gate tools pinned by the existing CI/tooling guide.
-- Codex 0.162.1, retaining the version used to verify native hook reporting.
+- Codex through OpenAI's standalone installer, independently of Node/npm.
+  Fresh installations and migration select the current stable release;
+  repeated provisioning preserves the installed standalone version.
 - Kozmotic 2.3.0 at `~/.claude/bin/kozmotic`, required by the repository's
   Git-status hook. Fixed release archive and binary checksums cover x86_64 and
   ARM64; reruns retain the exact installed binary and refuse conflicting files.
@@ -42,12 +44,69 @@ Provisioning installs system build/browser/cross-compiler prerequisites and:
 - Locked frontend dependencies/Chromium and a release-built standalone publisher.
 
 Node/rustup archives use fixed official SHA256 values for x86_64 and ARM64.
-Agent npm packages use a user-owned prefix, never `sudo npm install`. Repeating
+Claude's npm package uses a user-owned prefix, never `sudo npm install`. Repeating
 provisioning retains compatible installed tools, configuration and counters;
 it refuses conflicting publisher configuration and unrelated command files.
 No personal agent configuration, authentication cache or hook trust is copied.
 Run provisioning while agent sessions are idle, since rebuilding/installing
 programs can replace the executables they use.
+
+### Codex installation and upgrades
+
+The bootstrap calls `.bombyx/install-codex.sh`, which uses system Bash, curl
+and the official standalone installer without invoking npm. Codex's default
+launcher is `~/.local/bin/codex`, pointing through
+`~/.codex/packages/standalone/current` to the selected release. The installer
+owns that layout and its normal update flow; provisioning does not pin or
+restore an older Codex version. Claude installation/repair is independent.
+Initial selection of the current stable release is intentional for this
+user-updated development tool; the former 0.162.1 hook-verification pin no
+longer controls installation. This does not change locked application
+dependency cooldown or release gates.
+
+On an existing VM, provisioning recognizes the previous launcher into
+`~/.local/share/silkboard-tools/agents/bin/codex`. After the standalone
+installer succeeds and its version is verified, the helper retires recognized
+npm Codex launcher symlinks in both that prefix and the provisioned Node
+runtime. The latter can contain a second copy from an ineffective npm update.
+Old npm package files remain inert; no npm uninstall scripts run. Codex
+authentication, configuration and sessions are retained in `~/.codex`.
+Unrelated command files/symlinks, a broken standalone selection or a custom
+`CODEX_HOME` are refused for explicit inspection. Failure before cutover
+leaves the old launcher available; rerunning can retry the installation.
+
+With agent sessions idle, apply the merged provisioning changes using the
+existing Bombyx provisioning flow. For a narrow Codex-only migration in an
+already updated guest checkout, run:
+
+```bash
+BOMBYX_PROJECT=silkboard bash .bombyx/install-codex.sh
+hash -r
+command -v codex
+readlink -f "$(command -v codex)"
+codex --version
+```
+
+After migration, accept Codex's ordinary supported update prompt; no custom
+npm-prefix command is needed. The official installer can also be rerun as
+documented by OpenAI. Open a new shell or clear its command cache with
+`hash -r` after migration. Verify the resolved path is under the standalone
+release tree and compare `codex --version` with
+`~/.local/bin/codex --version` after updating. Reprovisioning must retain that
+updated version.
+
+Behavioral fixtures cover migration, private-state preservation, install
+failure/retry, conflicting commands, PATH resolution, repeat provisioning and
+independent Claude repair. On 2026-11-08 a disposable local home also verified
+the real official installer: fresh 0.167.0 installation, a standalone
+0.163.0-to-0.167.0 upgrade, resolved release path/version agreement and helper
+rerun preserving 0.167.0. The real `codex update` command also successfully
+invoked the standalone installer for a same-version update. Codex emitted a
+warning about creating its auxiliary
+PATH aliases under `/tmp`; the visible standalone command and installer still
+succeeded. This is not live guest migration, update-prompt interaction or
+native reporting evidence; verify those separately before claiming the VM
+migration works.
 
 ## Commit author and signing
 
@@ -201,6 +260,7 @@ credentials and dashboard execution authority are unchanged.
 Sources: [Bombyx tutorial](https://github.com/breki/bombyx/blob/main/docs/tutorial.md),
 [Bombyx configuration sample](https://github.com/breki/bombyx/blob/main/config.toml.sample),
 [Codex authentication](https://learn.chatgpt.com/docs/auth),
+[Codex standalone installation](https://learn.chatgpt.com/docs/cli),
 [Claude installation](https://code.claude.com/docs/en/setup),
 [Tailscale Ubuntu packages](https://pkgs.tailscale.com/stable/#ubuntu-2404),
 [GitHub CLI installation](https://github.com/cli/cli/blob/trunk/docs/install_linux.md).

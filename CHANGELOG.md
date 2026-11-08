@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Install Codex independently of npm in Bombyx development VMs, migrate known
+  npm launchers and preserve later standalone upgrades during reprovisioning.
+
 ## 0.15.0 - 2026-11-06
 
 - Replace per-item Todos forms with the approved keyboard document editor,

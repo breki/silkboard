@@ -578,7 +578,16 @@ test("native provisioner reruns with mocked system installers, preserving counte
       { mode: 0o755 },
     );
   fs.symlinkSync(node, path.join(runtime, "node"));
-  script(runtime, "npm", "exit 0");
+  script(
+    runtime,
+    "npm",
+    `printf '%s\\n' "$*" >> "$HOME/npm.calls"
+if [[ $1 == install ]]; then
+    [[ $* == "install --global --prefix $HOME/.local/share/silkboard-tools/agents @anthropic-ai/claude-code@2.1.293" ]]
+    printf '#!/bin/sh\\necho "2.1.293 (Claude Code)"\\n' > "$HOME/.local/share/silkboard-tools/agents/bin/claude"
+    chmod +x "$HOME/.local/share/silkboard-tools/agents/bin/claude"
+fi`,
+  );
   script(runtime, "npx", "exit 0");
   script(cargoBin, "rustup", "exit 0");
   script(cargoBin, "rustc", "echo rustc");
@@ -635,7 +644,17 @@ cp "$HOME/release-fixture/package.tar.gz" "\${!#}"; printf "downloaded\\n" >> "$
 esac`,
   );
   script(fake, "sudo", `printf '%s\\n' "$*" >> "$HOME/system-installer.calls"`);
-  script(agents, "codex", "echo 'codex-cli 0.162.1'");
+  const standalone = path.join(
+    f.home,
+    ".codex/packages/standalone/current/bin",
+  );
+  fs.mkdirSync(standalone, { recursive: true });
+  fs.mkdirSync(path.join(f.home, ".local/bin"), { recursive: true });
+  script(standalone, "codex", "echo 'codex-cli 9.0.0'");
+  fs.symlinkSync(
+    path.join(standalone, "codex"),
+    path.join(f.home, ".local/bin/codex"),
+  );
   script(agents, "claude", "echo '2.1.293 (Claude Code)'");
   f.put(`SILKBOARD_PUBLISH_TOKEN=${token}\n`);
   execFileSync("git", [
@@ -645,7 +664,7 @@ esac`,
     "core.sshCommand",
     "ssh -i retained-deploy-key",
   ]);
-  const env = { ...f.env, PATH: fake + ":" + process.env.PATH };
+  const env = { ...f.env, PATH: fake + ":/usr/bin:/bin" };
   hookFixture(f);
   for (let i = 0; i < 2; i++) {
     const out = spawnSync(
@@ -659,9 +678,19 @@ esac`,
       f.home,
       ".local/state/silkboard-publish/retained-counter",
     );
-    if (i === 0) fs.writeFileSync(counter, "retained");
-    else assert.equal(fs.readFileSync(counter, "utf8"), "retained");
+    if (i === 0) {
+      fs.writeFileSync(counter, "retained");
+      script(standalone, "codex", "echo 'codex-cli 10.0.0'");
+      fs.unlinkSync(path.join(agents, "claude"));
+    } else {
+      assert.equal(fs.readFileSync(counter, "utf8"), "retained");
+      assert.match(out.stdout, /codex-cli 10\.0\.0/);
+    }
   }
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(f.home, "npm.calls"), "utf8"),
+    /@openai\/codex/,
+  );
   assert.equal(
     execFileSync("git", ["-C", f.repo, "config", "core.sshCommand"], {
       encoding: "utf8",
@@ -724,6 +753,23 @@ esac`,
   });
   assert.equal(login.status, 0);
   assert.equal(login.stdout.trim(), "code-dupes 0.2.1");
+  // A conflicting local launcher must never run before link_tool rejects it.
+  const localNpm = path.join(f.home, ".local/bin/npm");
+  fs.unlinkSync(localNpm);
+  script(
+    path.dirname(localNpm),
+    "npm",
+    'touch "$HOME/unrelated-npm-ran"; exit 70',
+  );
+  fs.unlinkSync(path.join(agents, "claude"));
+  const conflictingNpm = spawnSync(
+    "/bin/bash",
+    [path.join(f.repo, ".bombyx/provision.sh")],
+    { cwd: f.repo, env, encoding: "utf8", timeout: 15000 },
+  );
+  assert.notEqual(conflictingNpm.status, 0);
+  assert.match(conflictingNpm.stderr, /refusing to replace existing npm/);
+  assert.equal(fs.existsSync(path.join(f.home, "unrelated-npm-ran")), false);
 });
 test("quoted values stop at the closing quote as specified by Bombyx", (t) => {
   const f = fixture(t);

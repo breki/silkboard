@@ -54,6 +54,7 @@ if [[ ! -x $runtime/bin/node ]] || [[ $("$runtime/bin/node" --version) != v24.14
     mv "$work/node" "$runtime"
 fi
 export PATH="$runtime/bin:$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
+bash "$root/.bombyx/install-codex.sh"
 if [[ ! -x $HOME/.cargo/bin/rustup ]]; then
     curl -fSsL --retry 3 "https://static.rust-lang.org/rustup/archive/1.29.1/$rust_arch/rustup-init" -o "$work/rustup-init"
     printf '%s  %s\n' "$rust_sum" "$work/rustup-init" | sha256sum --check --status
@@ -76,9 +77,8 @@ fi
 install_gate cargo-deny 0.20.2 deny
 install_gate cargo-audit 0.22.2 audit
 agents=$tools/agents
-if [[ ! -x $agents/bin/codex ]] || [[ $("$agents/bin/codex" --version) != 'codex-cli 0.162.1' ]] || \
-   [[ ! -x $agents/bin/claude ]] || [[ $("$agents/bin/claude" --version) != '2.1.293 (Claude Code)' ]]; then
-    npm install --global --prefix "$agents" @openai/codex@0.162.1 @anthropic-ai/claude-code@2.1.293
+if [[ ! -x $agents/bin/claude ]] || [[ $("$agents/bin/claude" --version) != '2.1.293 (Claude Code)' ]]; then
+    npm install --global --prefix "$agents" @anthropic-ai/claude-code@2.1.293
 fi
 link_tool() {
     local source=$1 dest=$HOME/.local/bin/$2
@@ -90,7 +90,7 @@ link_tool() {
 }
 for tool in node npm npx; do link_tool "$runtime/bin/$tool" "$tool"; done
 for tool in cargo rustc rustup rustfmt cargo-clippy cargo-llvm-cov cargo-deny cargo-audit code-dupes; do link_tool "$HOME/.cargo/bin/$tool" "$tool"; done
-for tool in codex claude; do link_tool "$agents/bin/$tool" "$tool"; done
+link_tool "$agents/bin/claude" claude
 bash "$root/.bombyx/install-kozmotic.sh"
 npm ci --prefix frontend
 (cd frontend && npm exec -- playwright install --with-deps chromium)
