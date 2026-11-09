@@ -1,5 +1,17 @@
 # Canon provenance
 
+## Page-loading transfer reduction, 2026-11-08
+
+The owner reported slow Agents, Events and Workflows data loading, requested
+[#153](https://github.com/breki/silkboard/issues/153) in high priority, then
+authorized implementation. The [measurement record](../page-loading-performance.md)
+separates public production health/resource observations, disposable browser
+timings and synthetic query costs. It records the demonstrated repeat asset
+transfer and the narrower public fingerprinted cache/precompression change.
+Private API and HTML caching protections remain; query scaling and owner-device
+acceptance are not claimed as solved. No release or production mutation is
+authorized by this implementation workflow.
+
 ## Todos usability and project filtering, 2026-11-08
 
 The owner requested implementation of [#152](https://github.com/breki/silkboard/issues/152),

@@ -5,8 +5,182 @@ use std::path::Path;
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode};
 use serde_json::{Value, json};
-use silkboard_web::create_router;
+use silkboard_web::{
+    create_owner_router, create_router, progress::ProgressStore,
+};
 use tower::ServiceExt;
+
+const GZIP: &[u8] = &[
+    31, 139, 8, 0, 0, 0, 0, 0, 0, 3, 75, 206, 207, 43, 206, 207, 73, 213, 203,
+    201, 79, 215, 48, 212, 4, 0, 104, 254, 1, 67, 14, 0, 0, 0,
+];
+
+fn asset_fixture() -> (axum::Router, std::path::PathBuf) {
+    let directory = std::env::temp_dir().join(format!(
+        "silkboard-asset-policy-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+    std::fs::create_dir_all(directory.join("assets")).unwrap();
+    std::fs::write(directory.join("index.html"), "shell").unwrap();
+    let asset = directory.join("assets/app-12345678.js");
+    std::fs::write(&asset, "console.log(1)").unwrap();
+    std::fs::write(directory.join("assets/theme-ab-cd_12.css"), "body{}")
+        .unwrap();
+    for name in [
+        "plain.js",
+        "app-123.js",
+        "app-1234567!.js",
+        "app-12345678.txt",
+        ".js",
+    ] {
+        std::fs::write(directory.join("assets").join(name), "unversioned")
+            .unwrap();
+    }
+    std::fs::write(directory.join("assets/app-12345678.js.gz"), GZIP).unwrap();
+    let app = create_owner_router(
+        &directory,
+        ProgressStore::open_memory().unwrap(),
+        "https://silkboard.example",
+    )
+    .unwrap();
+    (app, directory)
+}
+
+#[tokio::test]
+async fn public_fingerprinted_assets_are_cacheable_and_negotiate_gzip() {
+    let (app, directory) = asset_fixture();
+    for (encoding, expected_encoding, body) in [
+        ("gzip", Some("gzip"), GZIP),
+        ("identity", None, b"console.log(1)".as_slice()),
+        ("gzip;q=0", None, b"console.log(1)".as_slice()),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::get("/assets/app-12345678.js")
+                    .header("accept-encoding", encoding)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(
+            response.headers()["cache-control"],
+            "public, max-age=31536000, immutable"
+        );
+        assert_eq!(
+            response
+                .headers()
+                .get("content-encoding")
+                .and_then(|v| v.to_str().ok()),
+            expected_encoding
+        );
+        assert_eq!(response.headers()["x-content-type-options"], "nosniff");
+        assert_eq!(response.headers()["vary"], "Accept-Encoding");
+        let modified = response.headers()["last-modified"].clone();
+        assert_eq!(
+            to_bytes(response.into_body(), 4096).await.unwrap().as_ref(),
+            body
+        );
+        let revalidated = app
+            .clone()
+            .oneshot(
+                Request::get("/assets/app-12345678.js")
+                    .header("if-modified-since", modified)
+                    .header("accept-encoding", encoding)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(revalidated.status(), StatusCode::NOT_MODIFIED);
+        assert_eq!(
+            revalidated.headers()["cache-control"],
+            "public, max-age=31536000, immutable"
+        );
+    }
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[tokio::test]
+async fn private_errors_and_unversioned_files_keep_no_store_policy() {
+    let (app, directory) = asset_fixture();
+    for (path, status) in [
+        ("/", StatusCode::OK),
+        ("/events", StatusCode::OK),
+        ("/plans", StatusCode::OK),
+        ("/assets/plain.js", StatusCode::OK),
+        ("/assets/app-123.js", StatusCode::OK),
+        ("/assets/app-1234567!.js", StatusCode::OK),
+        ("/assets/app-12345678.txt", StatusCode::OK),
+        ("/assets/.js", StatusCode::OK),
+        ("/api/owner/events", StatusCode::UNAUTHORIZED),
+        ("/api/owner/plans", StatusCode::UNAUTHORIZED),
+        ("/assets/missing.js", StatusCode::NOT_FOUND),
+        ("/assets/../index.html", StatusCode::NOT_FOUND),
+        ("/assets/%2e%2e/index.html", StatusCode::NOT_FOUND),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(Request::get(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), status, "{path}");
+        assert_eq!(response.headers()["cache-control"], "no-store", "{path}");
+    }
+    std::fs::remove_dir_all(directory).unwrap();
+}
+
+#[tokio::test]
+async fn public_assets_support_head_ranges_and_uncompressed_fallback() {
+    let (app, directory) = asset_fixture();
+    for (method, path, range, status, body) in [
+        ("HEAD", "/assets/app-12345678.js", None, StatusCode::OK, ""),
+        (
+            "GET",
+            "/assets/app-12345678.js",
+            Some("bytes=0-3"),
+            StatusCode::PARTIAL_CONTENT,
+            "cons",
+        ),
+        (
+            "GET",
+            "/assets/theme-ab-cd_12.css",
+            None,
+            StatusCode::OK,
+            "body{}",
+        ),
+    ] {
+        let mut request = Request::builder().method(method).uri(path).header(
+            "accept-encoding",
+            if range.is_some() { "identity" } else { "gzip" },
+        );
+        if let Some(range) = range {
+            request = request.header("range", range);
+        }
+        let response = app
+            .clone()
+            .oneshot(request.body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        assert_eq!(response.status(), status);
+        assert_eq!(
+            response.headers()["cache-control"],
+            "public, max-age=31536000, immutable"
+        );
+        assert_eq!(response.headers()["vary"], "Accept-Encoding");
+        assert_eq!(
+            to_bytes(response.into_body(), 4096).await.unwrap().as_ref(),
+            body.as_bytes()
+        );
+    }
+    std::fs::remove_dir_all(directory).unwrap();
+}
 
 #[tokio::test]
 async fn health_and_status_report_backend_build_identity() {
