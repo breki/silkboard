@@ -80,7 +80,7 @@ fn accepts_only_the_exact_approved_finding_and_propagation() {
         .as_secs();
     assert_eq!(
         audit(&finding(), 1, &lock(), "").is_ok(),
-        now < 1_794_182_400
+        now < 1_794_787_200
     );
     let mut clean = finding();
     clean["vulnerabilities"] = json!({});
@@ -118,7 +118,7 @@ fn executable_captures_npm_findings_but_rejects_tool_and_registry_failures() {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs()
-        < 1_794_182_400;
+        < 1_794_787_200;
     for (report, status, cargo_status, succeeds) in [
         (finding().to_string(), 1, 0, active),
         (finding().to_string(), 2, 0, false),

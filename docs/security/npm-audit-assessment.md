@@ -61,7 +61,7 @@ disclosure or a reason to change production credentials.
 
 ## Approved temporary exception
 
-**Status: approved by the owner on 2026-11-02 and implemented in xtask.**
+**Status: approved on 2026-11-02; explicitly renewed on 2026-11-09.**
 The owner accepted the exact proposal after reviewing draft PR #135. The
 gate still runs RustSec with denied warnings and live npm audit at the low
 threshold; it accepts only the advisory's exact recorded finding
@@ -73,7 +73,7 @@ and its one propagated plugin entry before the expiry below.
 | Dependency | Only Deepmerge 4.3.1 through Svelte Vite plugin 7.2.0 |
 | Context | Repository-controlled build configuration only |
 | Reason | Authoritative CVE rejection plus inspected local input path |
-| Expiry | 2026-11-09T00:00:00Z; review earlier if the feed changes |
+| Expiry | 2026-11-16T00:00:00Z; review earlier if the feed changes |
 | Default | Every other advisory and all unavailable/malformed evidence fail |
 
 The [evaluator](../../xtask/src/npm_audit.rs) parses the live npm JSON audit
@@ -98,3 +98,24 @@ advisory associated with the rejected CVE. Zero-finding scans pass after the
 deadline; this finding is refused at or after the exact expiry instant.
 Renewal is not automatic. This approval does not authorize merging,
 publishing a release or changing production.
+
+## Explicit seven-day renewal, 2026-11-09
+
+The original exception expired at 2026-11-09T00:00:00Z and correctly blocked
+the audit after the SQLite repair. The owner reviewed the exact date-only
+renewal proposal and explicitly approved seven more days, ending at
+2026-11-16T00:00:00Z. The advisory, package versions, consumer path, complete
+report matching and all other rejection rules remain unchanged.
+
+Rechecking the [current authoritative CVE record](https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves/2026/93xxx/CVE-2026-93753.json)
+still returned REJECTED with the same November 2 rejection timestamp. Live
+npm audit still returned the exact two approved entries; primary registry
+metadata still offered no patched Deepmerge release, and the latest Svelte
+plugin still depended on it. No frontend dependencies changed in this repair.
+This renews the inspected build-configuration-only disposition; it does not
+claim withdrawal of the GitHub advisory or a zero-finding npm scan.
+
+Existing evaluator regressions continue to accept only the exact report
+before expiry and reject it at/after the deadline, along with changed
+versions, consumers, finding fields and malformed evidence. Clean scans
+continue to pass after expiry. Further renewal is not automatic.

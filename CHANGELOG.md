@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Upgrade the bundled SQLite library to address RUSTSEC-2026-0459.
+- Validate private backups against one committed database revision during
+  concurrent checklist edits, preventing false integrity failures.
 - Reduce page-loading transfers with cached fingerprinted public frontend
   assets and build-time gzip, preserving private API and HTML no-store policy.
 - Tighten Todos spacing, add keyboard completion/deletion shortcuts and move

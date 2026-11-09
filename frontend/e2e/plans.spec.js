@@ -356,8 +356,20 @@ test("the next full snapshot repairs a lost revision while preserving selected w
     blocked_reason: null,
   });
   await publish(value, token);
-  await page.clock.fastForward(10000);
   const done = page.getByRole("button", { name: "Build graph page, Done" });
+  // A tick can be skipped while an older request is in flight. Keep driving
+  // the test clock until a poll repairs the selected step, within the normal
+  // assertion deadline; one fast-forward does not guarantee a completed read.
+  await expect
+    .poll(async () => {
+      await page.clock.fastForward(10000);
+      return done.evaluateAll((buttons) =>
+        buttons.some(
+          (button) => button.getAttribute("aria-pressed") === "true",
+        ),
+      );
+    })
+    .toBe(true);
   await expect(done).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("button", { name: "Review the repaired plan, Active" }),
@@ -385,7 +397,16 @@ test("the next full snapshot repairs a lost revision while preserving selected w
         contentType: "application/json",
       }),
   );
-  await page.clock.fastForward(10000);
+  await expect
+    .poll(async () => {
+      await page.clock.fastForward(10000);
+      return page
+        .getByRole("alert")
+        .evaluateAll((alerts) =>
+          alerts.some((alert) => alert.textContent.includes("out of date")),
+        );
+    })
+    .toBe(true);
   await expect(page.getByRole("alert")).toContainText("out of date");
   await expect(done).toHaveAttribute("aria-pressed", "true");
   await page

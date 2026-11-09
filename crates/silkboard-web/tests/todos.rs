@@ -526,7 +526,11 @@ fn private_backups_remain_valid_during_concurrent_checklist_edits() {
         .collect();
     running.store(false, Ordering::Release);
     assert!(writer.join().unwrap() > 0);
-    assert!(results.into_iter().all(|result| result.is_ok()));
+    for (index, result) in results.into_iter().enumerate() {
+        result.unwrap_or_else(|error| {
+            panic!("concurrent backup {index} failed: {error:?}")
+        });
+    }
 }
 
 #[tokio::test]
