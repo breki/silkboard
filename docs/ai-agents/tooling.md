@@ -43,7 +43,7 @@ The live npm JSON audit has one
 [owner-approved temporary disposition](../security/npm-audit-assessment.md#approved-temporary-exception)
 for GHSA-gcqx-w48m-w2h4, whose CVE was rejected, bound to exact versions,
 consumer paths and the recorded low finding. It expires at
-2026-11-09T00:00:00Z. Acceptance prints an explicit exception diagnostic;
+2026-11-16T00:00:00Z. Acceptance prints an explicit exception diagnostic;
 it is not a clean scan. All other findings, schema/command failures and
 unavailable evidence remain blocking. No development dependencies are omitted.
 Long runs print stage progress; redirect output to a local log when needed.
