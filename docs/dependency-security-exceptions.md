@@ -39,7 +39,7 @@ compatibility checks must cover file selection and Svelte/TypeScript parsing.
 Remove obsolete age cases during a future scoped update after fourteen days.
 This admits security fixes; it does not suppress any npm advisory. The
 [Deepmerge assessment and approved disposition](security/npm-audit-assessment.md)
-is separate; its owner-approved exception expires at 2026-11-09T00:00:00Z.
+is separate; its owner-approved renewal expires at 2026-11-16T00:00:00Z.
 
 ## Rustls 0.23.46, 2026-10-18
 
@@ -198,3 +198,29 @@ sha512 integrity, date and advisory checks remain required. Regression tests
 reject adjacent versions, other packages, changed/future publication seconds
 and mismatched integrity. Remove the narrow exception after the ordinary
 cooldown is satisfied in a future scoped update. No advisory is ignored.
+
+## SQLite advisory repair, 2026-11-09
+
+The owner authorized fixing
+[RUSTSEC-2026-0459](https://rustsec.org/advisories/RUSTSEC-2026-0459),
+which affects bundled SQLite before 3.54.0. Upgrade rusqlite from 0.40.2
+to exact 0.41.0, resolving libsqlite3-sys from 0.38.2 to 0.39.1 and
+bundled SQLite 3.54.1. No other locked packages change.
+
+Both releases satisfy the normal fourteen-day cooldown. The primary registry
+reports rusqlite 0.41.0 at `2026-10-24T10:35:41.505736Z` and
+libsqlite3-sys 0.39.1 at `2026-10-25T05:20:35.644463Z`. Both retain the
+approved MIT license, registry source and locked checksums. Their Rust
+requirements, 1.89 and 1.88 respectively, fit the pinned CI toolchain.
+No age exception or RustSec ignore is added.
+
+The [migration notes](https://github.com/rusqlite/rusqlite/releases/tag/v0.41.0)
+change column-name iterators, zeroblob and some optional APIs that Silkboard
+does not call. The test authorizer now needs a mutable connection. Keep
+bundled SQLite and the test-only authorizer feature; verify current/legacy
+checklist admission, concurrent backups, restore and normal application
+queries with the upgraded library. The separate Deepmerge disposition records
+the owner's explicit November 9 renewal; the SQLite upgrade needs no exception.
+
+Sources: [rusqlite registry](https://crates.io/api/v1/crates/rusqlite/0.41.0),
+[SQLite binding registry](https://crates.io/api/v1/crates/libsqlite3-sys/0.39.1).

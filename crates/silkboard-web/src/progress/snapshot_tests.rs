@@ -39,7 +39,7 @@ fn source_validation_reads_one_revision_during_a_concurrent_commit() {
     drop(ProgressStore::open(&path).unwrap());
     let writer = Connection::open(&path).unwrap();
     writer.pragma_update(None, "journal_mode", "WAL").unwrap();
-    let reader =
+    let mut reader =
         Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY)
             .unwrap();
     let committed = Arc::new(AtomicBool::new(false));

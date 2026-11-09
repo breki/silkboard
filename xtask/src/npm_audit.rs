@@ -8,8 +8,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-// 2026-11-09T00:00:00Z. No CLI/environment extension or generic ignore list.
-const EXPIRES: u64 = 1_794_182_400;
+// 2026-11-16T00:00:00Z. No CLI/environment extension or generic ignore list.
+const EXPIRES: u64 = 1_794_787_200;
 const ADVISORY: &str = "https://github.com/advisories/GHSA-gcqx-w48m-w2h4";
 const PLUGIN: &str = "node_modules/@sveltejs/vite-plugin-svelte";
 const DEEPMERGE: &str = "node_modules/deepmerge";
@@ -36,7 +36,7 @@ pub(super) fn check(root: &Path, runner: &Runner<'_>) -> Result<(), String> {
         .as_secs();
     if evaluate(&output, &lock, now)? {
         println!(
-            "npm audit: accepted exact GHSA-gcqx-w48m-w2h4 (CVE-2026-93753 rejected) for deepmerge 4.3.1 via Svelte plugin 7.2.0; temporary exception expires 2026-11-09T00:00:00Z (two low propagated entries, not a clean scan)."
+            "npm audit: accepted exact GHSA-gcqx-w48m-w2h4 (CVE-2026-93753 rejected) for deepmerge 4.3.1 via Svelte plugin 7.2.0; temporary exception expires 2026-11-16T00:00:00Z (two low propagated entries, not a clean scan)."
         );
     } else {
         println!("npm audit: no findings.");
@@ -173,7 +173,7 @@ fn evaluate(output: &str, lock: &str, now: u64) -> Result<bool, String> {
     }
     if now >= EXPIRES {
         return Err(
-            "Deepmerge audit exception expired at 2026-11-09T00:00:00Z".into(),
+            "Deepmerge audit exception expired at 2026-11-16T00:00:00Z".into(),
         );
     }
     approved_lock(lock)?;

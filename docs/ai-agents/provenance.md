@@ -1249,3 +1249,16 @@ helper installation. The [live record](../production-build-cache-trial.md)
 separates measured ARM64 reuse and installation from the still-pending normal
 release build and activation acceptance. Trust, credentials, updater policy,
 binary, units and timer remained unchanged.
+
+## SQLite advisory repair, 2026-11-09
+
+The owner authorized addressing the SQLite advisory blocking PR #155.
+The [dependency record](../dependency-security-exceptions.md#sqlite-advisory-repair-2026-11-09)
+records the RustSec finding, upstream migration notes, observed registry dates
+and normal cooldown admission for rusqlite 0.41.0/libsqlite3-sys 0.39.1.
+The manifest and lockfile update only these two crates. After rechecking the
+authoritative rejected CVE and live npm report, the owner separately approved
+the prepared exact Deepmerge renewal through 2026-11-16T00:00:00Z. The
+[renewal record](../security/npm-audit-assessment.md#explicit-seven-day-renewal-2026-11-09)
+preserves the earlier approval and unchanged report/version/consumer bounds.
+Neither decision authorizes a general audit bypass or release/deployment.
