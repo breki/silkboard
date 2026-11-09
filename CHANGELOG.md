@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Validate private backups against one committed database revision during
+  concurrent checklist edits, preventing false integrity failures.
 - Tighten Todos spacing, add keyboard completion/deletion shortcuts and move
   across nesting levels in document order. Add existing-project autocomplete
   tags and bookmarkable filtering that preserves hidden items during edits.

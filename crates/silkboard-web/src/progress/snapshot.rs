@@ -1,4 +1,8 @@
 //! Operator-only consistent snapshots; restoration never overwrites live state.
+#[cfg(test)]
+#[path = "snapshot_tests.rs"]
+mod tests;
+
 use super::{ProgressError, operator::private_options};
 use rusqlite::{Connection, OpenFlags};
 use std::{
@@ -71,6 +75,15 @@ fn existing(path: &Path) -> Result<Connection, ProgressError> {
     Ok(connection)
 }
 fn validate(connection: &Connection) -> Result<(), ProgressError> {
+    // Admission spans several queries. Keep them on one committed revision
+    // while legacy/current applications edit the live database in WAL mode.
+    // Release this read transaction before VACUUM INTO starts its own.
+    let transaction = connection.unchecked_transaction()?;
+    validate_snapshot(&transaction)?;
+    transaction.commit()?;
+    Ok(())
+}
+fn validate_snapshot(connection: &Connection) -> Result<(), ProgressError> {
     let version: i64 =
         connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
     if version > 3 {
