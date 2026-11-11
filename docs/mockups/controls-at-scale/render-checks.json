@@ -1,0 +1,124 @@
+{
+  "scenarios": [
+    {
+      "name": "agents-desktop-light",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "dialogOverflow": false,
+      "smallTargets": [
+        "◐",
+        "Agent All agents⌄",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity"
+      ],
+      "agentCount": 20
+    },
+    {
+      "name": "agents-desktop-dark",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "dialogOverflow": false,
+      "smallTargets": [
+        "◐",
+        "Agent All agents⌄",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity",
+        "Report & identity"
+      ],
+      "agentCount": 20
+    },
+    {
+      "name": "agents-phone-light",
+      "width": 390,
+      "scrollWidth": 390,
+      "dialogOverflow": false,
+      "smallTargets": [],
+      "agentCount": 20
+    },
+    {
+      "name": "agents-phone-320-dark",
+      "width": 320,
+      "scrollWidth": 320,
+      "dialogOverflow": false,
+      "smallTargets": [],
+      "agentCount": 20
+    },
+    {
+      "name": "project-chooser-phone",
+      "width": 390,
+      "scrollWidth": 390,
+      "dialogOverflow": false,
+      "smallTargets": [],
+      "agentCount": 20
+    },
+    {
+      "name": "events-desktop-light",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "dialogOverflow": false,
+      "smallTargets": ["◐", "Agent All agents⌄", "◷All time⌄"]
+    },
+    {
+      "name": "range-desktop-light",
+      "width": 1440,
+      "scrollWidth": 1440,
+      "dialogOverflow": false,
+      "smallTargets": [
+        "×",
+        "All time",
+        "Last hour",
+        "Last 24 hours",
+        "Last 7 days",
+        "from-date",
+        "from-time",
+        "to-date",
+        "to-time",
+        "Cancel",
+        "Apply range"
+      ]
+    },
+    {
+      "name": "range-phone-dark",
+      "width": 320,
+      "scrollWidth": 320,
+      "dialogOverflow": false,
+      "smallTargets": []
+    }
+  ],
+  "interactions": "project and agent search/selection, identity disclosure, clear, view navigation, last-hour preset, invalid dates/times and reversed range, cancel, custom range, Escape/focus return, empty search, theme switch"
+}
